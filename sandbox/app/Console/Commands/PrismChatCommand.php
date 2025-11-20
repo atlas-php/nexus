@@ -12,6 +12,8 @@ use Prism\Prism\Facades\Prism;
 use Prism\Prism\Streaming\Events\ErrorEvent;
 use Prism\Prism\Streaming\Events\StreamEvent;
 use Prism\Prism\Streaming\Events\TextDeltaEvent;
+use Prism\Prism\Streaming\Events\ToolCallEvent;
+use Prism\Prism\Streaming\Events\ToolResultEvent;
 use Prism\Prism\Text\PendingRequest;
 use Prism\Prism\Text\Response;
 use Prism\Prism\Tool;
@@ -148,10 +150,26 @@ class PrismChatCommand extends Command
     protected function streamResponse(iterable $chunks): ?string
     {
         $buffer = '';
+        $activeTools = [];
         $this->line('');
         $this->output->writeln(' Agent:');
 
         foreach ($chunks as $chunk) {
+            if ($chunk instanceof ToolCallEvent) {
+                $activeTools[$chunk->toolCall->id] = $chunk->toolCall->name;
+                $this->output->writeln(sprintf(' (working: %s)', $chunk->toolCall->name));
+
+                continue;
+            }
+
+            if ($chunk instanceof ToolResultEvent) {
+                $toolName = $activeTools[$chunk->toolResult->toolCallId] ?? $chunk->toolResult->toolName;
+                unset($activeTools[$chunk->toolResult->toolCallId]);
+                $this->output->writeln(sprintf(' (completed: %s)', $toolName));
+
+                continue;
+            }
+
             if ($chunk instanceof TextDeltaEvent) {
                 $this->output->write($chunk->delta);
                 $buffer .= $chunk->delta;
