@@ -7,6 +7,7 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiMemoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class AiMemory
@@ -53,6 +54,50 @@ class AiMemory extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_memories';
+    }
+
+    /**
+     * @return BelongsTo<AiAssistant, self>
+     */
+    public function assistant(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistant, self> $relation */
+        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiThread, self>
+     */
+    public function thread(): BelongsTo
+    {
+        /** @var BelongsTo<AiThread, self> $relation */
+        $relation = $this->belongsTo(AiThread::class, 'thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiMessage, self>
+     */
+    public function sourceMessage(): BelongsTo
+    {
+        /** @var BelongsTo<AiMessage, self> $relation */
+        $relation = $this->belongsTo(AiMessage::class, 'source_message_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiToolRun, self>
+     */
+    public function sourceToolRun(): BelongsTo
+    {
+        /** @var BelongsTo<AiToolRun, self> $relation */
+        $relation = $this->belongsTo(AiToolRun::class, 'source_tool_run_id');
+
+        return $relation;
     }
 
     protected static function newFactory(): AiMemoryFactory

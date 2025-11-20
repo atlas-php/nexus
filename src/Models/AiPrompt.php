@@ -7,7 +7,10 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiPromptFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
  * Class AiPrompt
@@ -55,6 +58,45 @@ class AiPrompt extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_prompts';
+    }
+
+    /**
+     * @return BelongsTo<AiAssistant, self>
+     */
+    public function assistant(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistant, self> $relation */
+        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AuthenticatableUser, self>
+     */
+    public function user(): BelongsTo
+    {
+        $providerModel = config('auth.providers.users.model');
+        $fallback = config('auth.model', AuthenticatableUser::class);
+
+        /** @var class-string<AuthenticatableUser> $modelClass */
+        $modelClass = $providerModel ?? $fallback;
+
+        /** @var BelongsTo<AuthenticatableUser, self> $relation */
+        $relation = $this->belongsTo($modelClass, 'user_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiThread, self>
+     */
+    public function threads(): HasMany
+    {
+        /** @var HasMany<AiThread, self> $relation */
+        $relation = $this->hasMany(AiThread::class, 'prompt_id');
+
+        return $relation;
     }
 
     protected static function newFactory(): AiPromptFactory

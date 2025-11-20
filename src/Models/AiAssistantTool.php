@@ -7,6 +7,7 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiAssistantToolFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class AiAssistantTool
@@ -44,6 +45,28 @@ class AiAssistantTool extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_assistant_tool';
+    }
+
+    /**
+     * @return BelongsTo<AiAssistant, self>
+     */
+    public function assistant(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistant, self> $relation */
+        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiTool, self>
+     */
+    public function tool(): BelongsTo
+    {
+        /** @var BelongsTo<AiTool, self> $relation */
+        $relation = $this->belongsTo(AiTool::class, 'tool_id');
+
+        return $relation;
     }
 
     protected static function newFactory(): AiAssistantToolFactory

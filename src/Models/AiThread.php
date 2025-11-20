@@ -7,6 +7,9 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiThreadFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
  * Class AiThread
@@ -56,6 +59,111 @@ class AiThread extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_threads';
+    }
+
+    /**
+     * @return BelongsTo<AiAssistant, self>
+     */
+    public function assistant(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistant, self> $relation */
+        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AuthenticatableUser, self>
+     */
+    public function user(): BelongsTo
+    {
+        $providerModel = config('auth.providers.users.model');
+        $fallback = config('auth.model', AuthenticatableUser::class);
+
+        /** @var class-string<AuthenticatableUser> $modelClass */
+        $modelClass = $providerModel ?? $fallback;
+
+        /** @var BelongsTo<AuthenticatableUser, self> $relation */
+        $relation = $this->belongsTo($modelClass, 'user_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiPrompt, self>
+     */
+    public function prompt(): BelongsTo
+    {
+        /** @var BelongsTo<AiPrompt, self> $relation */
+        $relation = $this->belongsTo(AiPrompt::class, 'prompt_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiThread, self>
+     */
+    public function parentThread(): BelongsTo
+    {
+        /** @var BelongsTo<AiThread, self> $relation */
+        $relation = $this->belongsTo(AiThread::class, 'parent_thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiThread, self>
+     */
+    public function children(): HasMany
+    {
+        /** @var HasMany<AiThread, self> $relation */
+        $relation = $this->hasMany(AiThread::class, 'parent_thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiToolRun, self>
+     */
+    public function parentToolRun(): BelongsTo
+    {
+        /** @var BelongsTo<AiToolRun, self> $relation */
+        $relation = $this->belongsTo(AiToolRun::class, 'parent_tool_run_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiToolRun, self>
+     */
+    public function toolRuns(): HasMany
+    {
+        /** @var HasMany<AiToolRun, self> $relation */
+        $relation = $this->hasMany(AiToolRun::class, 'thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiMessage, self>
+     */
+    public function messages(): HasMany
+    {
+        /** @var HasMany<AiMessage, self> $relation */
+        $relation = $this->hasMany(AiMessage::class, 'thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiMemory, self>
+     */
+    public function memories(): HasMany
+    {
+        /** @var HasMany<AiMemory, self> $relation */
+        $relation = $this->hasMany(AiMemory::class, 'thread_id');
+
+        return $relation;
     }
 
     protected static function newFactory(): AiThreadFactory

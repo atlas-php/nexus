@@ -115,18 +115,27 @@ class AiModelFactoryTest extends TestCase
 
         $this->assertSame(['tier' => 'enterprise'], $assistant->metadata);
 
+        $this->assertNotNull($prompt->assistant);
+        $this->assertTrue($prompt->assistant->is($assistant));
         $this->assertSame($assistant->id, $thread->assistant_id);
         $this->assertSame(42, $thread->user_id);
+        $this->assertNotNull($thread->assistant);
+        $this->assertTrue($thread->assistant->is($assistant));
+        $this->assertNotNull($thread->prompt);
+        $this->assertTrue($thread->prompt->is($prompt));
         $this->assertInstanceOf(Carbon::class, $thread->last_message_at);
         $this->assertSame(['channel' => 'web'], $thread->metadata);
 
+        $this->assertNotNull($message->thread);
         $this->assertSame($thread->id, $message->thread_id);
         $this->assertSame(1, $message->sequence);
         $this->assertSame('text', $message->content_type);
+        $this->assertTrue($message->thread->is($thread));
         $this->assertSame(['sentiment' => 'positive'], $message->metadata);
 
         $this->assertSame(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $tool->schema);
         $this->assertTrue($tool->is_active);
+        $this->assertTrue($tool->assistants()->whereKey($assistant->id)->exists());
 
         $this->assertSame('succeeded', $toolRun->status);
         $this->assertSame(['query' => 'demo'], $toolRun->input_args);
@@ -134,14 +143,32 @@ class AiModelFactoryTest extends TestCase
         $this->assertNotNull($toolRun->started_at);
         $this->assertNotNull($toolRun->finished_at);
         $this->assertTrue($toolRun->finished_at->greaterThan($toolRun->started_at));
+        $this->assertNotNull($toolRun->tool);
+        $this->assertNotNull($toolRun->thread);
+        $this->assertNotNull($toolRun->assistantMessage);
+        $this->assertTrue($toolRun->tool->is($tool));
+        $this->assertTrue($toolRun->thread->is($thread));
+        $this->assertTrue($toolRun->assistantMessage->is($message));
 
         $this->assertSame($assistant->id, $assistantTool->assistant_id);
         $this->assertSame($tool->id, $assistantTool->tool_id);
         $this->assertSame(['mode' => 'sync'], $assistantTool->config);
+        $this->assertNotNull($assistantTool->assistant);
+        $this->assertNotNull($assistantTool->tool);
+        $this->assertTrue($assistantTool->assistant->is($assistant));
+        $this->assertTrue($assistantTool->tool->is($tool));
 
         $this->assertSame($assistant->id, $memory->assistant_id);
         $this->assertSame($thread->id, $memory->thread_id);
         $this->assertSame(['context' => 'demo'], $memory->metadata);
+        $this->assertNotNull($memory->assistant);
+        $this->assertNotNull($memory->thread);
+        $this->assertNotNull($memory->sourceMessage);
+        $this->assertNotNull($memory->sourceToolRun);
+        $this->assertTrue($memory->assistant->is($assistant));
+        $this->assertTrue($memory->thread->is($thread));
+        $this->assertTrue($memory->sourceMessage->is($message));
+        $this->assertTrue($memory->sourceToolRun->is($toolRun));
     }
 
     private function migrationPath(): string

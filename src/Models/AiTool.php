@@ -7,6 +7,8 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiToolFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -53,8 +55,52 @@ class AiTool extends AtlasModel
         return 'ai_tools';
     }
 
+    /**
+     * @return HasMany<AiAssistantTool, self>
+     */
+    public function assistantTools(): HasMany
+    {
+        /** @var HasMany<AiAssistantTool, self> $relation */
+        $relation = $this->hasMany(AiAssistantTool::class, 'tool_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsToMany<AiAssistant, self>
+     */
+    public function assistants(): BelongsToMany
+    {
+        /** @var BelongsToMany<AiAssistant, self> $relation */
+        $relation = $this->belongsToMany(
+            AiAssistant::class,
+            $this->resolveConfiguredTableNameForPivot('ai_assistant_tool'),
+            'tool_id',
+            'assistant_id'
+        )->withPivot(['config'])
+            ->withTimestamps();
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiToolRun, self>
+     */
+    public function toolRuns(): HasMany
+    {
+        /** @var HasMany<AiToolRun, self> $relation */
+        $relation = $this->hasMany(AiToolRun::class, 'tool_id');
+
+        return $relation;
+    }
+
     protected static function newFactory(): AiToolFactory
     {
         return AiToolFactory::new();
+    }
+
+    private function resolveConfiguredTableNameForPivot(string $tableKey): string
+    {
+        return config(sprintf('atlas-nexus.tables.%s', $tableKey), $tableKey);
     }
 }

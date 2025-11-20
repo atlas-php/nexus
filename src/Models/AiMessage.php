@@ -7,6 +7,9 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiMessageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
  * Class AiMessage
@@ -55,6 +58,45 @@ class AiMessage extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_messages';
+    }
+
+    /**
+     * @return BelongsTo<AiThread, self>
+     */
+    public function thread(): BelongsTo
+    {
+        /** @var BelongsTo<AiThread, self> $relation */
+        $relation = $this->belongsTo(AiThread::class, 'thread_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AuthenticatableUser, self>
+     */
+    public function user(): BelongsTo
+    {
+        $providerModel = config('auth.providers.users.model');
+        $fallback = config('auth.model', AuthenticatableUser::class);
+
+        /** @var class-string<AuthenticatableUser> $modelClass */
+        $modelClass = $providerModel ?? $fallback;
+
+        /** @var BelongsTo<AuthenticatableUser, self> $relation */
+        $relation = $this->belongsTo($modelClass, 'user_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiToolRun, self>
+     */
+    public function toolRuns(): HasMany
+    {
+        /** @var HasMany<AiToolRun, self> $relation */
+        $relation = $this->hasMany(AiToolRun::class, 'assistant_message_id');
+
+        return $relation;
     }
 
     protected static function newFactory(): AiMessageFactory

@@ -7,6 +7,9 @@ namespace Atlas\Nexus\Models;
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiAssistantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -61,8 +64,74 @@ class AiAssistant extends AtlasModel
         return 'ai_assistants';
     }
 
+    /**
+     * @return HasMany<AiPrompt, self>
+     */
+    public function prompts(): HasMany
+    {
+        /** @var HasMany<AiPrompt, self> $relation */
+        $relation = $this->hasMany(AiPrompt::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiThread, self>
+     */
+    public function threads(): HasMany
+    {
+        /** @var HasMany<AiThread, self> $relation */
+        $relation = $this->hasMany(AiThread::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsToMany<AiTool, self>
+     */
+    public function tools(): BelongsToMany
+    {
+        /** @var BelongsToMany<AiTool, self> $relation */
+        $relation = $this->belongsToMany(
+            AiTool::class,
+            $this->resolveConfiguredTableNameForPivot('ai_assistant_tool'),
+            'assistant_id',
+            'tool_id'
+        )->withPivot(['config'])
+            ->withTimestamps();
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<AiAssistantTool, self>
+     */
+    public function assistantTools(): HasMany
+    {
+        /** @var HasMany<AiAssistantTool, self> $relation */
+        $relation = $this->hasMany(AiAssistantTool::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiPrompt, self>
+     */
+    public function currentPrompt(): BelongsTo
+    {
+        /** @var BelongsTo<AiPrompt, self> $relation */
+        $relation = $this->belongsTo(AiPrompt::class, 'current_prompt_id');
+
+        return $relation;
+    }
+
     protected static function newFactory(): AiAssistantFactory
     {
         return AiAssistantFactory::new();
+    }
+
+    private function resolveConfiguredTableNameForPivot(string $tableKey): string
+    {
+        return config(sprintf('atlas-nexus.tables.%s', $tableKey), $tableKey);
     }
 }
