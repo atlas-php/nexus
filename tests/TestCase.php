@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Tests;
 
 use Atlas\Core\Testing\PackageTestCase;
 use Atlas\Nexus\Providers\AtlasNexusServiceProvider;
+use Prism\Prism\PrismServiceProvider;
 
 /**
  * Class TestCase
@@ -24,6 +25,7 @@ abstract class TestCase extends PackageTestCase
     {
         return [
             AtlasNexusServiceProvider::class,
+            PrismServiceProvider::class,
         ];
     }
 }

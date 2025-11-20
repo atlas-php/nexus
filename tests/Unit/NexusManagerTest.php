@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit;
 
 use Atlas\Nexus\NexusManager;
+use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Tests\TestCase;
+use Atlas\Nexus\Text\TextRequest;
 use InvalidArgumentException;
 
 /**
@@ -37,5 +39,16 @@ class NexusManagerTest extends TestCase
         $this->expectExceptionMessage('Pipeline [missing] is not defined.');
 
         $manager->getPipelineConfig('missing');
+    }
+
+    public function test_it_exposes_prism_text_requests(): void
+    {
+        $manager = $this->app->make(NexusManager::class);
+        $threadLog = new ChatThreadLog;
+
+        $request = $manager->text($threadLog);
+
+        $this->assertInstanceOf(TextRequest::class, $request);
+        $this->assertSame($threadLog, $request->chatThreadLog());
     }
 }

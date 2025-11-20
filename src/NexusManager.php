@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus;
 
+use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Text\TextRequest;
+use Atlas\Nexus\Text\TextRequestFactory;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use InvalidArgumentException;
 
 /**
  * Class NexusManager
  *
- * Centralizes access to Nexus pipeline configuration to coordinate future AI flows.
+ * Centralizes access to Nexus pipeline configuration and Prism entry points to coordinate future AI flows.
  * PRD Reference: Atlas Nexus Foundation Setup — Initial manager scaffolding.
  */
 class NexusManager
 {
     public function __construct(
-        private readonly ConfigRepository $config
+        private readonly ConfigRepository $config,
+        private readonly TextRequestFactory $textRequestFactory
     ) {}
 
     /**
@@ -49,5 +53,13 @@ class NexusManager
         $default = $this->config->get('atlas-nexus.default_pipeline');
 
         return is_string($default) && $default !== '' ? $default : null;
+    }
+
+    /**
+     * Build a Prism text request while preserving direct access to Prism features.
+     */
+    public function text(?ChatThreadLog $chatThreadLog = null): TextRequest
+    {
+        return $this->textRequestFactory->make($chatThreadLog);
     }
 }

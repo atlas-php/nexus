@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Providers;
 
 use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\NexusManager;
+use Atlas\Nexus\Text\TextRequestFactory;
 
 /**
  * Class AtlasNexusServiceProvider
@@ -27,11 +28,15 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
             'atlas-nexus'
         );
 
+        $this->app->singleton(TextRequestFactory::class, static fn (): TextRequestFactory => new TextRequestFactory);
+
         $this->app->singleton(NexusManager::class, static fn ($app): NexusManager => new NexusManager(
-            $app['config']
+            $app['config'],
+            $app->make(TextRequestFactory::class),
         ));
 
         $this->app->alias(NexusManager::class, 'atlas-nexus.manager');
+        $this->app->alias(TextRequestFactory::class, 'atlas-nexus.text-factory');
     }
 
     /**
