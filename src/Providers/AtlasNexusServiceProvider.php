@@ -49,10 +49,16 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
                 $this->packageConfigPath('atlas-nexus.php') => config_path('atlas-nexus.php'),
             ], $this->tags()->config());
 
+            $this->publishes([
+                $this->packageDatabasePath('migrations') => database_path('migrations'),
+            ], $this->tags()->migrations());
+
             $this->notifyPendingInstallSteps(
                 'Atlas Nexus',
                 'atlas-nexus.php',
-                $this->tags()->config()
+                $this->tags()->config(),
+                '*ai_assistants*',
+                $this->tags()->migrations()
             );
         }
     }
