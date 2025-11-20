@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\InveloChatCommand;
 use App\Console\Commands\ListChatsCommand;
 use App\Console\Commands\LogChatCommand;
 use App\Console\Commands\NexusPipelineCommand;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         LogChatCommand::class,
         ListChatsCommand::class,
         ViewChatCommand::class,
+        InveloChatCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         //

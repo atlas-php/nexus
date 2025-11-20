@@ -26,6 +26,7 @@ A dedicated Laravel sandbox ships in [`sandbox/`](./sandbox) so you can exercise
    php artisan sandbox:log-chat "Persist custom payload for review"
    php artisan sandbox:list-chats
    php artisan sandbox:view-chat 20250101_120000_000000.txt
+   php artisan invelo:chat "How many agents are onboarded?"
    ```
 
 The sandbox uses the checked-in `config/atlas-nexus.php` to describe pipelines, so feel free to duplicate and tweak entries as you experiment with additional providers, models, and system prompts.
