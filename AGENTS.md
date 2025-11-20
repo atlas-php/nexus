@@ -110,7 +110,7 @@ package-name/
 6. **Dependencies** — keep minimal; prefer Laravel contracts over concrete bindings.
 7. **PRD Alignment** — always verify that logic, method names, and service behavior align with the PRD before implementation.
 8. **Deviation Handling** — if any PRD rule appears incomplete or conflicting, pause work and flag it for clarification rather than guessing.
-9. **Documentation via Doc Blocks** — every class, interface, and trait must include a top-level PHPDoc block explaining its purpose and referencing the PRD section (if applicable). This ensures consumers understand intent and maintainability is preserved.
+9. **Documentation via Doc Blocks** — every class, interface, and trait must include a top-level PHPDoc block explaining its purpose. This ensures consumers understand intent and maintainability is preserved.
 
 ---
 
@@ -146,7 +146,7 @@ Every Agent is required to:
 
 * Follow this guide precisely.
 * Use PRDs as the **single source of truth** for all logic, naming, and intent.
-* Include PHPDoc blocks at the top of every class describing purpose and PRD linkage.
+* Include PHPDoc blocks at the top of every class describing purpose and usage.
 * Seek clarification when a PRD is ambiguous or missing required details.
 
 > **Failure to follow the PRD or this guide will result in revision or rejection of the contribution.**
