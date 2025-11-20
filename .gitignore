@@ -45,3 +45,6 @@ Temporary Items
 
 components.d.ts
 auto-imports.d.ts
+
+# Allow the sandbox .env file to ship with defaults for local usage.
+!sandbox/.env
