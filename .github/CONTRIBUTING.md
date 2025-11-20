@@ -2,7 +2,7 @@
 
 This document defines the **minimum checks** and **commit style** required to complete any contribution.
 
-All coding standards, architecture rules, and naming conventions live in **[AGENTS.md](./AGENTS.md)**.
+All coding standards, architecture rules, and naming conventions live in **[AGENTS.md](../AGENTS.md)**.
 
 ---
 
