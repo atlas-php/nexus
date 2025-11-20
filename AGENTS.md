@@ -25,7 +25,7 @@ All **Agents** must treat any **Product Requirement Documents (PRDs)** included 
 5. Always reference **PRDs** for functional requirements and naming accuracy.
 6. Write clear, testable, and deterministic code.
 7. Never introduce new logic, naming, or assumptions that conflict with the PRD.
-8. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose, expected usage, and any relevant PRD reference. These doc blocks are mandatory and intended to help both internal and external consumers understand the class role without reading its internals.
+8. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and expected usage details. These doc blocks are mandatory and intended to help both internal and external consumers understand the class role without reading its internals.
 
 Example:
 
@@ -34,7 +34,6 @@ Example:
  * Class UserWebhookService
  *
  * Handles webhook registration, processing, and retry logic for user-related events.
- * Defined by PRD: Send Webhook Relay — Delivery Rules.
  */
 ```
 
@@ -135,7 +134,7 @@ Before committing any change:
 4. Verify autoload & discovery: `composer dump-autoload`
 5. Confirm PRD alignment for naming and functionality.
 6. Ensure no temporary debugging or unused imports remain.
-7. Verify that every class includes a valid doc block with purpose and PRD reference.
+7. Verify that every class includes a valid doc block with purpose and usage context.
 
 ---
 
