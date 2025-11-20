@@ -6,7 +6,7 @@ This guide defines the conventions and best practices for contributors working o
 
 ---
 
-## Purpose
+## Purpose 
 
 This repository provides **standalone Laravel packages** designed for installation in other Laravel applications. There is **no full Laravel app** in this repo — all logic must remain **framework-integrated but package-isolated**.
 
