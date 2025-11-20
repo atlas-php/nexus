@@ -1,0 +1,46 @@
+{
+    "name": "atlas-php/nexus",
+    "description": "Atlas Nexus centralizes AI orchestration pipelines and shared workflow tooling.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0",
+        "atlas-php/core": "^0.3.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.17",
+        "larastan/larastan": "^3.0",
+        "orchestra/testbench": "^8.24|^9.0|^10.0",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Atlas\\Nexus\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Atlas\\Nexus\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Atlas\\Nexus\\Providers\\AtlasNexusServiceProvider"
+            ],
+            "aliases": {
+                "Nexus": "Atlas\\Nexus\\NexusManager"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "analyse": "vendor/bin/phpstan analyse",
+        "analyze": "vendor/bin/phpstan analyse",
+        "lint": "vendor/bin/pint",
+        "format": "vendor/bin/pint"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
