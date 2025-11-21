@@ -14,20 +14,23 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 
 /**
  * Class ThreadMessageService
  *
- * Records user messages within a thread, stages the pending assistant reply, and dispatches generation jobs.
+ * Records user messages within a thread, stages the pending assistant reply, and dispatches or runs generation inline per request.
  */
 class ThreadMessageService
 {
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiThreadService $threadService,
-        private readonly MemoryToolRegistrar $memoryToolRegistrar
+        private readonly MemoryToolRegistrar $memoryToolRegistrar,
+        private readonly AssistantResponseService $assistantResponseService,
+        private readonly ConfigRepository $config
     ) {}
 
     /**
@@ -37,7 +40,8 @@ class ThreadMessageService
         AiThread $thread,
         string $content,
         ?int $userId = null,
-        AiMessageContentType $contentType = AiMessageContentType::TEXT
+        AiMessageContentType $contentType = AiMessageContentType::TEXT,
+        bool $dispatchResponse = true
     ): array {
         $this->ensureAssistantIsIdle($thread);
         $assistant = $this->resolveAssistant($thread);
@@ -72,7 +76,16 @@ class ThreadMessageService
             'last_message_at' => Carbon::now(),
         ]);
 
-        RunAssistantResponseJob::dispatch($assistantMessage->id);
+        if ($dispatchResponse) {
+            $dispatch = RunAssistantResponseJob::dispatch($assistantMessage->id);
+            $queue = $this->responseQueue();
+
+            if ($queue !== null) {
+                $dispatch->onQueue($queue);
+            }
+        } else {
+            $this->assistantResponseService->handle($assistantMessage->id);
+        }
 
         return [
             'user' => $userMessage,
@@ -111,5 +124,12 @@ class ThreadMessageService
             ->max('sequence');
 
         return ((int) ($current ?? 0)) + 1;
+    }
+
+    protected function responseQueue(): ?string
+    {
+        $queue = $this->config->get('atlas-nexus.responses.queue');
+
+        return is_string($queue) && $queue !== '' ? $queue : null;
     }
 }

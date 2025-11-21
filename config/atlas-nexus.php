@@ -11,6 +11,10 @@ return [
         ],
     ],
 
+    'responses' => [
+        'queue' => env('ATLAS_NEXUS_RESPONSES_QUEUE'),
+    ],
+
     'tools' => [
         'memory' => [
             'enabled' => true,

@@ -6,8 +6,10 @@ namespace Atlas\Nexus\Tests\Unit\Providers;
 
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
+use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
@@ -29,6 +31,7 @@ class AtlasNexusServiceProviderTest extends TestCase
     public function test_default_configuration_is_available(): void
     {
         $this->assertSame('default', config('atlas-nexus.default_pipeline'));
+        $this->assertNull(config('atlas-nexus.responses.queue'));
     }
 
     public function test_text_request_factory_binding_is_available(): void
@@ -42,5 +45,7 @@ class AtlasNexusServiceProviderTest extends TestCase
     {
         $this->assertInstanceOf(ThreadStateService::class, $this->app->make(ThreadStateService::class));
         $this->assertInstanceOf(ThreadMessageService::class, $this->app->make(ThreadMessageService::class));
+        $this->assertInstanceOf(AssistantResponseService::class, $this->app->make(AssistantResponseService::class));
+        $this->assertInstanceOf(ToolRunLogger::class, $this->app->make(ToolRunLogger::class));
     }
 }
