@@ -11,6 +11,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Collection;
+
 use function collect;
 
 /**

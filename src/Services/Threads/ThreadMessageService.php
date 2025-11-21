@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Threads;
 
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
+use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMessageService;

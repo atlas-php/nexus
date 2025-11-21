@@ -8,7 +8,6 @@ use Atlas\Nexus\Contracts\NexusTool;
 use Atlas\Nexus\Contracts\ToolRunLoggingAware;
 use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
-use Atlas\Nexus\Support\Chat\ThreadState;
 use Prism\Prism\Tool as PrismTool;
 
 /**

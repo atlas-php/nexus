@@ -256,7 +256,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         })->all();
     }
 
-    protected function ownerTypeFromScope(string|null $scope): AiMemoryOwnerType
+    protected function ownerTypeFromScope(?string $scope): AiMemoryOwnerType
     {
         return match ($scope) {
             'assistant' => AiMemoryOwnerType::ASSISTANT,
@@ -266,7 +266,6 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     }
 
     /**
-     * @param  mixed  $metadata
      * @return array<string, mixed>|null
      */
     protected function normalizeMetadata(mixed $metadata): ?array

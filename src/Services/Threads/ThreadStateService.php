@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;

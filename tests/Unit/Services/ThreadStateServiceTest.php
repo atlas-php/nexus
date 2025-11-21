@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
-use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMemory;

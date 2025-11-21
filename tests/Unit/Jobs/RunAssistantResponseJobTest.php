@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Jobs;
 
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
-use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
@@ -32,6 +32,7 @@ use Prism\Prism\ValueObjects\Meta;
 use Prism\Prism\ValueObjects\ToolResult;
 use Prism\Prism\ValueObjects\Usage;
 use RuntimeException;
+
 use function collect;
 
 /**
