@@ -9,10 +9,10 @@ use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolService;
+use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Collection;
@@ -31,7 +31,7 @@ class ThreadStateService
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
         private readonly AiToolService $toolService,
-        private readonly AiAssistantService $assistantService,
+        private readonly MemoryToolRegistrar $memoryToolRegistrar,
         ConfigRepository $config
     ) {
         $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
@@ -87,27 +87,11 @@ class ThreadStateService
             return $tools;
         }
 
-        /** @var \Atlas\Nexus\Models\AiTool|null $memoryTool */
-        $memoryTool = $this->toolService->query()
-            ->withTrashed()
-            ->where('slug', MemoryTool::SLUG)
-            ->first();
+        $memoryTool = $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant);
 
         if ($memoryTool === null) {
-            $memoryTool = $this->toolService->create(MemoryTool::toolRecordDefinition());
-        } elseif ($memoryTool->trashed()) {
-            $memoryTool->restore();
-        } elseif (! $memoryTool->is_active || $memoryTool->handler_class !== MemoryTool::class) {
-            $this->toolService->update($memoryTool, [
-                'handler_class' => MemoryTool::class,
-                'is_active' => true,
-                'schema' => MemoryTool::toolSchema(),
-            ]);
+            return $tools;
         }
-
-        $this->assistantService->attachTool($assistant, $memoryTool, [
-            'built_in' => true,
-        ]);
 
         if ($memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
             $tools->push($memoryTool);

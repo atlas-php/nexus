@@ -9,6 +9,7 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMemory;
@@ -185,6 +186,72 @@ class RunAssistantResponseJobTest extends TestCase
             $this->assertTrue($assistantMessage->status === AiMessageStatus::FAILED);
             $this->assertSame('Simulated Prism failure', $assistantMessage->failed_reason);
         }
+    }
+
+    public function test_it_records_memory_tool_runs_when_enabled(): void
+    {
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'job-memory-tool',
+            'default_model' => 'gpt-4o',
+        ]);
+        $prompt = AiPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'version' => 1,
+        ]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'prompt_id' => $prompt->id,
+            'user_id' => 77,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'content' => 'Store a memory.',
+        ]);
+
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+            'content' => '',
+        ]);
+
+        $messages = collect([
+            new UserMessage('Store a memory.'),
+            new AssistantMessage('Memory stored.'),
+        ]);
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Memory stored.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [
+                new ToolResult('call-1', MemoryTool::SLUG, ['action' => 'save'], ['success' => true]),
+            ],
+            usage: new Usage(5, 10),
+            meta: new Meta('res-555', 'gpt-4o'),
+            messages: $messages,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $toolRun = AiToolRun::query()
+            ->whereHas('tool', fn ($query) => $query->where('slug', MemoryTool::SLUG))
+            ->first();
+
+        $this->assertInstanceOf(AiToolRun::class, $toolRun);
+        $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
+        $this->assertSame(['action' => 'save'], $toolRun->input_args);
+        $this->assertSame(['success' => true], $toolRun->response_output);
+        $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
     }
 
     private function migrationPath(): string

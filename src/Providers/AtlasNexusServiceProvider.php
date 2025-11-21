@@ -17,6 +17,7 @@ use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
 
 /**
  * Class AtlasNexusServiceProvider
@@ -58,6 +59,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AiMemoryService::class);
         $this->app->singleton(ThreadStateService::class);
         $this->app->singleton(ThreadMessageService::class);
+        $this->app->singleton(MemoryToolRegistrar::class);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Threads;
 
+use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
@@ -12,6 +13,7 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 
@@ -24,7 +26,8 @@ class ThreadMessageService
 {
     public function __construct(
         private readonly AiMessageService $messageService,
-        private readonly AiThreadService $threadService
+        private readonly AiThreadService $threadService,
+        private readonly MemoryToolRegistrar $memoryToolRegistrar
     ) {}
 
     /**
@@ -37,6 +40,8 @@ class ThreadMessageService
         AiMessageContentType $contentType = AiMessageContentType::TEXT
     ): array {
         $this->ensureAssistantIsIdle($thread);
+        $assistant = $this->resolveAssistant($thread);
+        $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant);
 
         $userId = $userId ?? $thread->user_id;
         $sequence = $this->nextSequence($thread);
@@ -86,6 +91,17 @@ class ThreadMessageService
         if ($isProcessing) {
             throw new RuntimeException('Assistant is still processing the previous message.');
         }
+    }
+
+    protected function resolveAssistant(AiThread $thread): AiAssistant
+    {
+        $thread->loadMissing('assistant');
+
+        if ($thread->assistant === null) {
+            throw new RuntimeException('Thread is missing an associated assistant.');
+        }
+
+        return $thread->assistant;
     }
 
     protected function nextSequence(AiThread $thread): int
