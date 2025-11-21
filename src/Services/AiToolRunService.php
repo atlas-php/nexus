@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Models\AiToolRun;
+use Illuminate\Support\Carbon;
 
 /**
  * Class AiToolRunService
@@ -19,21 +20,20 @@ class AiToolRunService extends ModelService
 {
     protected string $model = AiToolRun::class;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiToolRun
-    {
-        /** @var AiToolRun $run */
-        $run = parent::create($data);
-
-        return $run;
-    }
-
     public function markStatus(AiToolRun $run, string $status): AiToolRun
     {
+        $updates = ['status' => $status];
+
+        if ($status === 'running' && $run->started_at === null) {
+            $updates['started_at'] = Carbon::now();
+        }
+
+        if (in_array($status, ['succeeded', 'failed'], true)) {
+            $updates['finished_at'] = Carbon::now();
+        }
+
         /** @var AiToolRun $updated */
-        $updated = $this->update($run, ['status' => $status]);
+        $updated = $this->update($run, $updates);
 
         return $updated;
     }

@@ -76,6 +76,8 @@ class AiModelServiceTest extends TestCase
         $threadService = $this->app->make(AiThreadService::class);
         $messageService = $this->app->make(AiMessageService::class);
         $memoryService = $this->app->make(AiMemoryService::class);
+        $toolRunService = $this->app->make(AiToolRunService::class);
+        $toolService = $this->app->make(AiToolService::class);
 
         /** @var array<string, mixed> $assistantData */
         $assistantData = AiAssistant::factory()->raw(['slug' => 'svc-assistant-thread']);
@@ -107,6 +109,21 @@ class AiModelServiceTest extends TestCase
         ]);
         $message = $messageService->create($messageData);
 
+        /** @var array<string, mixed> $toolData */
+        $toolData = AiTool::factory()->raw(['slug' => 'svc-tool-status']);
+        $tool = $toolService->create($toolData);
+
+        /** @var array<string, mixed> $runData */
+        $runData = AiToolRun::factory()->raw([
+            'tool_id' => $tool->id,
+            'thread_id' => $thread->id,
+            'assistant_message_id' => $message->id,
+            'status' => 'queued',
+            'started_at' => null,
+            'finished_at' => null,
+        ]);
+        $run = $toolRunService->create($runData);
+
         /** @var array<string, mixed> $memoryData */
         $memoryData = AiMemory::factory()->raw([
             'assistant_id' => $assistant->id,
@@ -121,14 +138,26 @@ class AiModelServiceTest extends TestCase
         $this->assertSame($assistant->id, $memory->assistant_id);
         $this->assertSame($message->id, $memory->source_message_id);
 
+        $runningRun = $toolRunService->markStatus($run, 'running');
+        $this->assertSame('running', $runningRun->status);
+        $this->assertNotNull($runningRun->started_at);
+        $this->assertNull($runningRun->finished_at);
+
+        $finishedRun = $toolRunService->markStatus($runningRun, 'succeeded');
+        $this->assertSame('succeeded', $finishedRun->status);
+        $this->assertNotNull($finishedRun->finished_at);
+
         $updatedThread = $threadService->update($thread, ['status' => 'closed']);
         $this->assertSame('closed', $updatedThread->status);
 
         $updatedMemory = $memoryService->update($memory, ['kind' => 'summary']);
         $this->assertSame('summary', $updatedMemory->kind);
 
-        $this->assertTrue($memoryService->delete($memory));
+        $this->assertTrue($threadService->delete($thread));
+        $this->assertModelMissing($thread);
         $this->assertModelMissing($memory);
+        $this->assertModelMissing($message);
+        $this->assertModelMissing($runningRun);
     }
 
     public function test_tool_run_and_mapping_services_update_status_and_cleanup(): void

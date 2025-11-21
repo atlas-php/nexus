@@ -6,6 +6,9 @@ namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Models\AiMessage;
+use Atlas\Nexus\Models\AiToolRun;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class AiMessageService
@@ -19,14 +22,16 @@ class AiMessageService extends ModelService
 {
     protected string $model = AiMessage::class;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiMessage
+    public function delete(Model $message, bool $force = false): bool
     {
-        /** @var AiMessage $message */
-        $message = parent::create($data);
+        $messageId = $message->getKey();
 
-        return $message;
+        if (is_int($messageId) || is_string($messageId)) {
+            DB::transaction(static function () use ($messageId): void {
+                AiToolRun::query()->where('assistant_message_id', $messageId)->delete();
+            });
+        }
+
+        return parent::delete($message, $force);
     }
 }

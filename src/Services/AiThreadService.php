@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
+use Atlas\Nexus\Models\AiMemory;
+use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Models\AiToolRun;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class AiThreadService
@@ -19,14 +24,18 @@ class AiThreadService extends ModelService
 {
     protected string $model = AiThread::class;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiThread
+    public function delete(Model $thread, bool $force = false): bool
     {
-        /** @var AiThread $thread */
-        $thread = parent::create($data);
+        $threadId = $thread->getKey();
 
-        return $thread;
+        if (is_int($threadId) || is_string($threadId)) {
+            DB::transaction(static function () use ($threadId): void {
+                AiToolRun::query()->where('thread_id', $threadId)->delete();
+                AiMessage::query()->where('thread_id', $threadId)->delete();
+                AiMemory::query()->where('thread_id', $threadId)->delete();
+            });
+        }
+
+        return parent::delete($thread, $force);
     }
 }

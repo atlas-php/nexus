@@ -8,6 +8,8 @@ use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiTool;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class AiAssistantService
@@ -20,17 +22,6 @@ use Atlas\Nexus\Models\AiTool;
 class AiAssistantService extends ModelService
 {
     protected string $model = AiAssistant::class;
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiAssistant
-    {
-        /** @var AiAssistant $assistant */
-        $assistant = parent::create($data);
-
-        return $assistant;
-    }
 
     /**
      * Attach or update tool configuration for an assistant.
@@ -61,5 +52,18 @@ class AiAssistantService extends ModelService
                 'tool_id' => $tool->id,
             ])
             ->delete() > 0;
+    }
+
+    public function delete(Model $assistant, bool $force = false): bool
+    {
+        $assistantId = $assistant->getKey();
+
+        if (is_int($assistantId) || is_string($assistantId)) {
+            DB::transaction(static function () use ($assistantId): void {
+                AiAssistantTool::query()->where('assistant_id', $assistantId)->delete();
+            });
+        }
+
+        return parent::delete($assistant, $force);
     }
 }

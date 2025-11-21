@@ -18,15 +18,4 @@ use Atlas\Nexus\Models\AiPrompt;
 class AiPromptService extends ModelService
 {
     protected string $model = AiPrompt::class;
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiPrompt
-    {
-        /** @var AiPrompt $prompt */
-        $prompt = parent::create($data);
-
-        return $prompt;
-    }
 }

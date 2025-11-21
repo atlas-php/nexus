@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
+use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiTool;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class AiToolService
@@ -19,14 +22,16 @@ class AiToolService extends ModelService
 {
     protected string $model = AiTool::class;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiTool
+    public function delete(Model $tool, bool $force = false): bool
     {
-        /** @var AiTool $tool */
-        $tool = parent::create($data);
+        $toolId = $tool->getKey();
 
-        return $tool;
+        if (is_int($toolId) || is_string($toolId)) {
+            DB::transaction(static function () use ($toolId): void {
+                AiAssistantTool::query()->where('tool_id', $toolId)->delete();
+            });
+        }
+
+        return parent::delete($tool, $force);
     }
 }

@@ -18,15 +18,4 @@ use Atlas\Nexus\Models\AiAssistantTool;
 class AiAssistantToolService extends ModelService
 {
     protected string $model = AiAssistantTool::class;
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function create(array $data): AiAssistantTool
-    {
-        /** @var AiAssistantTool $mapping */
-        $mapping = parent::create($data);
-
-        return $mapping;
-    }
 }
