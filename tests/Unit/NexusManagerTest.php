@@ -8,7 +8,6 @@ use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Tests\TestCase;
-use InvalidArgumentException;
 
 /**
  * Class NexusManagerTest

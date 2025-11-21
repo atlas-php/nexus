@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Console;
 
 use Atlas\Nexus\Console\Commands\NexusSeedCommand;
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Console\Application;

@@ -8,7 +8,9 @@ use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Atlas\Nexus\Support\Threads\ThreadManagerDefaults;
 use Illuminate\Support\Str;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
@@ -24,7 +26,8 @@ class ThreadTitleSummaryService
     public function __construct(
         private readonly TextRequestFactory $textRequestFactory,
         private readonly AiThreadService $threadService,
-        private readonly AiAssistantService $assistantService
+        private readonly AiAssistantService $assistantService,
+        private readonly PromptVariableService $promptVariableService
     ) {}
 
     /**
@@ -93,11 +96,16 @@ class ThreadTitleSummaryService
             throw new RuntimeException('Thread manager assistant or prompt is missing. Please run the Nexus seeders.');
         }
 
-        $prompt = $assistant->currentPrompt->system_prompt;
+        $prompt = $assistant->currentPrompt;
+        $promptContext = new PromptVariableContext($state, $prompt, $assistant);
+        $promptText = $this->promptVariableService->apply(
+            $prompt->system_prompt,
+            $promptContext
+        );
 
         $request = $this->textRequestFactory->make()
             ->using($this->provider(), $this->model($assistant->default_model))
-            ->withSystemPrompt($prompt)
+            ->withSystemPrompt($promptText)
             ->withMessages([
                 new UserMessage($conversation),
             ])

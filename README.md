@@ -10,6 +10,7 @@
 - [Overview](#overview)
 - [Installation](#installation)
 - [Assistants & Prompts](#assistants--prompts)
+- [Prompt Variables](#prompt-variables)
 - [Threads & Messages](#threads--messages)
 - [Tools & Tool Runs](#tools--tool-runs)
 - [Memories](#memories)
@@ -44,6 +45,12 @@ Full steps: [Install Guide](./docs/Install.md)
 - Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
 
 See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
+
+## Prompt Variables
+- Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside `ai_prompts.system_prompt`; values are resolved right before the model request.
+- Defaults pull from the thread's authenticatable user when the `users` table exists.
+- Add more via `atlas-nexus.prompts.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
+- When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.
 
 ## Threads & Messages
 - Threads (`ai_threads`) hold `group_id`, `assistant_id`, `user_id`, status, and prompt overrides.

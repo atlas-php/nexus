@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Tests\Fixtures\DummyNexusSeeder;
 use Atlas\Nexus\Tests\TestCase;

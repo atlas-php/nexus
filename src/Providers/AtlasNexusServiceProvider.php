@@ -13,6 +13,8 @@ use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
+use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
+use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -55,6 +57,8 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AiMessageService::class);
         $this->app->singleton(AiToolRunService::class);
         $this->app->singleton(AiMemoryService::class);
+        $this->app->singleton(PromptVariableRegistry::class);
+        $this->app->singleton(PromptVariableService::class);
         $this->app->singleton(ToolRegistry::class);
         $this->app->singleton(ToolRunLogger::class);
         $this->app->singleton(AssistantResponseService::class);

@@ -43,6 +43,12 @@ Table: `ai_prompts`
 | `is_active`         | Boolean                                                     |
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                    |
 
+## Prompt Variables
+- `system_prompt` supports placeholders (e.g., `{USER.NAME}`, `{USER.EMAIL}`) that are replaced before the request is sent to the LLM.
+- Default providers resolve from the thread's authenticatable user when the `users` table is available.
+- Additional providers can be registered via `atlas-nexus.prompts.variables`; each receives a `PromptVariableContext` containing the thread, assistant, prompt, and user. Use `PromptVariableGroup` to map multiple keys within one class.
+- Inline overrides may also be merged by calling `PromptVariableService::apply($prompt, $context, ['TEAM.NAME' => 'Atlas'])`.
+
 ## Assistant ↔ Prompt Behavior
 - `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt`.
 - Multiple prompts per assistant are allowed; versions must be unique per assistant in code.
