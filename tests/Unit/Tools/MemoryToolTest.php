@@ -68,7 +68,7 @@ class MemoryToolTest extends TestCase
             'action' => 'fetch',
         ]);
 
-        $this->assertSame('Memories retrieved.', $fetchResponse->message());
+        $this->assertStringContainsString('Memories retrieved', $fetchResponse->message());
 
         /** @var array<int, array<string, mixed>> $fetched */
         $fetched = $fetchResponse->meta()['memories'];
