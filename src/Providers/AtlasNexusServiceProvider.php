@@ -13,7 +13,6 @@ use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -63,7 +62,6 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(ThreadStateService::class);
         $this->app->singleton(ThreadMessageService::class);
         $this->app->singleton(NexusSeederService::class);
-        $this->app->singleton(MemoryFeatureSeeder::class);
     }
 
     /**

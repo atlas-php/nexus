@@ -15,7 +15,7 @@ class WebSummaryDefaults
     public const ASSISTANT_NAME = 'Web Summarizer';
     public const ASSISTANT_DESCRIPTION = 'Summarizes fetched website content for quick context.';
     public const PROMPT_VERSION = 1;
-    public const PROMPT_LABEL = 'Website Summarizer v1';
+    public const PROMPT_LABEL = 'Website Summarizer';
 
     public const SYSTEM_PROMPT = <<<PROMPT
 You are a concise web content summarizer.

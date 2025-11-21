@@ -29,8 +29,7 @@ Field: `ai_assistants.tools`
 
 Rules:
 - Keys are normalized to unique strings; empty/null means no tools.
-- Memory key is added during seeding when memory is enabled.
-- Thread state filters keys against the registered tool set.
+- Thread state filters keys against the registered tool set; built-in tools are registered automatically when enabled.
 
 ## Tool Runs
 Table: `ai_tool_runs`
@@ -63,5 +62,4 @@ Indexes: `tool_key`, `thread_id`, `assistant_message_id`.
 - `ToolRegistry` — maintains available tool definitions (built-ins + configured mappings).
 - `AiAssistantService` — CRUD + helpers for syncing assistant tool keys.
 - `AiToolRunService` — CRUD + status helpers; auto-applies `group_id` from thread when absent.
-- `MemoryFeatureSeeder` — adds the Memory tool key to assistants when enabled.
 - `ThreadStateService` — resolves registered tools matching an assistant's configured keys.

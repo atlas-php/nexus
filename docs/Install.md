@@ -53,7 +53,6 @@ php artisan atlas:nexus:seed
 ```
 
 Default seeders:
-- `MemoryFeatureSeeder` adds the `memory` tool to assistants when `atlas-nexus.tools.memory.enabled=true`.
 - `WebSearchAssistantSeeder` creates the built-in web summarizer assistant/prompt used by the `web_search` tool when `atlas-nexus.tools.web_search.enabled=true`.
 - `ThreadManagerAssistantSeeder` creates the built-in thread manager assistant/prompt used for title/summary generation when `atlas-nexus.tools.thread_manager.enabled=true`.
 

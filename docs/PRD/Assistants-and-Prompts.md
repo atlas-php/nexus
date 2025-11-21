@@ -53,10 +53,10 @@ Assistant tool availability is configured via the `ai_assistants.tools` JSON arr
 
 Rules:
 - Keys are normalized to unique strings; null/empty means no tools.
-- Seeders add the Memory tool key when enabled.
-- Thread state only exposes tool keys that exist in the registered tool set.
+- Built-in tools (memory, web_search, thread_manager) are registered automatically when enabled in config; thread state filters to registered tool keys.
+- Seeders provision built-in assistants/prompts where required (e.g., web search summarizer, thread manager).
 
 ## Service Responsibilities
 - `AiAssistantService` — CRUD + tool key sync helpers.
 - `AiPromptService` — CRUD + versioning constraints enforced in code.
-- `NexusSeederService` (`MemoryFeatureSeeder`) — adds the Memory tool key to assistants when active.
+- `NexusSeederService` executes configured seeders (e.g., WebSearchAssistantSeeder, ThreadManagerAssistantSeeder) to provision built-in assistants/prompts.

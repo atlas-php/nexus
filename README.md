@@ -73,7 +73,6 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
 ## Seeding Built-ins
 - Run `php artisan atlas:nexus:seed` after migrations.
 - Default seeders:
-  - `MemoryFeatureSeeder` (adds the `memory` tool key to assistants when enabled).
   - `WebSearchAssistantSeeder` (creates the built-in web summarizer assistant/prompt used by the `web_search` tool).
   - `ThreadManagerAssistantSeeder` (creates the built-in thread manager assistant/prompt for title/summary generation).
 - Built-in tools: `memory` (persist/query memories), `web_search` (fetch and optionally summarize website content), and `thread_manager` (update or generate thread title/summary).

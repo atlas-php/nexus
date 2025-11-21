@@ -15,7 +15,7 @@ class ThreadManagerDefaults
     public const ASSISTANT_NAME = 'Thread Manager';
     public const ASSISTANT_DESCRIPTION = 'Generates concise thread titles and summaries.';
     public const PROMPT_VERSION = 1;
-    public const PROMPT_LABEL = 'Thread Manager v1';
+    public const PROMPT_LABEL = 'Thread Manager';
 
     public const SYSTEM_PROMPT = <<<PROMPT
 You summarize chat threads.

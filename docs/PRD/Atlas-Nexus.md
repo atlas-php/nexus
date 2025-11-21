@@ -49,10 +49,9 @@ Each table definition with fields is detailed in the linked PRDs below.
 ## Seeded Built-ins
 - `atlas:nexus:seed` runs all configured seeders.
 - Default seeders:
-  - `MemoryFeatureSeeder` — adds the built-in `memory` tool key to assistants when enabled.
   - `WebSearchAssistantSeeder` — provisions the built-in web summarizer assistant/prompt used by the `web_search` tool when enabled.
+  - `ThreadManagerAssistantSeeder` — provisions the built-in thread manager assistant/prompt for title/summary generation when enabled.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
-- `ThreadManagerAssistantSeeder` — provisions the built-in thread manager assistant/prompt for title/summary generation when enabled.
 - `ThreadManagerTool` is available as a built-in tool when enabled via config.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 

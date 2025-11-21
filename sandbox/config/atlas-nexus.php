@@ -34,7 +34,6 @@ return [
     ],
 
     'seeders' => [
-        \Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder::class,
         \Atlas\Nexus\Services\Seeders\WebSearchAssistantSeeder::class,
         \Atlas\Nexus\Services\Seeders\ThreadManagerAssistantSeeder::class,
     ],
