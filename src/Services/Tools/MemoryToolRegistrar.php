@@ -32,20 +32,13 @@ class MemoryToolRegistrar
 
         /** @var AiTool|null $memoryTool */
         $memoryTool = $this->toolService->query()
-            ->withTrashed()
             ->where('slug', MemoryTool::SLUG)
+            ->where('handler_class', MemoryTool::class)
+            ->where('is_active', true)
             ->first();
 
         if ($memoryTool === null) {
-            $memoryTool = $this->toolService->create(MemoryTool::toolRecordDefinition());
-        } elseif ($memoryTool->trashed()) {
-            $memoryTool->restore();
-        } elseif (! $memoryTool->is_active || $memoryTool->handler_class !== MemoryTool::class) {
-            $this->toolService->update($memoryTool, [
-                'handler_class' => MemoryTool::class,
-                'is_active' => true,
-                'schema' => MemoryTool::toolSchema(),
-            ]);
+            return null;
         }
 
         $this->assistantService->attachTool($assistant, $memoryTool, [

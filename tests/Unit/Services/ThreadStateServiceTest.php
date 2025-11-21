@@ -16,6 +16,7 @@ use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Models\AiAssistantToolService;
+use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\TestCase;
@@ -81,6 +82,7 @@ class ThreadStateServiceTest extends TestCase
             'handler_class' => StubTool::class,
         ]);
 
+        $this->app->make(NexusSeederService::class)->run();
         $this->app->make(AiAssistantToolService::class)->create([
             'assistant_id' => $assistant->id,
             'tool_id' => $tool->id,
@@ -107,6 +109,8 @@ class ThreadStateServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+
+        $this->app->make(NexusSeederService::class)->run();
 
         $freshThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $freshThread);

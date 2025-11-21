@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
@@ -83,6 +84,12 @@ class ThreadStateService
             : null;
 
         $tools = $assistant->tools()->where('is_active', true)->get();
+
+        if (! $includeMemoryTool) {
+            return $tools
+                ->reject(fn ($tool) => $tool->slug === MemoryTool::SLUG || $tool->handler_class === MemoryTool::class)
+                ->values();
+        }
 
         if ($memoryTool !== null && $memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
             $tools->push($memoryTool);

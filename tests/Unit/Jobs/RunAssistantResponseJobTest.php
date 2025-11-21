@@ -19,6 +19,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiAssistantToolService;
+use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
@@ -200,6 +201,7 @@ class RunAssistantResponseJobTest extends TestCase
             'slug' => 'job-memory-tool',
             'default_model' => 'gpt-4o',
         ]);
+        $this->app->make(NexusSeederService::class)->run();
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'version' => 1,

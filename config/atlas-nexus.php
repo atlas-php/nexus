@@ -21,6 +21,10 @@ return [
         ],
     ],
 
+    'seeders' => [
+        \Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder::class,
+    ],
+
     'tables' => [
         'ai_assistants' => env('ATLAS_NEXUS_TABLE_AI_ASSISTANTS', 'ai_assistants'),
         'ai_prompts' => env('ATLAS_NEXUS_TABLE_AI_PROMPTS', 'ai_prompts'),
