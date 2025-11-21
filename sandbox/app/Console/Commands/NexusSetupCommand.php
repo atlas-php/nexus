@@ -68,6 +68,7 @@ class NexusSetupCommand extends Command
                 'name' => Str::title(str_replace('-', ' ', $assistantSlug)),
                 'description' => 'Sandbox assistant for local Nexus chat tests.',
                 'default_model' => $model,
+                'tools' => ['memory'],
                 'is_active' => true,
             ]);
         }
