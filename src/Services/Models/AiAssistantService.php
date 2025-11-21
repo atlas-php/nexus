@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services;
+namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Models\AiAssistant;

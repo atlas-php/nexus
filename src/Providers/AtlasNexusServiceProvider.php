@@ -6,14 +6,14 @@ namespace Atlas\Nexus\Providers;
 
 use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\NexusManager;
-use Atlas\Nexus\Services\AiAssistantService;
-use Atlas\Nexus\Services\AiAssistantToolService;
-use Atlas\Nexus\Services\AiMemoryService;
-use Atlas\Nexus\Services\AiMessageService;
-use Atlas\Nexus\Services\AiPromptService;
-use Atlas\Nexus\Services\AiThreadService;
-use Atlas\Nexus\Services\AiToolRunService;
-use Atlas\Nexus\Services\AiToolService;
+use Atlas\Nexus\Services\Models\AiAssistantService;
+use Atlas\Nexus\Services\Models\AiAssistantToolService;
+use Atlas\Nexus\Services\Models\AiMemoryService;
+use Atlas\Nexus\Services\Models\AiMessageService;
+use Atlas\Nexus\Services\Models\AiPromptService;
+use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Models\AiToolRunService;
+use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Text\TextRequestFactory;
 
 /**
