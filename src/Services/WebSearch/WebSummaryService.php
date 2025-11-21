@@ -57,7 +57,7 @@ class WebSummaryService
         }
 
         $sourceUrls = array_values(array_filter(array_map(
-            static fn (array $source): string => (string) ($source['url'] ?? ''),
+            static fn (array $source): string => (string) $source['url'],
             $sources
         ), static fn (string $url): bool => $url !== ''));
 
@@ -90,14 +90,18 @@ class WebSummaryService
         $assistantMessage = $result['assistant']->fresh();
 
         if ($assistantMessage === null || $assistantMessage->status !== AiMessageStatus::COMPLETED) {
-            $reason = $assistantMessage?->failed_reason ?? 'Assistant failed to summarize website content.';
+            $reason = $assistantMessage !== null
+                ? (string) $assistantMessage->failed_reason
+                : 'Assistant failed to summarize website content.';
 
             throw new RuntimeException('Web summarization failed: '.$reason);
         }
 
+        $freshThread = $thread->fresh() ?? $thread;
+
         return [
             'summary' => $assistantMessage->content,
-            'thread' => $thread->fresh(),
+            'thread' => $freshThread,
             'assistant_message' => $assistantMessage,
         ];
     }
@@ -112,8 +116,8 @@ class WebSummaryService
         ];
 
         foreach ($sources as $index => $source) {
-            $url = (string) ($source['url'] ?? '');
-            $content = (string) ($source['content'] ?? '');
+            $url = (string) $source['url'];
+            $content = (string) $source['content'];
 
             $lines[] = sprintf('Source %d: %s', $index + 1, $url !== '' ? $url : 'Unknown URL');
             $lines[] = trim($content);

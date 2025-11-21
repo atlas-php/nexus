@@ -87,6 +87,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
             return $this->output('Provide at least one website URL to fetch.', ['error' => true]);
         }
 
+        /** @var array<int, array{url: string, status: int|null, content: string|null, error: string|null}> $results */
         $results = array_map(fn (string $url): array => $this->fetchFromUrl($url), $urls);
         $successful = array_values(array_filter(
             $results,
@@ -137,6 +138,10 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<int, string>
+     */
     protected function collectUrls(array $arguments): array
     {
         $urls = [];
@@ -162,6 +167,9 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         return array_values(array_unique(array_map('trim', $urls)));
     }
 
+    /**
+     * @return array{url: string, status: int|null, content: string|null, error: string|null}
+     */
     protected function fetchFromUrl(string $url): array
     {
         $url = trim($url);
@@ -218,7 +226,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
     {
         $decoded = html_entity_decode($body, ENT_QUOTES | ENT_HTML5);
         $stripped = strip_tags($decoded);
-        $withoutWhitespace = preg_replace('/\s+/', ' ', $stripped ?? '') ?? '';
+        $withoutWhitespace = preg_replace('/\s+/', ' ', $stripped) ?? '';
         $trimmed = trim($withoutWhitespace);
 
         if ($trimmed === '') {
@@ -228,6 +236,9 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         return Str::limit($trimmed, $this->contentLimit, '...');
     }
 
+    /**
+     * @param  array<int, array{url: string, status: int|null, content: string|null, error: string|null}>  $results
+     */
     /**
      * @param  array<int, array{url: string, status: int|null, content: string|null, error: string|null}>  $results
      */
@@ -255,6 +266,9 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         return implode("\n", $lines);
     }
 
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
     protected function shouldSummarize(array $arguments): bool
     {
         $flag = $arguments['summarize'] ?? $arguments['summerize'] ?? false;
@@ -276,11 +290,15 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
      * @param  array<int, array{url: string, status: int|null, content: string|null, error: string|null}>  $results
      * @return array<int, array{url: string, content: string}>
      */
+    /**
+     * @param  array<int, array{url: string, status: int|null, content: string|null, error: string|null}>  $results
+     * @return array<int, array{url: string, content: string}>
+     */
     protected function summarizationSources(array $results): array
     {
         return array_map(
             static fn (array $result): array => [
-                'url' => (string) $result['url'],
+                'url' => $result['url'],
                 'content' => (string) $result['content'],
             ],
             $results

@@ -82,6 +82,12 @@ class WebSearchToolTest extends TestCase
             'https://example.com' => Http::response('<html><body><p>This page is used for illustrative examples in documents.</p></body></html>', 200),
         ]);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
+        $messages = collect([
+            new UserMessage('Summarize the following website content with concise bullet points that capture the key facts.'),
+            new AssistantMessage('Example.com is a placeholder site for documentation examples.'),
+        ]);
+
         Prism::fake([
             new TextResponse(
                 steps: collect([]),
@@ -91,10 +97,7 @@ class WebSearchToolTest extends TestCase
                 toolResults: [],
                 usage: new Usage(5, 5),
                 meta: new Meta('summary-1', 'gpt-4o-mini'),
-                messages: collect([
-                    new UserMessage('Summarize the following website content with concise bullet points that capture the key facts.'),
-                    new AssistantMessage('Example.com is a placeholder site for documentation examples.'),
-                ]),
+                messages: $messages,
                 additionalContent: [],
             ),
         ]);

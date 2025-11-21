@@ -79,6 +79,9 @@ class WebSearchAssistantSeeder implements NexusSeeder
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function assistantUpdates(\Atlas\Nexus\Models\AiAssistant $assistant): array
     {
         $updates = [

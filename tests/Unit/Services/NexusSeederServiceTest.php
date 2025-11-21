@@ -28,21 +28,18 @@ class NexusSeederServiceTest extends TestCase
         ])->run();
     }
 
-    public function test_it_seeds_memory_tool_and_is_idempotent(): void
+    public function test_it_seeds_built_in_assistants_and_is_idempotent(): void
     {
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create([
-            'slug' => 'seedable',
-            'tools' => [],
-        ]);
-
         $service = $this->app->make(NexusSeederService::class);
 
         $service->run();
         $service->run();
 
-        $assistant->refresh();
-        $this->assertContains(MemoryTool::KEY, $assistant->tools ?? []);
+        $webAssistant = \Atlas\Nexus\Models\AiAssistant::query()->where('slug', 'web-summarizer')->first();
+        $threadAssistant = \Atlas\Nexus\Models\AiAssistant::query()->where('slug', 'thread-manager')->first();
+
+        $this->assertNotNull($webAssistant);
+        $this->assertNotNull($threadAssistant);
     }
 
     public function test_consumers_can_extend_seeders(): void

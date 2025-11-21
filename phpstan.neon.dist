@@ -9,4 +9,5 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
     parallel:
-        maximumNumberOfProcesses: 1
+        maximumNumberOfProcesses: 0
+        processTimeout: 0.0

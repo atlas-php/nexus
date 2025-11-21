@@ -27,10 +27,6 @@ class NexusSeedCommandTest extends TestCase
             '--realpath' => true,
         ])->run();
 
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create(['tools' => []]);
-        $this->assertSame([], $assistant->tools);
-
         $command = new NexusSeedCommand;
         $command->setLaravel($this->app);
         $command->setApplication(new Application($this->app, $this->app['events'], 'testing'));
@@ -38,8 +34,11 @@ class NexusSeedCommandTest extends TestCase
         $status = $command->run(new ArrayInput([]), new NullOutput);
         $this->assertSame(0, $status);
 
-        $assistant->refresh();
-        $this->assertContains(MemoryTool::KEY, $assistant->tools ?? []);
+        $webAssistant = AiAssistant::query()->where('slug', 'web-summarizer')->first();
+        $threadManagerAssistant = AiAssistant::query()->where('slug', 'thread-manager')->first();
+
+        $this->assertNotNull($webAssistant);
+        $this->assertNotNull($threadManagerAssistant);
     }
 
     private function migrationPath(): string

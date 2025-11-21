@@ -67,6 +67,12 @@ class ThreadManagerToolTest extends TestCase
 
         $state = $this->createState(withMessages: true);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
+        $messages = collect([
+            new UserMessage('Generate title/summary'),
+            new AssistantMessage('Summary generated.'),
+        ]);
+
         Prism::fake([
             new TextResponse(
                 steps: collect([]),
@@ -79,10 +85,7 @@ class ThreadManagerToolTest extends TestCase
                 toolResults: [],
                 usage: new Usage(8, 16),
                 meta: new Meta('thread-summary-1', 'gpt-4o-mini'),
-                messages: collect([
-                    new UserMessage('Generate title/summary'),
-                    new AssistantMessage('Summary generated.'),
-                ]),
+                messages: $messages,
                 additionalContent: [],
             ),
         ]);
@@ -100,7 +103,7 @@ class ThreadManagerToolTest extends TestCase
 
         $this->assertSame('Thread title and summary generated.', $response->message());
         $this->assertSame('Weekly Task Review', $state->thread->title);
-        $this->assertStringContainsString('weekly tasks', $state->thread->summary);
+        $this->assertStringContainsString('weekly tasks', (string) $state->thread->summary);
     }
 
     public function test_it_errors_when_no_inputs_and_not_generating(): void

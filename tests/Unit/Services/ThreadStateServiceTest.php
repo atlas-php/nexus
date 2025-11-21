@@ -40,6 +40,7 @@ class ThreadStateServiceTest extends TestCase
     public function test_it_builds_thread_state_with_contextual_resources(): void
     {
         config()->set('atlas-nexus.tools.registry', [
+            MemoryTool::KEY => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,
             'calendar_lookup' => StubTool::class,
         ]);
 

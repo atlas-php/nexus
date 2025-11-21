@@ -106,6 +106,9 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
     protected function shouldAutoGenerate(array $arguments): bool
     {
         $flag = $arguments['create_title_and_summary'] ?? false;

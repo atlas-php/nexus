@@ -40,7 +40,7 @@ class ThreadManagerAssistantSeederTest extends TestCase
 
         $this->assertNotNull($assistant);
         $this->assertNotNull($assistant->currentPrompt);
-        $this->assertSame(ThreadManagerDefaults::PROMPT_LABEL, $assistant->currentPrompt?->label);
+        $this->assertSame(ThreadManagerDefaults::PROMPT_LABEL, $assistant->currentPrompt->label);
     }
 
     private function migrationPath(): string
