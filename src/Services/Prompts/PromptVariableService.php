@@ -21,20 +21,35 @@ class PromptVariableService
      */
     public function apply(string $prompt, PromptVariableContext $context, array $customVariables = []): string
     {
-        $resolved = $this->registry->resolveValues($context);
-        $merged = array_merge($resolved, $this->normalizeCustomVariables($customVariables));
+        $rendered = $this->renderWithVariables($prompt, $context, $customVariables);
 
-        if ($merged === []) {
-            return $prompt;
-        }
+        return $rendered['rendered_prompt'];
+    }
 
-        $replacements = [];
+    /**
+     * @param  array<string, scalar|Stringable|null>  $customVariables
+     * @return array{rendered_prompt: string, variables: array<string, string>}
+     */
+    public function renderWithVariables(
+        string $prompt,
+        PromptVariableContext $context,
+        array $customVariables = []
+    ): array {
+        $variables = $this->mergeVariables($context, $customVariables);
 
-        foreach ($merged as $key => $value) {
-            $replacements['{'.$key.'}'] = $value;
-        }
+        return [
+            'rendered_prompt' => $this->renderPrompt($prompt, $variables),
+            'variables' => $variables,
+        ];
+    }
 
-        return strtr($prompt, $replacements);
+    /**
+     * @param  array<string, scalar|Stringable|null>  $customVariables
+     * @return array<string, string>
+     */
+    public function resolvedVariables(PromptVariableContext $context, array $customVariables = []): array
+    {
+        return $this->mergeVariables($context, $customVariables);
     }
 
     /**
@@ -62,6 +77,44 @@ class PromptVariableService
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     */
+    private function renderPrompt(string $prompt, array $variables): string
+    {
+        if ($variables === []) {
+            return $prompt;
+        }
+
+        return strtr($prompt, $this->replacements($variables));
+    }
+
+    /**
+     * @param  array<string, scalar|Stringable|null>  $customVariables
+     * @return array<string, string>
+     */
+    private function mergeVariables(PromptVariableContext $context, array $customVariables): array
+    {
+        $resolved = $this->registry->resolveValues($context);
+
+        return array_merge($resolved, $this->normalizeCustomVariables($customVariables));
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     * @return array<string, string>
+     */
+    private function replacements(array $variables): array
+    {
+        $replacements = [];
+
+        foreach ($variables as $key => $value) {
+            $replacements['{'.$key.'}'] = $value;
+        }
+
+        return $replacements;
     }
 
     private function stringify(mixed $value): ?string

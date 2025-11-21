@@ -24,9 +24,8 @@ class NexusSetupCommand extends Command
      */
     protected $signature = 'nexus:setup
         {--assistant=sandbox-assistant : Assistant slug to create or reuse}
-        {--name=Sandbox Tester : Name for the fake user}
-        {--email=sandbox@example.com : Email for the fake user}
-        {--prompt=You are a helpful assistant. : System prompt content}
+        {--name=John : Name for the fake user}
+        {--email=john@company.com : Email for the fake user}
         {--model=gpt-4.1 : Default model for the assistant}';
 
     /**
@@ -47,7 +46,7 @@ class NexusSetupCommand extends Command
         $email = (string) $this->option('email');
         $name = (string) $this->option('name');
         $assistantSlug = Str::slug((string) $this->option('assistant'));
-        $systemPrompt = (string) $this->option('prompt');
+        $systemPrompt = "##ROLE:\nYou are a helpful assistant.\n##CONTEXT:\nThe user is {USER.NAME}";
         $model = (string) $this->option('model');
 
         $user = User::query()->firstOrCreate(

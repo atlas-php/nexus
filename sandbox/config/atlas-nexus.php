@@ -7,6 +7,14 @@ return [
         'queue' => env('ATLAS_NEXUS_RESPONSES_QUEUE'),
     ],
 
+    'prompts' => [
+        'freeze_thread' => true,
+        'variables' => [
+            \Atlas\Nexus\Support\Prompts\Variables\UserPromptVariables::class,
+            // \App\Nexus\Prompts\Variables\CustomPromptVariable::class,
+        ],
+    ],
+
     'tools' => [
         'registry' => [
             'memory' => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,

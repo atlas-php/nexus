@@ -13,11 +13,9 @@ use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +39,6 @@ class AssistantResponseService
         private readonly AiMessageService $messageService,
         private readonly AiToolRunService $toolRunService,
         private readonly TextRequestFactory $textRequestFactory,
-        private readonly PromptVariableService $promptVariableService,
         private readonly ToolRunLogger $toolRunLogger
     ) {}
 
@@ -80,15 +77,8 @@ class AssistantResponseService
                 $request->usingTopP($state->assistant->top_p);
             }
 
-            $promptContext = $this->promptContext($state);
-
-            if ($state->prompt !== null && $promptContext !== null) {
-                $request->withSystemPrompt(
-                    $this->promptVariableService->apply(
-                        $state->prompt->system_prompt,
-                        $promptContext
-                    )
-                );
+            if ($state->systemPrompt !== null) {
+                $request->withSystemPrompt($state->systemPrompt);
             }
 
             $memoryPrompt = $this->memoryPrompt($state);
@@ -324,16 +314,4 @@ class AssistantResponseService
         return "Contextual memories:\n".implode("\n", $lines);
     }
 
-    protected function promptContext(ThreadState $state): ?PromptVariableContext
-    {
-        if ($state->prompt === null) {
-            return null;
-        }
-
-        return new PromptVariableContext(
-            $state,
-            $state->prompt,
-            $state->assistant
-        );
-    }
 }

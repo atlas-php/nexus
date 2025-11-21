@@ -257,6 +257,14 @@ class RunAssistantResponseJobTest extends TestCase
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
     }
 
+    public function test_it_has_single_attempt_and_twenty_minute_timeout(): void
+    {
+        $job = new RunAssistantResponseJob(123);
+
+        $this->assertSame(1, $job->tries);
+        $this->assertSame(1_200, $job->timeout);
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';

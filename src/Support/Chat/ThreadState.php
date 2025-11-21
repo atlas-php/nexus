@@ -9,6 +9,7 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Support\Prompts\PromptSnapshot;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Collection;
 
@@ -18,6 +19,8 @@ use Illuminate\Support\Collection;
  * @property Collection<int, AiMessage> $messages
  * @property Collection<int, AiMemory> $memories
  * @property Collection<int, ToolDefinition> $tools
+ * @property PromptSnapshot|null $promptSnapshot
+ * @property string|null $systemPrompt
  */
 class ThreadState
 {
@@ -32,6 +35,8 @@ class ThreadState
         public readonly ?AiPrompt $prompt,
         public readonly Collection $messages,
         public readonly Collection $memories,
-        public readonly Collection $tools
+        public readonly Collection $tools,
+        public readonly ?PromptSnapshot $promptSnapshot = null,
+        public readonly ?string $systemPrompt = null
     ) {}
 }

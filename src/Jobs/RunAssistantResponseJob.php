@@ -26,6 +26,10 @@ class RunAssistantResponseJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    public int $tries = 1;
+
+    public int $timeout = 1_200;
+
     public function __construct(public int $assistantMessageId)
     {
         $queue = $this->resolveQueue();

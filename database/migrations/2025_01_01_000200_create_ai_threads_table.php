@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('title')->nullable();
             $table->string('status');
             $table->unsignedBigInteger('prompt_id')->nullable()->index();
+            $table->json('prompt_snapshot')->nullable();
             $table->text('summary')->nullable();
             $table->timestamp('last_message_at')->nullable();
             $table->json('metadata')->nullable();
