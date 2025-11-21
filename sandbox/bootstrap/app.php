@@ -5,6 +5,7 @@ use App\Console\Commands\ListChatsCommand;
 use App\Console\Commands\LogChatCommand;
 use App\Console\Commands\NexusChatCommand;
 use App\Console\Commands\NexusPipelineCommand;
+use App\Console\Commands\NexusSetupCommand;
 use App\Console\Commands\PrismChatCommand;
 use App\Console\Commands\PrismTextCommand;
 use App\Console\Commands\ViewChatCommand;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         NexusPipelineCommand::class,
         NexusChatCommand::class,
+        NexusSetupCommand::class,
         PrismTextCommand::class,
         PrismChatCommand::class,
         LogChatCommand::class,

@@ -92,7 +92,6 @@ class NexusChatCommand extends Command
             }
 
             $messages = $this->threadMessageService->sendUserMessage($thread, $input, $userId);
-            $this->displayMessage($messages['user']);
 
             $resolved = $this->waitForAssistant($messages['assistant']);
 
@@ -160,7 +159,9 @@ class NexusChatCommand extends Command
 
         if ($message->status === AiMessageStatus::FAILED) {
             $reason = $message->failed_reason ?? 'Unknown failure.';
-            $this->components->error(sprintf('%s (failed): %s', $label, $reason));
+            $this->components->error(sprintf('%s (failed):', $label));
+            $this->components->error(' '.$reason);
+            $this->line('');
 
             return;
         }
@@ -169,7 +170,9 @@ class NexusChatCommand extends Command
             return;
         }
 
-        $this->line(sprintf('%s: %s', $label, $message->content));
+        $this->line(sprintf('%s:', $label));
+        $this->line(' '.$message->content);
+        $this->line('');
     }
 
     protected function waitForAssistant(AiMessage $assistantMessage): ?AiMessage
