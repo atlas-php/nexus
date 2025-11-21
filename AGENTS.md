@@ -6,7 +6,7 @@ This guide defines the conventions and best practices for contributors working o
 
 ---
 
-## Purpose 
+## Purpose
 
 This repository provides **standalone Laravel packages** designed for installation in other Laravel applications. There is **no full Laravel app** in this repo — all logic must remain **framework-integrated but package-isolated**.
 
@@ -49,8 +49,11 @@ package-name/
 ├── src/
 │   ├── Providers/
 │   │   └── PackageServiceProvider.php
-│   ├── Services/
 │   ├── Models/ (if applicable)
+│   ├── Services/
+│   │   ├── Models/            # per-model services, one model per service
+│   │   └── <Domain>/          # feature/business services grouped by domain (e.g. Contacts/, Tasks/)
+│   ├── Integrations/ (optional)
 │   ├── Contracts/
 │   ├── Exceptions/
 │   ├── Support/
@@ -60,6 +63,55 @@ package-name/
 ├── tests/
 └── README.md
 ```
+
+### Service & Integration Organization
+
+To keep `src/Services` organized and avoid a generic dumping ground, follow these rules:
+
+#### `src/Services/Models`
+
+* Each class in `Services/Models` is responsible for **one Eloquent model** only.
+* Responsibilities:
+    * Extend `Atlas\Core\Service\ModelService` from the Atlas Core package.
+    * Centralized `create`, `update`, `delete`, and common query helpers for that model.
+    * Normalizing and parsing data before it is persisted.
+    * Applying simple per-model rules (defaults, formatting, basic invariants).
+* Must **not**:
+    * Orchestrate multi-model workflows.
+    * Contain cross-domain business rules.
+    * Call external APIs directly.
+* Naming convention examples:
+    * `ContactService` in `Services/Models/ContactService.php`.
+    * `TaskService` in `Services/Models/TaskService.php`.
+
+These services act as the **model-facing layer** and are the preferred entrypoint when only a single model is affected.
+
+#### `src/Services/<Domain>` (business / feature services)
+
+* Each domain directory (e.g. `Services/Contacts`, `Services/Tasks`) groups **business-oriented services** by feature or domain.
+* Responsibilities:
+    * Express **use cases** defined in PRDs (e.g. `ScheduleCallWithContactService`, `CreateFollowUpTasksForLeadService`).
+    * Orchestrate multiple model services and domain concepts.
+    * Manage transactions when a workflow touches multiple models.
+    * Coordinate with integrations (via `Integrations/` clients) and dispatch jobs/events.
+* Must:
+    * Be named by intent and follow the `*Service` suffix (e.g. `ScheduleCallWithContactService`).
+    * Use `Services/Models/*` for persistence logic rather than talking to models directly, unless the PRD explicitly states otherwise.
+
+These services form the **business layer** and should be the primary surface area exposed to consuming applications for higher-level workflows.
+
+#### `src/Integrations`
+
+* Houses low-level, reusable clients for **external systems** (e.g. HTTP APIs, queues, third-party services).
+* Responsibilities:
+    * Encapsulate API calls, authentication, and request/response handling.
+    * Remain free of package-specific business rules.
+    * Wrappers for SDKs, third-party libraries, or other integrations.
+* Example locations:
+    * `Integrations/OpenAI/OpenAiClient.php`
+    * `Integrations/Stripe/StripeClient.php`
+
+Business services in `Services/<Domain>` may depend on these **integration clients** to fulfill PRD-defined workflows.
 
 ---
 
@@ -102,7 +154,7 @@ package-name/
 
 ## Code Practices
 
-1. **Business Logic** — belongs in `Services/` or dedicated singleton classes, not controllers or providers.
+1. **Business Logic** — belongs in `Services/` or dedicated singleton classes, not controllers or providers. Use `Services/Models/*` for model-focused CRUD and `Services/<Domain>/*` for higher-level workflows that span multiple models or integrations.
 2. **Configuration** — define publishable config files in `config/`, use sensible defaults.
 3. **Testing** — use PHPUnit or Pest; cover both happy and failure paths.
 4. **Type Safety** — declare all parameter and return types.
