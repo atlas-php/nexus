@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus;
 
+use Atlas\Nexus\Integrations\Prism\TextRequest;
+use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
-use Atlas\Nexus\Text\TextRequest;
-use Atlas\Nexus\Text\TextRequestFactory;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use InvalidArgumentException;
 

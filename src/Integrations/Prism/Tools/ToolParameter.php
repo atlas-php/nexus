@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tools;
+namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Prism\Prism\Contracts\Schema;
 

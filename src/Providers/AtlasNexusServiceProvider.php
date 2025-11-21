@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Providers;
 
 use Atlas\Core\Providers\PackageServiceProvider;
+use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiAssistantToolService;
@@ -14,7 +15,6 @@ use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Models\AiToolService;
-use Atlas\Nexus\Text\TextRequestFactory;
 
 /**
  * Class AtlasNexusServiceProvider

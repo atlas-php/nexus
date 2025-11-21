@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Contracts;
 
-use Atlas\Nexus\Tools\ToolParameter;
-use Atlas\Nexus\Tools\ToolResponse;
+use Atlas\Nexus\Integrations\Prism\Tools\ToolParameter;
+use Atlas\Nexus\Integrations\Prism\Tools\ToolResponse;
 use Prism\Prism\Tool as PrismTool;
 
 /**

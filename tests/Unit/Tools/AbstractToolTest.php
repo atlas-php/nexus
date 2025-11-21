@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Tools;
 
+use Atlas\Nexus\Integrations\Prism\Tools\AbstractTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ToolParameter;
+use Atlas\Nexus\Integrations\Prism\Tools\ToolResponse;
 use Atlas\Nexus\Tests\TestCase;
-use Atlas\Nexus\Tools\AbstractTool;
-use Atlas\Nexus\Tools\ToolParameter;
-use Atlas\Nexus\Tools\ToolResponse;
 use Prism\Prism\Schema\StringSchema;
 
 /**

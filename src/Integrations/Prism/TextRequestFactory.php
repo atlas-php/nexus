@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Text;
+namespace Atlas\Nexus\Integrations\Prism;
 
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Prism\Prism\Facades\Prism;

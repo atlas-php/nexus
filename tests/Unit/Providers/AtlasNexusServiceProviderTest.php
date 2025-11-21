@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Providers;
 
+use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Tests\TestCase;
-use Atlas\Nexus\Text\TextRequestFactory;
 
 /**
  * Class AtlasNexusServiceProviderTest
