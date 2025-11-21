@@ -1,0 +1,191 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Atlas\Nexus\Tests\Unit\Jobs;
+
+use Atlas\Nexus\Enums\AiMessageContentType;
+use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Jobs\RunAssistantResponseJob;
+use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiMemory;
+use Atlas\Nexus\Models\AiMessage;
+use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Models\AiTool;
+use Atlas\Nexus\Models\AiToolRun;
+use Atlas\Nexus\Services\Models\AiAssistantToolService;
+use Atlas\Nexus\Tests\Fixtures\StubTool;
+use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
+use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Support\Facades\App;
+use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Text\Response as TextResponse;
+use Prism\Prism\ValueObjects\Messages\AssistantMessage;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\ValueObjects\Meta;
+use Prism\Prism\ValueObjects\ToolResult;
+use Prism\Prism\ValueObjects\Usage;
+use RuntimeException;
+use function collect;
+
+/**
+ * Class RunAssistantResponseJobTest
+ *
+ * Validates assistant response generation, tool logging, and failure handling.
+ */
+class RunAssistantResponseJobTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->loadPackageMigrations($this->migrationPath());
+        $this->runPendingCommand('migrate:fresh', [
+            '--path' => $this->migrationPath(),
+            '--realpath' => true,
+        ])->run();
+    }
+
+    public function test_it_updates_message_and_records_tool_runs(): void
+    {
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'job-assistant',
+            'default_model' => 'gpt-4o',
+        ]);
+        $prompt = AiPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'version' => 1,
+            'system_prompt' => 'Assist politely.',
+        ]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'prompt_id' => $prompt->id,
+            'user_id' => 1,
+        ]);
+
+        $memory = AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'thread_id' => $thread->id,
+            'kind' => 'preference',
+            'content' => 'User prefers concise replies.',
+        ]);
+
+        $userMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'content_type' => AiMessageContentType::TEXT->value,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'content' => 'Hello!',
+        ]);
+
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+            'content' => '',
+        ]);
+
+        $tool = AiTool::factory()->create([
+            'slug' => 'calendar_lookup',
+            'handler_class' => StubTool::class,
+        ]);
+
+        $this->app->make(AiAssistantToolService::class)->create([
+            'assistant_id' => $assistant->id,
+            'tool_id' => $tool->id,
+            'config' => [],
+        ]);
+
+        $messages = collect([
+            new UserMessage('Hello!'),
+            new AssistantMessage('Here is your update.'),
+        ]);
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Here is your update.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [
+                new ToolResult('call-1', 'calendar_lookup', ['date' => '2025-01-01'], ['events' => 2]),
+            ],
+            usage: new Usage(10, 20),
+            meta: new Meta('res-123', 'gpt-4o-mini'),
+            messages: $messages,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $assistantMessage->refresh();
+
+        $this->assertTrue($assistantMessage->status === AiMessageStatus::COMPLETED);
+        $this->assertSame('Here is your update.', $assistantMessage->content);
+        $this->assertSame('res-123', $assistantMessage->provider_response_id);
+        $this->assertSame(10, $assistantMessage->tokens_in);
+        $this->assertSame(20, $assistantMessage->tokens_out);
+        $this->assertContains($memory->id, $assistantMessage->metadata['memory_ids']);
+        $this->assertNotEmpty($assistantMessage->metadata['tool_run_ids']);
+
+        $toolRun = AiToolRun::first();
+        $this->assertInstanceOf(AiToolRun::class, $toolRun);
+        $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
+        $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
+        $this->assertSame($tool->id, $toolRun->tool_id);
+        $this->assertSame(['events' => 2], $toolRun->response_output);
+        $this->assertSame(['date' => '2025-01-01'], $toolRun->input_args);
+    }
+
+    public function test_it_marks_message_as_failed_when_prism_errors(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'job-failure']);
+        $prompt = AiPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'version' => 1,
+        ]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'prompt_id' => $prompt->id,
+            'user_id' => 1,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        App::instance(\Atlas\Nexus\Integrations\Prism\TextRequestFactory::class, new ThrowingTextRequestFactory);
+
+        $this->expectException(RuntimeException::class);
+
+        try {
+            RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+        } finally {
+            $assistantMessage->refresh();
+            $this->assertTrue($assistantMessage->status === AiMessageStatus::FAILED);
+            $this->assertSame('Simulated Prism failure', $assistantMessage->failed_reason);
+        }
+    }
+
+    private function migrationPath(): string
+    {
+        return __DIR__.'/../../../database/migrations';
+    }
+}

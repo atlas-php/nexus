@@ -21,6 +21,8 @@ return new class extends Migration
             $table->text('content');
             $table->string('content_type');
             $table->unsignedInteger('sequence');
+            $table->string('status')->default('completed');
+            $table->text('failed_reason')->nullable();
             $table->string('model')->nullable();
             $table->unsignedInteger('tokens_in')->nullable();
             $table->unsignedInteger('tokens_out')->nullable();

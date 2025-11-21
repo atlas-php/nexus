@@ -75,6 +75,8 @@ Every message in a thread.
 - content              text              -- text or JSON
 - content_type         string            -- 'text','json'
 - sequence             int               -- order in thread
+- status               string            -- 'processing','completed','failed'
+- failed_reason        text nullable     -- populated when status='failed'
 - model                string nullable
 - tokens_in            int nullable
 - tokens_out           int nullable

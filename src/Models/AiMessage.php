@@ -8,6 +8,7 @@ use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiMessageFactory;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiMessageStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +27,8 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property string $content
  * @property AiMessageContentType $content_type
  * @property int $sequence
+ * @property AiMessageStatus $status
+ * @property string|null $failed_reason
  * @property string|null $model
  * @property int|null $tokens_in
  * @property int|null $tokens_out
@@ -50,6 +53,7 @@ class AiMessage extends AtlasModel
         'thread_id' => 'int',
         'user_id' => 'int',
         'sequence' => 'int',
+        'status' => AiMessageStatus::class,
         'tokens_in' => 'int',
         'tokens_out' => 'int',
         'role' => AiMessageRole::class,

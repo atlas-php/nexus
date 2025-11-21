@@ -6,6 +6,8 @@ namespace Atlas\Nexus\Tests\Unit\Providers;
 
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
+use Atlas\Nexus\Services\Threads\ThreadMessageService;
+use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
@@ -34,5 +36,11 @@ class AtlasNexusServiceProviderTest extends TestCase
         $resolved = $this->app->make(TextRequestFactory::class);
 
         $this->assertSame($resolved, $this->app->make('atlas-nexus.text-factory'));
+    }
+
+    public function test_thread_services_are_bound(): void
+    {
+        $this->assertInstanceOf(ThreadStateService::class, $this->app->make(ThreadStateService::class));
+        $this->assertInstanceOf(ThreadMessageService::class, $this->app->make(ThreadMessageService::class));
     }
 }

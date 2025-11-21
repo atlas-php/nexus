@@ -86,6 +86,8 @@ class MigrationTest extends TestCase
             'content',
             'content_type',
             'sequence',
+            'status',
+            'failed_reason',
             'model',
             'tokens_in',
             'tokens_out',

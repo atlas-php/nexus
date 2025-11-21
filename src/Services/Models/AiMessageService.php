@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
+use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,17 @@ use Illuminate\Support\Facades\DB;
 class AiMessageService extends ModelService
 {
     protected string $model = AiMessage::class;
+
+    public function markStatus(AiMessage $message, AiMessageStatus $status, ?string $failedReason = null): AiMessage
+    {
+        /** @var AiMessage $updated */
+        $updated = $this->update($message, [
+            'status' => $status->value,
+            'failed_reason' => $status === AiMessageStatus::FAILED ? $failedReason : null,
+        ]);
+
+        return $updated;
+    }
 
     public function delete(Model $message, bool $force = false): bool
     {

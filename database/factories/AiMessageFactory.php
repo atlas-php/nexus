@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Database\Factories;
 
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiMessage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -28,6 +29,8 @@ class AiMessageFactory extends Factory
             'content' => $this->faker->paragraph(),
             'content_type' => $this->faker->randomElement(AiMessageContentType::cases())->value,
             'sequence' => $this->faker->numberBetween(1, 500),
+            'status' => AiMessageStatus::COMPLETED->value,
+            'failed_reason' => null,
             'model' => $this->faker->optional()->word(),
             'tokens_in' => $this->faker->optional()->numberBetween(1, 8_000),
             'tokens_out' => $this->faker->optional()->numberBetween(1, 8_000),

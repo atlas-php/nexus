@@ -15,6 +15,8 @@ use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Models\AiToolService;
+use Atlas\Nexus\Services\Threads\ThreadMessageService;
+use Atlas\Nexus\Services\Threads\ThreadStateService;
 
 /**
  * Class AtlasNexusServiceProvider
@@ -54,6 +56,8 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AiAssistantToolService::class);
         $this->app->singleton(AiToolRunService::class);
         $this->app->singleton(AiMemoryService::class);
+        $this->app->singleton(ThreadStateService::class);
+        $this->app->singleton(ThreadMessageService::class);
     }
 
     /**
