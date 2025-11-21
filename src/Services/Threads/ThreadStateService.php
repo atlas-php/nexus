@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
+use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Support\Collection;
 use RuntimeException;
 
 /**
@@ -21,12 +25,19 @@ use RuntimeException;
  */
 class ThreadStateService
 {
+    protected bool $includeMemoryTool;
+
     public function __construct(
         private readonly AiMessageService $messageService,
-        private readonly AiMemoryService $memoryService
-    ) {}
+        private readonly AiMemoryService $memoryService,
+        private readonly AiToolService $toolService,
+        private readonly AiAssistantService $assistantService,
+        ConfigRepository $config
+    ) {
+        $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
+    }
 
-    public function forThread(AiThread $thread): ThreadState
+    public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
         $thread->loadMissing(['assistant', 'prompt', 'assistant.currentPrompt', 'assistant.tools']);
 
@@ -43,19 +54,12 @@ class ThreadStateService
             ->orderBy('sequence')
             ->get();
 
-        $memories = $this->memoryService->query()
-            ->where(function (Builder $query) use ($assistant): void {
-                $query->whereNull('assistant_id')
-                    ->orWhere('assistant_id', $assistant->id);
-            })
-            ->where(function (Builder $query) use ($thread): void {
-                $query->whereNull('thread_id')
-                    ->orWhere('thread_id', $thread->id);
-            })
-            ->orderBy('id')
-            ->get();
+        $memories = $this->memoryService->listForThread($assistant, $thread);
 
-        $tools = $assistant->tools()->where('is_active', true)->get();
+        $tools = $this->resolveTools(
+            $assistant,
+            $includeMemoryTool ?? $this->includeMemoryTool
+        );
 
         return new ThreadState(
             $thread,
@@ -70,5 +74,45 @@ class ThreadStateService
     protected function resolvePrompt(AiThread $thread, AiAssistant $assistant): ?AiPrompt
     {
         return $thread->prompt ?? $assistant->currentPrompt;
+    }
+
+    /**
+     * @return Collection<int, \Atlas\Nexus\Models\AiTool>
+     */
+    protected function resolveTools(AiAssistant $assistant, bool $includeMemoryTool): Collection
+    {
+        $tools = $assistant->tools()->where('is_active', true)->get();
+
+        if (! $includeMemoryTool) {
+            return $tools;
+        }
+
+        /** @var \Atlas\Nexus\Models\AiTool|null $memoryTool */
+        $memoryTool = $this->toolService->query()
+            ->withTrashed()
+            ->where('slug', MemoryTool::SLUG)
+            ->first();
+
+        if ($memoryTool === null) {
+            $memoryTool = $this->toolService->create(MemoryTool::toolRecordDefinition());
+        } elseif ($memoryTool->trashed()) {
+            $memoryTool->restore();
+        } elseif (! $memoryTool->is_active || $memoryTool->handler_class !== MemoryTool::class) {
+            $this->toolService->update($memoryTool, [
+                'handler_class' => MemoryTool::class,
+                'is_active' => true,
+                'schema' => MemoryTool::toolSchema(),
+            ]);
+        }
+
+        $this->assistantService->attachTool($assistant, $memoryTool, [
+            'built_in' => true,
+        ]);
+
+        if ($memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
+            $tools->push($memoryTool);
+        }
+
+        return $tools;
     }
 }

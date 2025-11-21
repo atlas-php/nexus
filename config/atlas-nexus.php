@@ -11,6 +11,12 @@ return [
         ],
     ],
 
+    'tools' => [
+        'memory' => [
+            'enabled' => true,
+        ],
+    ],
+
     'tables' => [
         'ai_assistants' => env('ATLAS_NEXUS_TABLE_AI_ASSISTANTS', 'ai_assistants'),
         'ai_prompts' => env('ATLAS_NEXUS_TABLE_AI_PROMPTS', 'ai_prompts'),

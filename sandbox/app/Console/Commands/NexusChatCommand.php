@@ -16,6 +16,7 @@ use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 /**
  * Provides an interactive CLI chat loop that uses Nexus thread/message services and queued assistant responses.
@@ -116,10 +117,18 @@ class NexusChatCommand extends Command
         $threadId = $this->option('thread');
 
         if ($threadId !== null && $threadId !== '') {
-            /** @var AiThread $thread */
-            $thread = $this->threadService->findOrFail((int) $threadId);
+            try {
+                /** @var AiThread $thread */
+                $thread = $this->threadService->findOrFail((int) $threadId);
 
-            return $thread;
+                if ($thread->assistant_id === $assistant->id) {
+                    return $thread;
+                }
+
+                $this->components->warn('Thread does not belong to this assistant. A new thread will be created.');
+            } catch (ModelNotFoundException $exception) {
+                $this->components->warn(sprintf('Thread [%s] was not found. A new thread will be created.', $threadId));
+            }
         }
 
         /** @var AiThread $thread */
@@ -133,6 +142,8 @@ class NexusChatCommand extends Command
             'summary' => null,
             'metadata' => [],
         ]);
+
+        $this->components->info(sprintf('Created new thread #%s for assistant [%s].', $thread->id, $assistant->slug));
 
         return $thread;
     }

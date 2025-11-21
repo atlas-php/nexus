@@ -7,6 +7,7 @@ namespace Atlas\Nexus\Tests\Unit\Jobs;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
@@ -70,6 +71,8 @@ class RunAssistantResponseJobTest extends TestCase
         $memory = AiMemory::factory()->create([
             'assistant_id' => $assistant->id,
             'thread_id' => $thread->id,
+            'owner_type' => AiMemoryOwnerType::USER->value,
+            'owner_id' => $thread->user_id,
             'kind' => 'preference',
             'content' => 'User prefers concise replies.',
         ]);

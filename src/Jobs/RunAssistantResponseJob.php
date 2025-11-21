@@ -8,6 +8,7 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Contracts\NexusTool;
+use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiTool;
@@ -167,6 +168,10 @@ class RunAssistantResponseJob implements ShouldQueue
 
             if (! $handler instanceof NexusTool) {
                 continue;
+            }
+
+            if ($handler instanceof ThreadStateAwareTool) {
+                $handler->setThreadState($state);
             }
 
             /** @var Tool $prismTool */

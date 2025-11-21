@@ -7,6 +7,8 @@ namespace Atlas\Nexus\Tests\Unit\Services;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
+use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
@@ -68,6 +70,8 @@ class ThreadStateServiceTest extends TestCase
         $memory = AiMemory::factory()->create([
             'assistant_id' => $assistant->id,
             'thread_id' => $thread->id,
+            'owner_type' => AiMemoryOwnerType::USER->value,
+            'owner_id' => $thread->user_id,
             'kind' => 'fact',
             'content' => 'User prefers morning updates.',
         ]);
@@ -85,10 +89,25 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($thread->fresh());
 
+        $toolSlugs = $state->tools->pluck('slug')->all();
+
         $this->assertSame($prompt->id, $state->prompt?->id);
         $this->assertCount(1, $state->messages);
         $this->assertTrue($state->memories->contains('id', $memory->id));
-        $this->assertTrue($state->tools->contains('id', $tool->id));
+        $this->assertTrue(in_array($tool->slug, $toolSlugs, true));
+        $this->assertTrue(in_array(MemoryTool::SLUG, $toolSlugs, true), 'Available slugs: '.implode(', ', $toolSlugs));
+    }
+
+    public function test_it_can_exclude_memory_tool_when_requested(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'state-assistant-disabled']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+        ]);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($thread->fresh(), false);
+
+        $this->assertFalse($state->tools->contains('slug', MemoryTool::SLUG));
     }
 
     private function migrationPath(): string
