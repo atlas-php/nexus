@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Models;
 
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiMemoryFactory;
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * PRD Reference: Atlas Nexus Overview — ai_memories schema.
  *
  * @property int $id
- * @property string $owner_type
+ * @property AiMemoryOwnerType $owner_type
  * @property int $owner_id
  * @property int|null $assistant_id
  * @property int|null $thread_id
@@ -46,6 +47,7 @@ class AiMemory extends AtlasModel
         'thread_id' => 'int',
         'source_message_id' => 'int',
         'source_tool_run_id' => 'int',
+        'owner_type' => AiMemoryOwnerType::class,
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

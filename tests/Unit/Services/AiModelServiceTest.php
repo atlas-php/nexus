@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
+use Atlas\Nexus\Enums\AiMessageContentType;
+use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiThreadStatus;
+use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiMemory;
@@ -95,7 +99,7 @@ class AiModelServiceTest extends TestCase
             'assistant_id' => $assistant->id,
             'prompt_id' => $prompt->id,
             'last_message_at' => Carbon::now(),
-            'status' => 'open',
+            'status' => AiThreadStatus::OPEN->value,
         ]);
         $thread = $threadService->create($threadData);
 
@@ -104,8 +108,8 @@ class AiModelServiceTest extends TestCase
             'thread_id' => $thread->id,
             'user_id' => $thread->user_id,
             'sequence' => 1,
-            'content_type' => 'text',
-            'role' => 'user',
+            'content_type' => AiMessageContentType::TEXT->value,
+            'role' => AiMessageRole::USER->value,
         ]);
         $message = $messageService->create($messageData);
 
@@ -118,7 +122,7 @@ class AiModelServiceTest extends TestCase
             'tool_id' => $tool->id,
             'thread_id' => $thread->id,
             'assistant_message_id' => $message->id,
-            'status' => 'queued',
+            'status' => AiToolRunStatus::QUEUED->value,
             'started_at' => null,
             'finished_at' => null,
         ]);
@@ -132,23 +136,23 @@ class AiModelServiceTest extends TestCase
         ]);
         $memory = $memoryService->create($memoryData);
 
-        $this->assertSame('open', $thread->status);
+        $this->assertTrue($thread->status === AiThreadStatus::OPEN);
         $this->assertSame($prompt->id, $thread->prompt_id);
         $this->assertSame($thread->id, $message->thread_id);
         $this->assertSame($assistant->id, $memory->assistant_id);
         $this->assertSame($message->id, $memory->source_message_id);
 
-        $runningRun = $toolRunService->markStatus($run, 'running');
-        $this->assertSame('running', $runningRun->status);
+        $runningRun = $toolRunService->markStatus($run, AiToolRunStatus::RUNNING);
+        $this->assertTrue($runningRun->status === AiToolRunStatus::RUNNING);
         $this->assertNotNull($runningRun->started_at);
         $this->assertNull($runningRun->finished_at);
 
-        $finishedRun = $toolRunService->markStatus($runningRun, 'succeeded');
-        $this->assertSame('succeeded', $finishedRun->status);
+        $finishedRun = $toolRunService->markStatus($runningRun, AiToolRunStatus::SUCCEEDED);
+        $this->assertTrue($finishedRun->status === AiToolRunStatus::SUCCEEDED);
         $this->assertNotNull($finishedRun->finished_at);
 
-        $updatedThread = $threadService->update($thread, ['status' => 'closed']);
-        $this->assertSame('closed', $updatedThread->status);
+        $updatedThread = $threadService->update($thread, ['status' => AiThreadStatus::CLOSED->value]);
+        $this->assertTrue($updatedThread->status === AiThreadStatus::CLOSED);
 
         $updatedMemory = $memoryService->update($memory, ['kind' => 'summary']);
         $this->assertSame('summary', $updatedMemory->kind);
@@ -188,14 +192,14 @@ class AiModelServiceTest extends TestCase
         $threadData = AiThread::factory()->raw([
             'assistant_id' => $assistant->id,
             'user_id' => 99,
-            'status' => 'open',
+            'status' => AiThreadStatus::OPEN->value,
         ]);
         $thread = $threadService->create($threadData);
 
         /** @var array<string, mixed> $messageData */
         $messageData = AiMessage::factory()->raw([
             'thread_id' => $thread->id,
-            'role' => 'assistant',
+            'role' => AiMessageRole::ASSISTANT->value,
             'sequence' => 1,
         ]);
         $message = $messageService->create($messageData);
@@ -205,14 +209,14 @@ class AiModelServiceTest extends TestCase
             'tool_id' => $tool->id,
             'thread_id' => $thread->id,
             'assistant_message_id' => $message->id,
-            'status' => 'queued',
+            'status' => AiToolRunStatus::QUEUED->value,
         ]);
         $run = $toolRunService->create($runData);
 
-        $this->assertSame('queued', $run->status);
+        $this->assertTrue($run->status === AiToolRunStatus::QUEUED);
 
-        $updatedRun = $toolRunService->markStatus($run, 'running');
-        $this->assertSame('running', $updatedRun->status);
+        $updatedRun = $toolRunService->markStatus($run, AiToolRunStatus::RUNNING);
+        $this->assertTrue($updatedRun->status === AiToolRunStatus::RUNNING);
 
         $this->assertTrue($assistantToolService->delete($assistantTool));
         $this->assertModelMissing($assistantTool);

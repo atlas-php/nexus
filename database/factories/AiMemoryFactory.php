@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Database\Factories;
 
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Models\AiMemory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,7 +21,7 @@ class AiMemoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'owner_type' => $this->faker->randomElement(['user', 'assistant', 'org']),
+            'owner_type' => $this->faker->randomElement(AiMemoryOwnerType::cases())->value,
             'owner_id' => $this->faker->numberBetween(1, 5_000),
             'assistant_id' => $this->faker->optional()->numberBetween(1, 1_000),
             'thread_id' => $this->faker->optional()->numberBetween(1, 1_000),

@@ -6,6 +6,8 @@ namespace Atlas\Nexus\Models;
 
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiThreadFactory;
+use Atlas\Nexus\Enums\AiThreadStatus;
+use Atlas\Nexus\Enums\AiThreadType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,11 +22,11 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int $id
  * @property int $assistant_id
  * @property int $user_id
- * @property string $type
+ * @property AiThreadType $type
  * @property int|null $parent_thread_id
  * @property int|null $parent_tool_run_id
  * @property string|null $title
- * @property string $status
+ * @property AiThreadStatus $status
  * @property int|null $prompt_id
  * @property string|null $summary
  * @property \Illuminate\Support\Carbon|null $last_message_at
@@ -50,6 +52,8 @@ class AiThread extends AtlasModel
         'parent_thread_id' => 'int',
         'parent_tool_run_id' => 'int',
         'prompt_id' => 'int',
+        'type' => AiThreadType::class,
+        'status' => AiThreadStatus::class,
         'last_message_at' => 'datetime',
         'metadata' => 'array',
         'created_at' => 'datetime',

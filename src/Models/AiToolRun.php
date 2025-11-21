@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Models;
 
 use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiToolRunFactory;
+use Atlas\Nexus\Enums\AiToolRunStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $assistant_message_id
  * @property int $call_index
  * @property array<string, mixed> $input_args
- * @property string $status
+ * @property AiToolRunStatus $status
  * @property array<string, mixed>|null $response_output
  * @property array<string, mixed>|null $metadata
  * @property string|null $error_message
@@ -49,6 +50,7 @@ class AiToolRun extends AtlasModel
         'assistant_message_id' => 'int',
         'call_index' => 'int',
         'input_args' => 'array',
+        'status' => AiToolRunStatus::class,
         'response_output' => 'array',
         'metadata' => 'array',
         'started_at' => 'datetime',

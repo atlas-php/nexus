@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Models;
 
+use Atlas\Nexus\Enums\AiMessageContentType;
+use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiThreadStatus;
+use Atlas\Nexus\Enums\AiThreadType;
+use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiMemory;
@@ -53,11 +58,11 @@ class AiModelFactoryTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
             'user_id' => 42,
-            'type' => 'user',
+            'type' => AiThreadType::USER->value,
             'prompt_id' => $prompt->id,
             'last_message_at' => Carbon::now()->subMinutes(5),
             'metadata' => ['channel' => 'web'],
-            'status' => 'open',
+            'status' => AiThreadStatus::OPEN->value,
         ]);
 
         /** @var AiMessage $message */
@@ -65,8 +70,8 @@ class AiModelFactoryTest extends TestCase
             'thread_id' => $thread->id,
             'user_id' => $thread->user_id,
             'sequence' => 1,
-            'content_type' => 'text',
-            'role' => 'user',
+            'content_type' => AiMessageContentType::TEXT->value,
+            'role' => AiMessageRole::USER->value,
             'tokens_in' => 10,
             'tokens_out' => 5,
             'metadata' => ['sentiment' => 'positive'],
@@ -92,7 +97,7 @@ class AiModelFactoryTest extends TestCase
             'assistant_message_id' => $message->id,
             'call_index' => 0,
             'input_args' => ['query' => 'demo'],
-            'status' => 'succeeded',
+            'status' => AiToolRunStatus::SUCCEEDED->value,
             'response_output' => ['ok' => true],
             'metadata' => ['duration_ms' => 120],
             'error_message' => null,
@@ -125,11 +130,14 @@ class AiModelFactoryTest extends TestCase
         $this->assertTrue($thread->prompt->is($prompt));
         $this->assertInstanceOf(Carbon::class, $thread->last_message_at);
         $this->assertSame(['channel' => 'web'], $thread->metadata);
+        $this->assertTrue($thread->status === AiThreadStatus::OPEN);
+        $this->assertTrue($thread->type === AiThreadType::USER);
 
         $this->assertNotNull($message->thread);
         $this->assertSame($thread->id, $message->thread_id);
         $this->assertSame(1, $message->sequence);
-        $this->assertSame('text', $message->content_type);
+        $this->assertTrue($message->content_type === AiMessageContentType::TEXT);
+        $this->assertTrue($message->role === AiMessageRole::USER);
         $this->assertTrue($message->thread->is($thread));
         $this->assertSame(['sentiment' => 'positive'], $message->metadata);
 
@@ -137,7 +145,7 @@ class AiModelFactoryTest extends TestCase
         $this->assertTrue($tool->is_active);
         $this->assertTrue($tool->assistants()->whereKey($assistant->id)->exists());
 
-        $this->assertSame('succeeded', $toolRun->status);
+        $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
         $this->assertSame(['query' => 'demo'], $toolRun->input_args);
         $this->assertSame(['ok' => true], $toolRun->response_output);
         $this->assertNotNull($toolRun->started_at);
