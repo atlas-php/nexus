@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Atlas\Nexus\Contracts\NexusTool;
+use Atlas\Nexus\Contracts\ToolRunLoggingAware;
+use Atlas\Nexus\Models\AiTool;
+use Atlas\Nexus\Services\Tools\ToolRunLogger;
+use Atlas\Nexus\Support\Chat\ThreadState;
 use Prism\Prism\Tool as PrismTool;
 
 /**
@@ -12,8 +16,16 @@ use Prism\Prism\Tool as PrismTool;
  *
  * Provides a base Nexus tool that maps domain logic to Prism's tool contract with consistent output handling.
  */
-abstract class AbstractTool implements NexusTool
+abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
 {
+    protected ?AiTool $toolModel = null;
+
+    protected ?ToolRunLogger $toolRunLogger = null;
+
+    protected ?int $assistantMessageId = null;
+
+    protected int $callCounter = 0;
+
     /**
      * @return array<int, ToolParameter>
      */
@@ -22,13 +34,31 @@ abstract class AbstractTool implements NexusTool
         return [];
     }
 
+    public function setToolRunLogger(ToolRunLogger $logger): void
+    {
+        $this->toolRunLogger = $logger;
+    }
+
+    public function setToolModel(AiTool $tool): void
+    {
+        $this->toolModel = $tool;
+    }
+
+    public function setAssistantMessageId(?int $assistantMessageId): void
+    {
+        $this->assistantMessageId = $assistantMessageId;
+    }
+
     public function toPrismTool(): PrismTool
     {
         $tool = (new PrismTool)
             ->as($this->name())
             ->for($this->description())
             ->using(function (mixed ...$arguments): string {
-                $response = $this->handle($this->normalizeArguments($arguments));
+                $normalizedArguments = $this->normalizeArguments($arguments);
+                $run = $this->logRunStart($normalizedArguments);
+                $response = $this->handle($normalizedArguments);
+                $this->logRunComplete($run, $response);
 
                 return $response->message();
             });
@@ -46,6 +76,45 @@ abstract class AbstractTool implements NexusTool
     protected function output(string $message, array $meta = []): ToolResponse
     {
         return new ToolResponse($message, $meta);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    protected function logRunStart(array $arguments): ?\Atlas\Nexus\Models\AiToolRun
+    {
+        if ($this->toolRunLogger === null || $this->toolModel === null || ! property_exists($this, 'state') || $this->assistantMessageId === null) {
+            return null;
+        }
+
+        /** @var mixed $state */
+        $state = $this->state ?? null;
+
+        if (! $state instanceof \Atlas\Nexus\Support\Chat\ThreadState) {
+            return null;
+        }
+
+        return $this->toolRunLogger->start(
+            $this->toolModel,
+            $state,
+            $this->assistantMessageId,
+            $this->nextCallIndex(),
+            $arguments
+        );
+    }
+
+    protected function logRunComplete(?\Atlas\Nexus\Models\AiToolRun $run, ToolResponse $response): void
+    {
+        if ($run === null || $this->toolRunLogger === null) {
+            return;
+        }
+
+        $this->toolRunLogger->complete($run, $response->meta()['result'] ?? $response->meta() ?: $response->message());
+    }
+
+    protected function nextCallIndex(): int
+    {
+        return $this->callCounter++;
     }
 
     /**

@@ -13,6 +13,7 @@ use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
+use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Collection;
@@ -32,6 +33,7 @@ class ThreadStateService
         private readonly AiMemoryService $memoryService,
         private readonly AiToolService $toolService,
         private readonly MemoryToolRegistrar $memoryToolRegistrar,
+        private readonly ToolRunLogger $toolRunLogger,
         ConfigRepository $config
     ) {
         $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);

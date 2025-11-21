@@ -65,7 +65,7 @@ class RunAssistantResponseJob implements ShouldQueue
         $state = $threadStateService->forThread($assistantMessage->thread);
         $messageService->markStatus($assistantMessage, AiMessageStatus::PROCESSING);
 
-        $toolContext = $this->prepareTools($state);
+        $toolContext = $this->prepareTools($state, $assistantMessage->id);
         $chatLog = new ChatThreadLog;
         $textRequest = $textRequestFactory->make($chatLog);
 
@@ -157,7 +157,7 @@ class RunAssistantResponseJob implements ShouldQueue
     /**
      * @return array{tools: array<int, Tool>, map: array<string, AiTool>}
      */
-    protected function prepareTools(ThreadState $state): array
+    protected function prepareTools(ThreadState $state, int $assistantMessageId): array
     {
         $toolMap = [];
         $prismTools = [];
@@ -178,6 +178,12 @@ class RunAssistantResponseJob implements ShouldQueue
 
             if ($handler instanceof ThreadStateAwareTool) {
                 $handler->setThreadState($state);
+            }
+
+            if ($handler instanceof \Atlas\Nexus\Contracts\ToolRunLoggingAware) {
+                $handler->setToolRunLogger(app(\Atlas\Nexus\Services\Tools\ToolRunLogger::class));
+                $handler->setToolModel($tool);
+                $handler->setAssistantMessageId($assistantMessageId);
             }
 
             /** @var Tool $prismTool */
