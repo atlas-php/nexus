@@ -91,7 +91,13 @@ class NexusChatCommand extends Command
                 return self::SUCCESS;
             }
 
-            $messages = $this->threadMessageService->sendUserMessage($thread, $input, $userId);
+            try {
+                $messages = $this->threadMessageService->sendUserMessage($thread, $input, $userId);
+            } catch (\Throwable $exception) {
+                $this->components->error('Could not send message, try again after the assistant finishes.');
+
+                continue;
+            }
 
             $resolved = $this->waitForAssistant($messages['assistant']);
 

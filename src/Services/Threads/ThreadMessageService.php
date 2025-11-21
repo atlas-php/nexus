@@ -13,6 +13,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * Class ThreadMessageService
@@ -35,6 +36,8 @@ class ThreadMessageService
         ?int $userId = null,
         AiMessageContentType $contentType = AiMessageContentType::TEXT
     ): array {
+        $this->ensureAssistantIsIdle($thread);
+
         $userId = $userId ?? $thread->user_id;
         $sequence = $this->nextSequence($thread);
 
@@ -70,6 +73,19 @@ class ThreadMessageService
             'user' => $userMessage,
             'assistant' => $assistantMessage,
         ];
+    }
+
+    protected function ensureAssistantIsIdle(AiThread $thread): void
+    {
+        $isProcessing = $this->messageService->query()
+            ->where('thread_id', $thread->id)
+            ->where('role', AiMessageRole::ASSISTANT->value)
+            ->where('status', AiMessageStatus::PROCESSING->value)
+            ->exists();
+
+        if ($isProcessing) {
+            throw new RuntimeException('Assistant is still processing the previous message.');
+        }
     }
 
     protected function nextSequence(AiThread $thread): int

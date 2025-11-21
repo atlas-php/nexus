@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
+use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -60,6 +62,37 @@ class ThreadMessageServiceTest extends TestCase
         Queue::assertPushed(RunAssistantResponseJob::class, function (RunAssistantResponseJob $job) use ($result): bool {
             return $job->assistantMessageId === $result['assistant']->id;
         });
+    }
+
+    public function test_it_blocks_new_messages_when_assistant_still_processing(): void
+    {
+        Queue::fake();
+
+        $assistant = AiAssistant::factory()->create(['slug' => 'thread-blocking']);
+        $prompt = AiPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'version' => 1,
+        ]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'prompt_id' => $prompt->id,
+            'user_id' => 999,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+
+        $this->expectException(\RuntimeException::class);
+
+        $service->sendUserMessage($thread, 'Are you there?', $thread->user_id);
+
+        Queue::assertNothingPushed();
     }
 
     private function migrationPath(): string
