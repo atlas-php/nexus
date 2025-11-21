@@ -37,11 +37,14 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
+        /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-message']);
+        /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
+        /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
             'prompt_id' => $prompt->id,
@@ -57,7 +60,9 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertTrue($result['assistant']->status === AiMessageStatus::PROCESSING);
         $this->assertSame(1, $result['user']->sequence);
         $this->assertSame(2, $result['assistant']->sequence);
-        $this->assertNotNull($thread->fresh()->last_message_at);
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+        $this->assertNotNull($freshThread->last_message_at);
 
         Queue::assertPushed(RunAssistantResponseJob::class, function (RunAssistantResponseJob $job) use ($result): bool {
             return $job->assistantMessageId === $result['assistant']->id;
@@ -68,11 +73,14 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
+        /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-blocking']);
+        /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
+        /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
             'prompt_id' => $prompt->id,

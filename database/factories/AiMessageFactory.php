@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Generates chat messages with ordered sequencing for testing thread persistence.
  * PRD Reference: Atlas Nexus Overview — ai_messages schema.
+ *
+ * @extends Factory<AiMessage>
  */
 class AiMessageFactory extends Factory
 {

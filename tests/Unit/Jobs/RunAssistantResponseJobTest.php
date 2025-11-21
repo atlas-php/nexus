@@ -107,6 +107,7 @@ class RunAssistantResponseJobTest extends TestCase
             'config' => [],
         ]);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
         $messages = collect([
             new UserMessage('Hello!'),
             new AssistantMessage('Here is your update.'),
@@ -132,18 +133,21 @@ class RunAssistantResponseJobTest extends TestCase
 
         $assistantMessage->refresh();
 
+        $metadata = $assistantMessage->metadata ?? [];
+
         $this->assertTrue($assistantMessage->status === AiMessageStatus::COMPLETED);
         $this->assertSame('Here is your update.', $assistantMessage->content);
         $this->assertSame('res-123', $assistantMessage->provider_response_id);
         $this->assertSame(10, $assistantMessage->tokens_in);
         $this->assertSame(20, $assistantMessage->tokens_out);
-        $this->assertContains($memory->id, $assistantMessage->metadata['memory_ids']);
-        $this->assertNotEmpty($assistantMessage->metadata['tool_run_ids']);
+        $this->assertArrayHasKey('memory_ids', $metadata);
+        $this->assertArrayHasKey('tool_run_ids', $metadata);
+        $this->assertContains($memory->id, $metadata['memory_ids']);
+        $this->assertNotEmpty($metadata['tool_run_ids']);
 
         $toolRun = AiToolRun::first();
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
-        $status = $toolRun->status instanceof AiToolRunStatus ? $toolRun->status->value : (string) $toolRun->status;
-        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $status);
+        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $toolRun->status->value);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
         $this->assertSame($tool->id, $toolRun->tool_id);
         $this->assertSame(['events' => 2], $toolRun->response_output);
@@ -222,6 +226,7 @@ class RunAssistantResponseJobTest extends TestCase
             'content' => '',
         ]);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
         $messages = collect([
             new UserMessage('Store a memory.'),
             new AssistantMessage('Memory stored.'),
@@ -252,8 +257,7 @@ class RunAssistantResponseJobTest extends TestCase
             ->first();
 
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
-        $status = $toolRun->status instanceof AiToolRunStatus ? $toolRun->status->value : (string) $toolRun->status;
-        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $status);
+        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $toolRun->status->value);
         $this->assertSame(['action' => 'save'], $toolRun->input_args);
         $this->assertSame(['success' => true], $toolRun->response_output);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);

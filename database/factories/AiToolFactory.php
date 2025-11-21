@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
  *
  * Provides seeded tool records with schemas and handler references for assistant integration tests.
  * PRD Reference: Atlas Nexus Overview — ai_tools schema.
+ *
+ * @extends Factory<AiTool>
  */
 class AiToolFactory extends Factory
 {

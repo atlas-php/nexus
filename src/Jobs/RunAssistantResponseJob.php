@@ -224,7 +224,7 @@ class RunAssistantResponseJob implements ShouldQueue
             $tool = $toolMap[$toolCall->name]
                 ?? $toolService->query()->withTrashed()->where('slug', $toolCall->name)->first();
 
-            if ($tool !== null && method_exists($tool, 'trashed') && $tool->trashed()) {
+            if ($tool !== null && $tool->trashed()) {
                 $tool->restore();
             }
 
@@ -252,7 +252,7 @@ class RunAssistantResponseJob implements ShouldQueue
             $tool = $toolMap[$toolResult->toolName]
                 ?? $toolService->query()->withTrashed()->where('slug', $toolResult->toolName)->first();
 
-            if ($tool !== null && method_exists($tool, 'trashed') && $tool->trashed()) {
+            if ($tool !== null && $tool->trashed()) {
                 $tool->restore();
             }
 
@@ -303,7 +303,7 @@ class RunAssistantResponseJob implements ShouldQueue
 
     protected function resolveProvider(): string
     {
-        $provider = config('prism.default_provider') ?? env('PRISM_DEFAULT_PROVIDER');
+        $provider = config('prism.default_provider', 'openai');
 
         return is_string($provider) && $provider !== '' ? $provider : 'openai';
     }
@@ -313,7 +313,7 @@ class RunAssistantResponseJob implements ShouldQueue
         $model = $state->assistant->default_model;
 
         if (! is_string($model) || $model === '') {
-            $model = config('prism.default_model') ?? env('PRISM_DEFAULT_MODEL');
+            $model = config('prism.default_model');
         }
 
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
@@ -321,7 +321,7 @@ class RunAssistantResponseJob implements ShouldQueue
 
     protected function maxSteps(): int
     {
-        return (int) env('PRISM_MAX_STEPS', 8);
+        return (int) config('prism.max_steps', 8);
     }
 
     protected function memoryPrompt(ThreadState $state): ?string

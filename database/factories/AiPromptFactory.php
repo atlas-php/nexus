@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Produces versioned prompt records for assistants with optional user ownership.
  * PRD Reference: Atlas Nexus Overview — ai_prompts schema.
+ *
+ * @extends Factory<AiPrompt>
  */
 class AiPromptFactory extends Factory
 {

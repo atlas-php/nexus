@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Creates reusable memory entries tied to owners and provenance for retrieval tests.
  * PRD Reference: Atlas Nexus Overview — ai_memories schema.
+ *
+ * @extends Factory<AiMemory>
  */
 class AiMemoryFactory extends Factory
 {

@@ -124,6 +124,9 @@ class AiMemoryService extends ModelService
         };
     }
 
+    /**
+     * @return Builder<AiMemory>
+     */
     protected function scopedQuery(AiAssistant $assistant, AiThread $thread): Builder
     {
         return $this->query()
@@ -142,6 +145,9 @@ class AiMemoryService extends ModelService
             });
     }
 
+    /**
+     * @param  Builder<AiMemory>  $query
+     */
     protected function applyDateBounds(Builder $query, ?Carbon $from, ?Carbon $to): void
     {
         if ($from !== null) {

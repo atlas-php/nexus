@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Creates conversation thread records spanning user and tool originators.
  * PRD Reference: Atlas Nexus Overview — ai_threads schema.
+ *
+ * @extends Factory<AiThread>
  */
 class AiThreadFactory extends Factory
 {

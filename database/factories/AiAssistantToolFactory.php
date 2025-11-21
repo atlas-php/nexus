@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Generates assistant-to-tool mapping records for validating tool access controls.
  * PRD Reference: Atlas Nexus Overview — ai_assistant_tool schema.
+ *
+ * @extends Factory<AiAssistantTool>
  */
 class AiAssistantToolFactory extends Factory
 {

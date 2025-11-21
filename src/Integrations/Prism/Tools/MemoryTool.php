@@ -35,6 +35,13 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         private readonly AiMemoryService $memoryService
     ) {}
 
+    /**
+     * @return array{
+     *     type: string,
+     *     properties: array<string, mixed>,
+     *     required: array<int, string>
+     * }
+     */
     public static function toolSchema(): array
     {
         return [
@@ -113,13 +120,15 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
             return $this->output('Memory tool unavailable: missing thread context.', ['error' => true]);
         }
 
+        $state = $this->state;
+
         $action = (string) ($arguments['action'] ?? 'fetch');
 
         try {
             return match ($action) {
-                'save' => $this->handleSave($arguments),
-                'delete' => $this->handleDelete($arguments),
-                default => $this->handleFetch($arguments),
+                'save' => $this->handleSave($arguments, $state),
+                'delete' => $this->handleDelete($arguments, $state),
+                default => $this->handleFetch($arguments, $state),
             };
         } catch (RuntimeException $exception) {
             return $this->output($exception->getMessage(), ['error' => true]);
@@ -131,7 +140,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<string, mixed>  $arguments
      */
-    protected function handleSave(array $arguments): ToolResponse
+    protected function handleSave(array $arguments, ThreadState $state): ToolResponse
     {
         $content = (string) ($arguments['content'] ?? '');
         $kind = (string) ($arguments['kind'] ?? 'note');
@@ -145,8 +154,8 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         $metadata = $this->normalizeMetadata($arguments['metadata'] ?? null);
 
         $memory = $this->memoryService->saveForThread(
-            $this->state->assistant,
-            $this->state->thread,
+            $state->assistant,
+            $state->thread,
             $kind,
             $content,
             $ownerType,
@@ -164,14 +173,14 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<string, mixed>  $arguments
      */
-    protected function handleFetch(array $arguments): ToolResponse
+    protected function handleFetch(array $arguments, ThreadState $state): ToolResponse
     {
         $from = $this->parseDate($arguments['from_date'] ?? null);
         $to = $this->parseDate($arguments['to_date'] ?? null);
 
         $memories = $this->memoryService->listForThread(
-            $this->state->assistant,
-            $this->state->thread,
+            $state->assistant,
+            $state->thread,
             $from,
             $to
         );
@@ -197,12 +206,12 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<string, mixed>  $arguments
      */
-    protected function handleDelete(array $arguments): ToolResponse
+    protected function handleDelete(array $arguments, ThreadState $state): ToolResponse
     {
         $ids = $this->collectIds($arguments);
 
         if ($ids === []) {
-            $available = $this->memoryService->listForThread($this->state->assistant, $this->state->thread);
+            $available = $this->memoryService->listForThread($state->assistant, $state->thread);
 
             return $this->output(
                 'Provide memory_id or memory_ids to delete. Use action=fetch first to list memories with their IDs.',
@@ -219,8 +228,8 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         foreach ($ids as $id) {
             try {
                 $this->memoryService->removeForThread(
-                    $this->state->assistant,
-                    $this->state->thread,
+                    $state->assistant,
+                    $state->thread,
                     $id
                 );
                 $removed[] = $id;
@@ -298,8 +307,10 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     {
         $ids = [];
 
-        if (isset($arguments['memory_id']) && $arguments['memory_id'] !== null) {
-            $ids[] = (int) $arguments['memory_id'];
+        $memoryId = $arguments['memory_id'] ?? null;
+
+        if ($memoryId !== null) {
+            $ids[] = (int) $memoryId;
         }
 
         if (isset($arguments['memory_ids']) && is_array($arguments['memory_ids'])) {

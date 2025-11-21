@@ -62,8 +62,8 @@ class MemoryToolTest extends TestCase
 
         $memory = AiMemory::find($memoryId);
         $this->assertInstanceOf(AiMemory::class, $memory);
-        $this->assertSame($thread->id, $memory?->thread_id);
-        $this->assertSame($thread->user_id, $memory?->owner_id);
+        $this->assertSame($thread->id, $memory->thread_id);
+        $this->assertSame($thread->user_id, $memory->owner_id);
 
         $fetchResponse = $tool->handle([
             'action' => 'fetch',

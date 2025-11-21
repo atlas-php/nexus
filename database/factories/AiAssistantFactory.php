@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Generates AI assistant records for Nexus feature and integration testing.
  * PRD Reference: Atlas Nexus Overview — ai_assistants schema.
+ *
+ * @extends Factory<AiAssistant>
  */
 class AiAssistantFactory extends Factory
 {

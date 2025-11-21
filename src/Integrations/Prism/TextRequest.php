@@ -8,14 +8,27 @@ use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Closure;
 use Generator;
 use Illuminate\Support\Collection;
+use Prism\Prism\Contracts\Message;
 use Prism\Prism\Text\PendingRequest;
 use Prism\Prism\Text\Request;
 use Prism\Prism\Text\Response;
+use Prism\Prism\Tool;
 
 /**
  * Class TextRequest
  *
  * Wraps Prism text requests to preserve full feature access while capturing chat thread logs.
+ *
+ * @mixin PendingRequest
+ *
+ * @method self using(string $provider, ?string $model = null)
+ * @method self withMessages(iterable<int, Message> $messages)
+ * @method self withMaxSteps(int $steps)
+ * @method self withTools(array<int, Tool> $tools)
+ * @method self withSystemPrompt(string $prompt)
+ * @method self withMaxTokens(int $maxTokens)
+ * @method self usingTemperature(float $temperature)
+ * @method self usingTopP(float $topP)
  */
 class TextRequest
 {

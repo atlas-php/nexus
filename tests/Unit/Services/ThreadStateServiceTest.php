@@ -87,7 +87,10 @@ class ThreadStateServiceTest extends TestCase
             'config' => [],
         ]);
 
-        $state = $this->app->make(ThreadStateService::class)->forThread($thread->fresh());
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
         $toolSlugs = $state->tools->pluck('slug')->all();
 
@@ -105,7 +108,10 @@ class ThreadStateServiceTest extends TestCase
             'assistant_id' => $assistant->id,
         ]);
 
-        $state = $this->app->make(ThreadStateService::class)->forThread($thread->fresh(), false);
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread, false);
 
         $this->assertFalse($state->tools->contains('slug', MemoryTool::SLUG));
     }

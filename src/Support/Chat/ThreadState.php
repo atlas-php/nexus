@@ -21,6 +21,11 @@ use Illuminate\Support\Collection;
  */
 class ThreadState
 {
+    /**
+     * @param  Collection<int, AiMessage>  $messages
+     * @param  Collection<int, AiMemory>  $memories
+     * @param  Collection<int, AiTool>  $tools
+     */
     public function __construct(
         public readonly AiThread $thread,
         public readonly AiAssistant $assistant,

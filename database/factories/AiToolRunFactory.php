@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Produces tool run records covering queued, running, and completed lifecycle states.
  * PRD Reference: Atlas Nexus Overview — ai_tool_runs schema.
+ *
+ * @extends Factory<AiToolRun>
  */
 class AiToolRunFactory extends Factory
 {
