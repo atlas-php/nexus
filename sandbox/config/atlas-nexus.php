@@ -3,20 +3,47 @@
 declare(strict_types=1);
 
 return [
-    'default_pipeline' => env('NEXUS_DEFAULT_PIPELINE', 'default'),
+    'default_pipeline' => 'default',
 
     'pipelines' => [
         'default' => [
-            'description' => 'Sandbox pipeline for testing Prism-backed Nexus flows.',
-            'provider' => env('PRISM_DEFAULT_PROVIDER', 'openai'),
-            'model' => env('PRISM_DEFAULT_MODEL', 'gpt-4o-mini'),
-            'system_prompt' => env('PRISM_SYSTEM_PROMPT', 'You are the Atlas Nexus sandbox assistant.'),
-            'provider_config' => [
-                'url' => env('OPENAI_URL', 'https://api.openai.com/v1'),
-                'api_key' => env('OPENAI_API_KEY'),
-                'organization' => env('OPENAI_ORGANIZATION'),
-                'project' => env('OPENAI_PROJECT'),
-            ],
+            'description' => 'Placeholder default pipeline until personas define workflows.',
         ],
+    ],
+
+    'responses' => [
+        'queue' => env('ATLAS_NEXUS_RESPONSES_QUEUE'),
+    ],
+
+    'tools' => [
+        'memory' => [
+            'enabled' => true,
+        ],
+        'web_search' => [
+            'enabled' => true,
+            'content_limit' => 8000,
+            'summary_model' => env('ATLAS_NEXUS_WEB_SUMMARY_MODEL'),
+        ],
+        'registry' => [
+            // 'web_search' => \App\Tools\WebSearchTool::class,
+        ],
+    ],
+
+    'seeders' => [
+        \Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder::class,
+        \Atlas\Nexus\Services\Seeders\WebSearchFeatureSeeder::class,
+    ],
+
+    'tables' => [
+        'ai_assistants' => env('ATLAS_NEXUS_TABLE_AI_ASSISTANTS', 'ai_assistants'),
+        'ai_prompts' => env('ATLAS_NEXUS_TABLE_AI_PROMPTS', 'ai_prompts'),
+        'ai_threads' => env('ATLAS_NEXUS_TABLE_AI_THREADS', 'ai_threads'),
+        'ai_messages' => env('ATLAS_NEXUS_TABLE_AI_MESSAGES', 'ai_messages'),
+        'ai_tool_runs' => env('ATLAS_NEXUS_TABLE_AI_TOOL_RUNS', 'ai_tool_runs'),
+        'ai_memories' => env('ATLAS_NEXUS_TABLE_AI_MEMORIES', 'ai_memories'),
+    ],
+
+    'database' => [
+        'connection' => env('ATLAS_NEXUS_DATABASE_CONNECTION'),
     ],
 ];

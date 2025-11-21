@@ -12,7 +12,9 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 ## Tools
 Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `web_search`), and is registered inside `ToolRegistry`.
 
-- Built-in tools register themselves (e.g., Memory) when enabled via `atlas-nexus.tools.memory.enabled`.
+- Built-in tools register themselves when enabled:
+  - `memory` — save/fetch/delete thread-aware memories.
+  - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant.
 - Additional tools can be registered through config (`atlas-nexus.tools.registry`) mapping `key => handler_class`.
 - Only tools with resolvable handler classes are exposed to Prism.
 

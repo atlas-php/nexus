@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Tools;
 
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
+use Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
@@ -71,6 +72,10 @@ class ToolRegistry
     {
         if ($this->config->get('atlas-nexus.tools.memory.enabled', true)) {
             $this->register(MemoryTool::definition());
+        }
+
+        if ($this->config->get('atlas-nexus.tools.web_search.enabled', true)) {
+            $this->register(WebSearchTool::definition());
         }
     }
 

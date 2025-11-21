@@ -19,6 +19,11 @@ return [
         'memory' => [
             'enabled' => true,
         ],
+        'web_search' => [
+            'enabled' => true,
+            'content_limit' => 8000,
+            'summary_model' => env('ATLAS_NEXUS_WEB_SUMMARY_MODEL'),
+        ],
         'registry' => [
             // 'web_search' => \App\Tools\WebSearchTool::class,
         ],
@@ -26,6 +31,7 @@ return [
 
     'seeders' => [
         \Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder::class,
+        \Atlas\Nexus\Services\Seeders\WebSearchFeatureSeeder::class,
     ],
 
     'tables' => [

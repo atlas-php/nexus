@@ -47,8 +47,11 @@ Each table definition with fields is detailed in the linked PRDs below.
 - Failures must mark the assistant message as `FAILED` with a `failed_reason`.
 
 ## Seeded Built-ins
-- `atlas:nexus:seed` runs all configured seeders. Default: `MemoryFeatureSeeder`.
-- Memory seeding ensures the built-in memory tool key is added to assistants when active.
+- `atlas:nexus:seed` runs all configured seeders.
+- Default seeders:
+  - `MemoryFeatureSeeder` — adds the built-in `memory` tool key to assistants when enabled.
+  - `WebSearchFeatureSeeder` — provisions the built-in web summarizer assistant/prompt used by the `web_search` tool when enabled.
+- Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 
 ## Multi-Tenancy Support

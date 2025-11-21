@@ -72,7 +72,10 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
 
 ## Seeding Built-ins
 - Run `php artisan atlas:nexus:seed` after migrations.
-- Default seeder: `MemoryFeatureSeeder` (adds the Memory tool key to assistants when enabled).
+- Default seeders:
+  - `MemoryFeatureSeeder` (adds the `memory` tool key to assistants when enabled).
+  - `WebSearchFeatureSeeder` (creates the built-in web summarizer assistant/prompt used by the `web_search` tool).
+\- Built-in tools: `memory` (persist/query memories) and `web_search` (fetch and optionally summarize website content).
 - Extend via `config/atlas-nexus.php` `seeders` array or `NexusSeederService::extend()` at runtime.
 
 ## Sandbox
