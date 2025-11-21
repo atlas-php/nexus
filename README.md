@@ -61,7 +61,7 @@ See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
 ## Memories
 - Memories (`ai_memories`) capture facts/preferences/summaries scoped to user, assistant, or org.
-- Built-in `MemoryTool` (seeded) lets assistants save/fetch/delete memories; thread state injects relevant memories into requests.
+- Built-in `MemoryTool` lets assistants save/fetch/delete memories; thread state injects relevant memories into requests.
 
 See: [PRD — Memories](./docs/PRD/Memories.md)
 

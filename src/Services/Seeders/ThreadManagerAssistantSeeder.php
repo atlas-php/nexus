@@ -72,7 +72,7 @@ class ThreadManagerAssistantSeeder implements NexusSeeder
 
     protected function defaultModel(): string
     {
-        $model = $this->config->get('atlas-nexus.tools.thread_manager.model')
+        $model = $this->config->get('atlas-nexus.tools.options.thread_manager.model')
             ?? $this->config->get('prism.default_model')
             ?? 'gpt-4o-mini';
 

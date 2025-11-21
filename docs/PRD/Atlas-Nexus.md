@@ -38,6 +38,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - `atlas-nexus.pipelines` — placeholder for persona-defined pipelines.
 - `atlas-nexus.tools.memory.enabled` — toggles inclusion of the built-in memory tool in thread state.
 - `atlas-nexus.tools.registry` — maps custom tool keys to handler classes.
+- `atlas-nexus.tools.options` — per-tool overrides (e.g., web search content limits, summary models).
 - `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.
 - `atlas-nexus.seeders` — list of seeders executed by `atlas:nexus:seed`.
 

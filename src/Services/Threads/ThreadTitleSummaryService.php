@@ -171,7 +171,7 @@ class ThreadTitleSummaryService
     protected function model(?string $assistantModel): string
     {
         $model = $assistantModel
-            ?? config('atlas-nexus.tools.thread_manager.model')
+            ?? config('atlas-nexus.tools.options.thread_manager.model')
             ?? config('prism.default_model')
             ?? 'gpt-4o-mini';
 

@@ -16,20 +16,20 @@ return [
     ],
 
     'tools' => [
-        'memory' => [
-            'enabled' => true,
-        ],
-        'web_search' => [
-            'enabled' => true,
-            'content_limit' => 8000,
-            'summary_model' => env('ATLAS_NEXUS_WEB_SUMMARY_MODEL'),
-        ],
-        'thread_manager' => [
-            'enabled' => true,
-            'model' => env('ATLAS_NEXUS_THREAD_MANAGER_MODEL'),
-        ],
         'registry' => [
-            // 'web_search' => \App\Tools\WebSearchTool::class,
+            'memory' => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,
+            'web_search' => \Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool::class,
+            'thread_manager' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadManagerTool::class,
+            // 'custom_tool' => \App\Tools\CustomTool::class,
+        ],
+        'options' => [
+            'web_search' => [
+                'content_limit' => env('ATLAS_NEXUS_WEB_SUMMARY_CONTENT_LIMIT', 8000),
+                'summary_model' => env('ATLAS_NEXUS_WEB_SUMMARY_MODEL'),
+            ],
+            'thread_manager' => [
+                'model' => env('ATLAS_NEXUS_THREAD_MANAGER_MODEL'),
+            ],
         ],
     ],
 

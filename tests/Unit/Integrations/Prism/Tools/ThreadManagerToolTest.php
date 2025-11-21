@@ -63,7 +63,7 @@ class ThreadManagerToolTest extends TestCase
 
     public function test_it_generates_title_and_summary_inline(): void
     {
-        config()->set('atlas-nexus.tools.thread_manager.model', 'gpt-4o-mini');
+        config()->set('atlas-nexus.tools.options.thread_manager.model', 'gpt-4o-mini');
 
         $state = $this->createState(withMessages: true);
 

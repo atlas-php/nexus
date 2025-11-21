@@ -36,7 +36,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         private readonly WebSummaryService $summaryService,
         ConfigRepository $config
     ) {
-        $limit = (int) $config->get('atlas-nexus.tools.web_search.content_limit', 8000);
+        $limit = (int) $config->get('atlas-nexus.tools.options.web_search.content_limit', 8000);
         $this->contentLimit = max(500, $limit);
     }
 
@@ -237,7 +237,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
             return 'No URLs were fetched.';
         }
 
-        $lines = ["Fetched ".count($results)." website(s):"];
+        $lines = ['Fetched '.count($results).' website(s):'];
 
         foreach ($results as $result) {
             $url = $result['url'];

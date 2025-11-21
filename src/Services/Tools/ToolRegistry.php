@@ -25,7 +25,6 @@ class ToolRegistry
     public function __construct(
         private readonly ConfigRepository $config
     ) {
-        $this->registerBuiltIns();
         $this->registerConfigured();
     }
 
@@ -103,11 +102,30 @@ class ToolRegistry
         }
 
         foreach ($configuredTools as $key => $handler) {
-            if (! is_string($key) || $key === '' || ! is_string($handler) || $handler === '') {
+            if (! is_string($key) || $key === '') {
                 continue;
             }
 
-            $this->register(new ToolDefinition($key, $handler));
+            $handlerClass = $this->resolveHandlerClass($handler);
+
+            if ($handlerClass === null) {
+                continue;
+            }
+
+            $this->register(new ToolDefinition($key, $handlerClass));
         }
+    }
+
+    private function resolveHandlerClass(mixed $handler): ?string
+    {
+        if (is_string($handler) && $handler !== '') {
+            return $handler;
+        }
+
+        if (is_array($handler) && is_string($handler['handler'] ?? null) && $handler['handler'] !== '') {
+            return $handler['handler'];
+        }
+
+        return null;
     }
 }
