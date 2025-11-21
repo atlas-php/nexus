@@ -1,0 +1,47 @@
+# PRD — Example Usage
+
+Scenario-driven overview of how consumers create assistants, start threads, send messages, and leverage tools/memories.
+
+## Table of Contents
+- [Create an Assistant & Prompt](#create-an-assistant--prompt)
+- [Register Tools](#register-tools)
+- [Start a Thread](#start-a-thread)
+- [Send a Message](#send-a-message)
+- [Inline vs Queued Responses](#inline-vs-queued-responses)
+- [Track Tool Runs](#track-tool-runs)
+- [Manage Memories](#manage-memories)
+
+## Create an Assistant & Prompt
+1. Create an assistant row with defaults (`slug`, `default_model`, optional `temperature/top_p/max_output_tokens`).
+2. Create a prompt version with `assistant_id`, `version`, `system_prompt`.
+3. Set `current_prompt_id` on the assistant to the active prompt.
+
+## Register Tools
+1. Define a tool record (`slug`, `handler_class`, `schema`, `is_active=true`).
+2. Attach it to the assistant via `ai_assistant_tool` mapping with optional config.
+3. Run `atlas:nexus:seed` to ensure built-in tools (Memory) exist and are attached when enabled.
+
+## Start a Thread
+1. Create `ai_threads` row with `assistant_id`, `user_id`, optional `group_id`, `type=user`, `status=open`.
+2. Optionally set `prompt_id` to override the assistant’s current prompt.
+
+## Send a Message
+1. Call `ThreadMessageService::sendUserMessage($thread, $content, $userId, $contentType, $dispatchResponse)`.
+2. Service ensures no assistant message is currently processing.
+3. Creates user message (`status=completed`) and assistant placeholder (`status=processing`).
+4. Touches `last_message_at` on the thread.
+
+## Inline vs Queued Responses
+- `$dispatchResponse=true` (default): dispatches `RunAssistantResponseJob`; queue name can be set via `atlas-nexus.responses.queue`.
+- `$dispatchResponse=false`: runs `AssistantResponseService` inline.
+- Both paths must mark assistant messages as `FAILED` on exceptions.
+
+## Track Tool Runs
+- `AssistantResponseService` creates `ai_tool_runs` for tool calls/results; `group_id` inherited from the thread.
+- Tool handlers can log via `ToolRunLogger` when implementing `ToolRunLoggingAware`.
+- Tool run metadata stores Prism `tool_call_id` and `tool_call_result_id` when available.
+
+## Manage Memories
+- `MemoryTool` (seeded) allows assistants to save/fetch/delete memories via tool calls.
+- `AiMemoryService::saveForThread` stores memory with `group_id` and owner/assistant scope.
+- `ThreadStateService` injects applicable memories into request context; assistant message metadata includes `memory_ids`.

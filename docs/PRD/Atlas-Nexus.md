@@ -1,0 +1,73 @@
+# PRD — Atlas Nexus
+
+Atlas Nexus centralizes AI assistants, prompts, threads, messages, tools, tool runs, and shared memories. This document is the authoritative specification for overall responsibilities and shared schemas across the package.
+
+## Table of Contents
+- [System Overview](#system-overview)
+- [Core Data Tables](#core-data-tables)
+- [Pipelines & Configuration](#pipelines--configuration)
+- [Job vs Inline Execution](#job-vs-inline-execution)
+- [Seeded Built-ins](#seeded-built-ins)
+- [Multi-Tenancy Support](#multi-tenancy-support)
+- [Failure Semantics](#failure-semantics)
+- [Also See](#also-see)
+
+## System Overview
+Nexus orchestrates:
+- **Assistants & Prompts** — define personas and versioned system prompts.
+- **Threads & Messages** — capture conversations and LLM responses.
+- **Tools & Tool Runs** — register callable tools and log executions.
+- **Memories** — persist reusable context across conversations.
+
+## Core Data Tables
+All tables support soft deletes unless noted otherwise. Default names are configurable via `config/atlas-nexus.php`.
+
+| Table             | Purpose                                                     |
+|-------------------|-------------------------------------------------------------|
+| `ai_assistants`   | Assistant definitions, defaults, and active prompt linkage  |
+| `ai_prompts`      | Versioned system prompts per assistant                      |
+| `ai_threads`      | Conversation containers (user/tool threads)                 |
+| `ai_messages`     | User and assistant messages in a thread                     |
+| `ai_tools`        | Registered tools with handler classes and schemas           |
+| `ai_assistant_tool` | Pivot for assistant → tool mapping                        |
+| `ai_tool_runs`    | Execution logs for tool calls                               |
+| `ai_memories`     | Reusable memory items scoped to users/assistants/orgs       |
+
+Each table definition with fields is detailed in the linked PRDs below.
+
+## Pipelines & Configuration
+- `atlas-nexus.default_pipeline` — name of the default orchestration pipeline.
+- `atlas-nexus.pipelines` — placeholder for persona-defined pipelines.
+- `atlas-nexus.tools.memory.enabled` — toggles inclusion of the built-in memory tool in thread state.
+- `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.
+- `atlas-nexus.seeders` — list of seeders executed by `atlas:nexus:seed`.
+
+## Job vs Inline Execution
+- `ThreadMessageService::sendUserMessage` stages a pending assistant message and either dispatches `RunAssistantResponseJob` or runs inline based on the `$dispatchResponse` flag.
+- `RunAssistantResponseJob` delegates to `AssistantResponseService`, which handles Prism calls, tool logging, and failure capture.
+- Failures must mark the assistant message as `FAILED` with a `failed_reason`.
+
+## Seeded Built-ins
+- `atlas:nexus:seed` runs all configured seeders. Default: `MemoryFeatureSeeder`.
+- Memory seeding ensures the built-in memory tool exists and is attached to assistants when active.
+- Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
+
+## Multi-Tenancy Support
+All conversation artifacts carry an optional `group_id` to align with tenant/account scoping:
+- `ai_threads.group_id`
+- `ai_messages.group_id`
+- `ai_memories.group_id`
+- `ai_tool_runs.group_id`
+
+Services propagate `group_id` from threads to messages, memories, and tool runs automatically when present.
+
+## Failure Semantics
+- Assistant response failures (inline or job) must mark the assistant message as `FAILED` with the error message.
+- Tool runs record statuses via `AiToolRunStatus` (`QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`).
+
+## Also See
+- [Assistants & Prompts](./Assistants-and-Prompts.md)
+- [Threads & Messages](./Threads-and-Messages.md)
+- [Tools & Tool Runs](./Tools-and-ToolRuns.md)
+- [Memories](./Memories.md)
+- [Example Usage](./Example-Usage.md)
