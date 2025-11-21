@@ -33,7 +33,6 @@ Versioned system prompts for each assistant.
 - version             int               -- 1,2,3...
 - label               string nullable
 - system_prompt       text
-- variables_schema    json nullable
 - is_active           boolean default 1
 - created_at
 - updated_at

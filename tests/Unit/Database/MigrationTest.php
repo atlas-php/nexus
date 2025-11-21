@@ -55,7 +55,6 @@ class MigrationTest extends TestCase
             'version',
             'label',
             'system_prompt',
-            'variables_schema',
             'is_active',
             'created_at',
             'updated_at',

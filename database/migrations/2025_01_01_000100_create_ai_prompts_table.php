@@ -20,7 +20,6 @@ return new class extends Migration
             $table->unsignedInteger('version');
             $table->string('label')->nullable();
             $table->text('system_prompt');
-            $table->json('variables_schema')->nullable();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();

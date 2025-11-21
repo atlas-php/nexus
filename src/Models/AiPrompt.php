@@ -15,7 +15,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 /**
  * Class AiPrompt
  *
- * Stores versioned system prompts for assistants with optional user scoping and structured variables.
+ * Stores versioned system prompts for assistants with optional user scoping.
  * PRD Reference: Atlas Nexus Overview — ai_prompts schema.
  *
  * @property int $id
@@ -24,7 +24,6 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int $version
  * @property string|null $label
  * @property string $system_prompt
- * @property array<string, mixed>|null $variables_schema
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -48,7 +47,6 @@ class AiPrompt extends AtlasModel
         'user_id' => 'int',
         'assistant_id' => 'int',
         'version' => 'int',
-        'variables_schema' => 'array',
         'is_active' => 'bool',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

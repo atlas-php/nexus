@@ -26,6 +26,7 @@ return [
             'web_search' => [
                 'content_limit' => 8000,
                 'summary_model' => null,
+                'allowed_domains' => null,
             ],
             'thread_manager' => [
                 'model' => null,

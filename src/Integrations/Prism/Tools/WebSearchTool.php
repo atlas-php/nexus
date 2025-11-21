@@ -20,7 +20,7 @@ use Throwable;
 /**
  * Class WebSearchTool
  *
- * Fetches website content for assistants and optionally summarizes it inline using the built-in web summarizer.
+ * Fetches website content for assistants and optionally summarizes it inline using the built-in web summarizer, with optional allowed-domain restrictions.
  */
 class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 {
@@ -30,6 +30,11 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     protected int $contentLimit;
 
+    /**
+     * @var array<int, string>|null
+     */
+    protected ?array $allowedDomains;
+
     protected ?AiToolRun $activeRun = null;
 
     public function __construct(
@@ -38,6 +43,9 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
     ) {
         $limit = (int) $config->get('atlas-nexus.tools.options.web_search.content_limit', 8000);
         $this->contentLimit = max(500, $limit);
+        $this->allowedDomains = $this->normalizeAllowedDomains(
+            $config->get('atlas-nexus.tools.options.web_search.allowed_domains')
+        );
     }
 
     public static function definition(): ToolDefinition
@@ -57,7 +65,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Retrieve website content for context and optionally summarize it.';
+        return 'Retrieve website content for context and optionally summarize it. Allowed domains: '.$this->allowedDomainsDescription().'.';
     }
 
     /**
@@ -85,6 +93,12 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
         if ($urls === []) {
             return $this->output('Provide at least one website URL to fetch.', ['error' => true]);
+        }
+
+        $domainRestriction = $this->restrictToAllowedDomains($urls);
+
+        if ($domainRestriction instanceof ToolResponse) {
+            return $domainRestriction;
         }
 
         /** @var array<int, array{url: string, status: int|null, content: string|null, error: string|null}> $results */
@@ -314,5 +328,97 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         $this->activeRun = $run;
 
         return $run;
+    }
+
+    /**
+     * @param  array<int, string>  $urls
+     */
+    protected function restrictToAllowedDomains(array $urls): ?ToolResponse
+    {
+        if ($this->allowedDomains === null) {
+            return null;
+        }
+
+        foreach ($urls as $url) {
+            $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+            $normalizedHost = ltrim($host, '.');
+
+            if ($normalizedHost === '') {
+                continue;
+            }
+
+            if ($this->isAllowedDomain($normalizedHost)) {
+                continue;
+            }
+
+            $message = sprintf('Error, this domain is not allowed to be searched: %s', $normalizedHost);
+
+            return $this->output($message, [
+                'error' => true,
+                'url' => $url,
+                'domain' => $normalizedHost,
+            ]);
+        }
+
+        return null;
+    }
+
+    protected function isAllowedDomain(string $host): bool
+    {
+        if ($this->allowedDomains === null) {
+            return true;
+        }
+
+        foreach ($this->allowedDomains as $allowedDomain) {
+            if ($host === $allowedDomain || Str::endsWith($host, '.'.$allowedDomain)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string>|string|null  $configured
+     * @return array<int, string>|null
+     */
+    protected function normalizeAllowedDomains(array|string|null $configured): ?array
+    {
+        if ($configured === null) {
+            return null;
+        }
+
+        if (is_string($configured)) {
+            $configured = explode(',', $configured);
+        }
+
+        if (! is_array($configured)) {
+            return null;
+        }
+
+        $domains = array_values(array_filter(array_map(
+            static function (mixed $domain): ?string {
+                $value = strtolower(trim((string) $domain));
+                $trimmed = ltrim($value, '.');
+
+                return $trimmed !== '' ? $trimmed : null;
+            },
+            $configured
+        )));
+
+        return $domains;
+    }
+
+    protected function allowedDomainsDescription(): string
+    {
+        if ($this->allowedDomains === null) {
+            return 'any domain';
+        }
+
+        if ($this->allowedDomains === []) {
+            return 'none';
+        }
+
+        return implode(', ', $this->allowedDomains);
     }
 }

@@ -39,7 +39,6 @@ Table: `ai_prompts`
 | `version`           | Int version (enforce uniqueness per assistant in code)      |
 | `label`             | Optional label                                              |
 | `system_prompt`     | Text content                                                |
-| `variables_schema`  | JSON schema describing variables                            |
 | `is_active`         | Boolean                                                     |
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                    |
 

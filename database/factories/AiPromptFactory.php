@@ -27,10 +27,6 @@ class AiPromptFactory extends Factory
             'version' => $this->faker->unique()->numberBetween(1, 2_147_483_647),
             'label' => $this->faker->optional()->sentence(3),
             'system_prompt' => $this->faker->paragraphs(2, true),
-            'variables_schema' => $this->faker->optional()->randomElement([
-                ['type' => 'object', 'properties' => ['topic' => ['type' => 'string']]],
-                ['type' => 'object', 'properties' => ['priority' => ['type' => 'integer']]],
-            ]),
             'is_active' => $this->faker->boolean(90),
         ];
     }

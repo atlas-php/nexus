@@ -127,6 +127,42 @@ class WebSearchToolTest extends TestCase
         $this->assertSame(AiThreadStatus::OPEN, $summaryThread->status);
     }
 
+    public function test_it_rejects_disallowed_domains(): void
+    {
+        config()->set('atlas-nexus.tools.options.web_search.allowed_domains', ['example.com']);
+
+        $tool = $this->app->make(WebSearchTool::class);
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://not-allowed.test/path']);
+
+        $this->assertStringContainsString('Error, this domain is not allowed to be searched', $response->message());
+
+        $meta = $response->meta();
+        $this->assertTrue((bool) ($meta['error'] ?? false));
+        $this->assertSame('not-allowed.test', $meta['domain']);
+        $this->assertSame('https://not-allowed.test/path', $meta['url']);
+    }
+
+    public function test_it_includes_allowed_domains_in_description_and_respects_configuration(): void
+    {
+        config()->set('atlas-nexus.tools.options.web_search.allowed_domains', ['example.com', 'atlasphp.com']);
+
+        Http::fake([
+            'https://example.com' => Http::response('<html><body><p>Allowed domain content.</p></body></html>', 200),
+        ]);
+
+        $tool = $this->app->make(WebSearchTool::class);
+
+        $this->assertStringContainsString('Allowed domains: example.com, atlasphp.com.', $tool->description());
+
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $this->assertStringContainsString('Fetched 1 website', $response->message());
+    }
+
     protected function createState(): ThreadState
     {
         $assistant = AiAssistant::factory()->create([
