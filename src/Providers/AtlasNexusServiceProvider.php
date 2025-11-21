@@ -43,7 +43,6 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(TextRequestFactory::class, static fn (): TextRequestFactory => new TextRequestFactory);
 
         $this->app->singleton(NexusManager::class, static fn ($app): NexusManager => new NexusManager(
-            $app['config'],
             $app->make(TextRequestFactory::class),
         ));
 

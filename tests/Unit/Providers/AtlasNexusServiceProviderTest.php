@@ -30,7 +30,6 @@ class AtlasNexusServiceProviderTest extends TestCase
 
     public function test_default_configuration_is_available(): void
     {
-        $this->assertSame('default', config('atlas-nexus.default_pipeline'));
         $this->assertNull(config('atlas-nexus.responses.queue'));
     }
 

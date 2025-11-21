@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\NullOutput;
 /**
  * Class NexusSeedCommandTest
  *
- * Ensures the seed command executes the configured seeder pipeline.
+ * Ensures the seed command executes configured seeders.
  */
 class NexusSeedCommandTest extends TestCase
 {

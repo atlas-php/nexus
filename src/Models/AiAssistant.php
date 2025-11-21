@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Class AiAssistant
  *
- * Represents an AI assistant definition including defaults, routing, and metadata used by Nexus pipelines.
+ * Represents an AI assistant definition including defaults, routing, and metadata used by Nexus.
  * PRD Reference: Atlas Nexus Overview — ai_assistants schema.
  *
  * @property int $id

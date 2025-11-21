@@ -5,7 +5,6 @@ Atlas Nexus centralizes AI assistants, prompts, threads, messages, tools, tool r
 ## Table of Contents
 - [System Overview](#system-overview)
 - [Core Data Tables](#core-data-tables)
-- [Pipelines & Configuration](#pipelines--configuration)
 - [Job vs Inline Execution](#job-vs-inline-execution)
 - [Seeded Built-ins](#seeded-built-ins)
 - [Multi-Tenancy Support](#multi-tenancy-support)
@@ -33,10 +32,7 @@ All tables support soft deletes unless noted otherwise. Default names are config
 
 Each table definition with fields is detailed in the linked PRDs below.
 
-## Pipelines & Configuration
-- `atlas-nexus.default_pipeline` — name of the default orchestration pipeline.
-- `atlas-nexus.pipelines` — placeholder for persona-defined pipelines.
-- `atlas-nexus.tools.memory.enabled` — toggles inclusion of the built-in memory tool in thread state.
+## Configuration
 - `atlas-nexus.tools.registry` — maps custom tool keys to handler classes.
 - `atlas-nexus.tools.options` — per-tool overrides (e.g., web search content limits, summary models).
 - `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.

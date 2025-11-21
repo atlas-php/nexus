@@ -18,7 +18,7 @@ composer require atlas-php/nexus
 ```
 
 ## Publish Configuration
-Generate `config/atlas-nexus.php` to customize table names, pipelines, tools, and future feature flags.
+Generate `config/atlas-nexus.php` to customize table names, tools, and future feature flags.
 
 ```bash
 php artisan vendor:publish --tag=atlas-nexus-config
@@ -59,7 +59,7 @@ Default seeders:
 You can add custom seeders by extending the `seeders` array in `config/atlas-nexus.php` or by calling the `NexusSeederService::extend()` method at runtime.
 
 ## Usage Entry Points
-- `Atlas\Nexus\NexusManager` — access pipeline configuration and create Prism text requests.
+- `Atlas\Nexus\NexusManager` — access Prism text requests.
 - `Atlas\Nexus\Services\Threads\ThreadMessageService` — record user messages and generate assistant responses (inline or queued).
 - `Atlas\Nexus\Services\Threads\ThreadStateService` — build state snapshots (messages, tools, memories) for LLM requests.
 

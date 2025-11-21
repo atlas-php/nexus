@@ -84,7 +84,6 @@ A Laravel sandbox lives in [`sandbox/`](./sandbox) to try Nexus + Prism flows.
 cd sandbox
 composer install
 php artisan migrate
-php artisan nexus:pipeline "Summarize today's tasks" --stream
 ```
 Use `sandbox/.env` to set DB + Prism provider keys and adjust `PRISM_MAX_STEPS` as needed.
 
