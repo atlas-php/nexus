@@ -392,10 +392,6 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
             $configured = explode(',', $configured);
         }
 
-        if (! is_array($configured)) {
-            return null;
-        }
-
         $domains = array_values(array_filter(array_map(
             static function (mixed $domain): ?string {
                 $value = strtolower(trim((string) $domain));
