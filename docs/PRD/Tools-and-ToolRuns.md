@@ -15,8 +15,10 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 - Built-in tools register themselves when enabled:
   - `memory` — save/fetch/delete thread-aware memories.
   - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant.
+  - `thread_manager` — update thread title/summary or auto-generate them from conversation context.
 - Additional tools can be registered through config (`atlas-nexus.tools.registry`) mapping `key => handler_class`.
 - Only tools with resolvable handler classes are exposed to Prism.
+- `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
 
 ## Assistant Tool Keys
 Field: `ai_assistants.tools`

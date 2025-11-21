@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Seeders;
 
 use Atlas\Nexus\Contracts\NexusSeeder;
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Support\Web\WebSummaryDefaults;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 /**
- * Class WebSearchFeatureSeeder
+ * Class WebSearchAssistantSeeder
  *
  * Seeds the built-in web summarizer assistant and prompt used by the web search tool.
  */
-class WebSearchFeatureSeeder implements NexusSeeder
+class WebSearchAssistantSeeder implements NexusSeeder
 {
     public function __construct(
         private readonly AiAssistantService $assistantService,
@@ -80,7 +79,7 @@ class WebSearchFeatureSeeder implements NexusSeeder
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
     }
 
-    protected function assistantUpdates(AiAssistant $assistant): array
+    protected function assistantUpdates(\Atlas\Nexus\Models\AiAssistant $assistant): array
     {
         $updates = [
             'name' => WebSummaryDefaults::ASSISTANT_NAME,

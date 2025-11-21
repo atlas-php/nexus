@@ -24,6 +24,10 @@ return [
             'content_limit' => 8000,
             'summary_model' => env('ATLAS_NEXUS_WEB_SUMMARY_MODEL'),
         ],
+        'thread_manager' => [
+            'enabled' => true,
+            'model' => env('ATLAS_NEXUS_THREAD_MANAGER_MODEL'),
+        ],
         'registry' => [
             // 'web_search' => \App\Tools\WebSearchTool::class,
         ],
@@ -31,7 +35,8 @@ return [
 
     'seeders' => [
         \Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder::class,
-        \Atlas\Nexus\Services\Seeders\WebSearchFeatureSeeder::class,
+        \Atlas\Nexus\Services\Seeders\WebSearchAssistantSeeder::class,
+        \Atlas\Nexus\Services\Seeders\ThreadManagerAssistantSeeder::class,
     ],
 
     'tables' => [
