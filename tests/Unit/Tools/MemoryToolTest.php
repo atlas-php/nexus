@@ -107,8 +107,60 @@ class MemoryToolTest extends TestCase
             'memory_id' => 404,
         ]);
 
-        $this->assertSame('Memory not found for this assistant or user.', $response->message());
-        $this->assertTrue($response->meta()['error']);
+        $this->assertSame('Some memories could not be removed.', $response->message());
+        $this->assertArrayHasKey(404, $response->meta()['errors']);
+    }
+
+    public function test_memory_tool_can_delete_multiple_or_suggest_ids(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-multi']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 111,
+        ]);
+
+        $tool = $this->app->make(MemoryTool::class);
+        $tool->setThreadState(new ThreadState(
+            $thread,
+            $assistant,
+            null,
+            new Collection,
+            new Collection,
+            new Collection
+        ));
+
+        $memA = AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'thread_id' => null,
+            'owner_type' => 'user',
+            'owner_id' => $thread->user_id,
+        ]);
+
+        $memB = AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'thread_id' => null,
+            'owner_type' => 'user',
+            'owner_id' => $thread->user_id,
+        ]);
+
+        $suggestion = $tool->handle([
+            'action' => 'delete',
+        ]);
+
+        $this->assertTrue($suggestion->meta()['error']);
+        $this->assertNotEmpty($suggestion->meta()['available_memories']);
+
+        $response = $tool->handle([
+            'action' => 'delete',
+            'memory_ids' => [$memA->id, $memB->id],
+        ]);
+
+        $this->assertSame('Memory removed.', $response->message());
+        $this->assertSame([], $response->meta()['errors']);
+        $this->assertTrue(in_array($memA->id, $response->meta()['removed_ids'], true));
+        $this->assertTrue(in_array($memB->id, $response->meta()['removed_ids'], true));
+        $this->assertModelMissing($memA);
+        $this->assertModelMissing($memB);
     }
 
     private function migrationPath(): string

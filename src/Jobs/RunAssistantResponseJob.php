@@ -13,6 +13,7 @@ use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Models\AiMessageService;
+use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
@@ -23,7 +24,9 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Prism\Prism\Tool;
+use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\ToolResult;
@@ -48,6 +51,7 @@ class RunAssistantResponseJob implements ShouldQueue
         ThreadStateService $threadStateService,
         AiMessageService $messageService,
         AiToolRunService $toolRunService,
+        AiToolService $toolService,
         TextRequestFactory $textRequestFactory
     ): void {
         /** @var AiMessage $assistantMessage */
@@ -103,12 +107,14 @@ class RunAssistantResponseJob implements ShouldQueue
                 throw new RuntimeException('Prism did not return a response for the assistant message.');
             }
 
-            DB::transaction(function () use ($assistantMessage, $response, $toolContext, $state, $messageService, $toolRunService): void {
+            DB::transaction(function () use ($assistantMessage, $response, $toolContext, $state, $messageService, $toolRunService, $toolService): void {
                 $toolRunIds = $this->recordToolResults(
+                    $response->toolCalls,
                     $response->toolResults,
                     $assistantMessage,
                     $toolContext['map'],
-                    $toolRunService
+                    $toolRunService,
+                    $toolService
                 );
 
                 $metadata = $assistantMessage->metadata ?? [];
@@ -191,19 +197,79 @@ class RunAssistantResponseJob implements ShouldQueue
      * @param  array<string, AiTool>  $toolMap
      * @return array<int, int>
      */
+    /**
+     * @param  ToolCall[]  $toolCalls
+     * @param  ToolResult[]  $toolResults
+     * @param  array<string, AiTool>  $toolMap
+     * @return array<int, int>
+     */
     protected function recordToolResults(
+        array $toolCalls,
         array $toolResults,
         AiMessage $assistantMessage,
         array $toolMap,
-        AiToolRunService $toolRunService
+        AiToolRunService $toolRunService,
+        AiToolService $toolService
     ): array {
         $recordedIds = [];
+        $runsByCallId = [];
 
-        foreach ($toolResults as $index => $toolResult) {
-            $tool = $toolMap[$toolResult->toolName] ?? null;
+        foreach ($toolCalls as $index => $toolCall) {
+            $tool = $toolMap[$toolCall->name]
+                ?? $toolService->query()->withTrashed()->where('slug', $toolCall->name)->first();
+
+            if ($tool !== null && method_exists($tool, 'trashed') && $tool->trashed()) {
+                $tool->restore();
+            }
 
             if ($tool === null) {
                 continue;
+            }
+
+            $run = $toolRunService->create([
+                'tool_id' => $tool->id,
+                'thread_id' => $assistantMessage->thread_id,
+                'assistant_message_id' => $assistantMessage->id,
+                'call_index' => (int) $index,
+                'input_args' => $toolCall->arguments(),
+                'status' => AiToolRunStatus::RUNNING->value,
+                'metadata' => [
+                    'tool_call_id' => $toolCall->id,
+                    'tool_call_result_id' => $toolCall->resultId ?? null,
+                ],
+            ]);
+
+            $runsByCallId[$toolCall->id] = $run;
+        }
+
+        foreach ($toolResults as $index => $toolResult) {
+            $tool = $toolMap[$toolResult->toolName]
+                ?? $toolService->query()->withTrashed()->where('slug', $toolResult->toolName)->first();
+
+            if ($tool !== null && method_exists($tool, 'trashed') && $tool->trashed()) {
+                $tool->restore();
+            }
+
+            if ($tool === null) {
+                continue;
+            }
+
+            $run = $runsByCallId[$toolResult->toolCallId] ?? null;
+
+            if ($run === null) {
+                $run = $toolRunService->create([
+                    'tool_id' => $tool->id,
+                    'thread_id' => $assistantMessage->thread_id,
+                    'assistant_message_id' => $assistantMessage->id,
+                    'call_index' => (int) $index,
+                    'input_args' => $toolResult->args,
+                    'status' => AiToolRunStatus::RUNNING->value,
+                    'response_output' => null,
+                    'metadata' => [
+                        'tool_call_id' => $toolResult->toolCallId,
+                        'tool_call_result_id' => $toolResult->toolCallResultId,
+                    ],
+                ]);
             }
 
             $responseOutput = is_array($toolResult->result)
@@ -215,15 +281,12 @@ class RunAssistantResponseJob implements ShouldQueue
                 'tool_call_result_id' => $toolResult->toolCallResultId,
             ];
 
-            $run = $toolRunService->create([
-                'tool_id' => $tool->id,
-                'thread_id' => $assistantMessage->thread_id,
-                'assistant_message_id' => $assistantMessage->id,
-                'call_index' => (int) $index,
-                'input_args' => $toolResult->args,
+            $toolRunService->update($run, [
                 'status' => AiToolRunStatus::SUCCEEDED->value,
                 'response_output' => $responseOutput,
                 'metadata' => $metadata,
+                'started_at' => $run->started_at ?? Carbon::now(),
+                'finished_at' => Carbon::now(),
             ]);
 
             $recordedIds[] = (int) $run->id;

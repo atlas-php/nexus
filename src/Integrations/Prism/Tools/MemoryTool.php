@@ -11,6 +11,7 @@ use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Prism\Prism\Schema\ArraySchema;
 use Prism\Prism\Schema\BooleanSchema;
 use Prism\Prism\Schema\EnumSchema;
 use Prism\Prism\Schema\NumberSchema;
@@ -47,6 +48,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
                 'from_date' => ['type' => 'string', 'format' => 'date-time'],
                 'to_date' => ['type' => 'string', 'format' => 'date-time'],
                 'memory_id' => ['type' => 'number', 'description' => 'Identifier of the memory to remove'],
+                'memory_ids' => ['type' => 'array', 'items' => ['type' => 'number'], 'description' => 'Array of memory IDs to remove'],
                 'metadata' => ['type' => 'object'],
             ],
             'required' => ['action'],
@@ -97,6 +99,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
             new ToolParameter(new StringSchema('from_date', 'Earliest creation date (ISO8601)', true), false),
             new ToolParameter(new StringSchema('to_date', 'Latest creation date (ISO8601)', true), false),
             new ToolParameter(new NumberSchema('memory_id', 'Memory identifier to remove', true, minimum: 1), false),
+            new ToolParameter(new ArraySchema('memory_ids', 'Memory identifiers to remove', new NumberSchema('id', 'Memory id')), false),
             new ToolParameter(new ObjectSchema('metadata', 'Optional metadata to store', [], [], allowAdditionalProperties: true, nullable: true), false),
         ];
     }
@@ -186,20 +189,43 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function handleDelete(array $arguments): ToolResponse
     {
-        $memoryId = (int) ($arguments['memory_id'] ?? 0);
+        $ids = $this->collectIds($arguments);
 
-        if ($memoryId <= 0) {
-            return $this->output('A valid memory_id is required to remove a memory.', ['error' => true]);
+        if ($ids === []) {
+            $available = $this->memoryService->listForThread($this->state->assistant, $this->state->thread);
+
+            return $this->output(
+                'Provide memory_id or memory_ids to delete. Use action=fetch first to list memories with their IDs.',
+                [
+                    'error' => true,
+                    'available_memories' => $this->serializeMemories($available),
+                ]
+            );
         }
 
-        $this->memoryService->removeForThread(
-            $this->state->assistant,
-            $this->state->thread,
-            $memoryId
-        );
+        $removed = [];
+        $errors = [];
 
-        return $this->output('Memory removed.', [
-            'memory_id' => $memoryId,
+        foreach ($ids as $id) {
+            try {
+                $this->memoryService->removeForThread(
+                    $this->state->assistant,
+                    $this->state->thread,
+                    $id
+                );
+                $removed[] = $id;
+            } catch (RuntimeException $exception) {
+                $errors[$id] = $exception->getMessage();
+            }
+        }
+
+        $message = $errors === []
+            ? 'Memory removed.'
+            : 'Some memories could not be removed.';
+
+        return $this->output($message, [
+            'removed_ids' => $removed,
+            'errors' => $errors,
         ]);
     }
 
@@ -253,5 +279,30 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         }
 
         return Carbon::parse($value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<int, int>
+     */
+    protected function collectIds(array $arguments): array
+    {
+        $ids = [];
+
+        if (isset($arguments['memory_id']) && $arguments['memory_id'] !== null) {
+            $ids[] = (int) $arguments['memory_id'];
+        }
+
+        if (isset($arguments['memory_ids']) && is_array($arguments['memory_ids'])) {
+            foreach ($arguments['memory_ids'] as $id) {
+                $intId = (int) $id;
+
+                if ($intId > 0) {
+                    $ids[] = $intId;
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
     }
 }

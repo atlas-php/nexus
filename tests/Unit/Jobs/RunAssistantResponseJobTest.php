@@ -141,7 +141,8 @@ class RunAssistantResponseJobTest extends TestCase
 
         $toolRun = AiToolRun::first();
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
-        $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
+        $status = $toolRun->status instanceof AiToolRunStatus ? $toolRun->status->value : (string) $toolRun->status;
+        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $status);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
         $this->assertSame($tool->id, $toolRun->tool_id);
         $this->assertSame(['events' => 2], $toolRun->response_output);
@@ -229,7 +230,9 @@ class RunAssistantResponseJobTest extends TestCase
             steps: collect([]),
             text: 'Memory stored.',
             finishReason: FinishReason::Stop,
-            toolCalls: [],
+            toolCalls: [
+                new \Prism\Prism\ValueObjects\ToolCall('call-1', MemoryTool::SLUG, ['action' => 'save'], 'result-1'),
+            ],
             toolResults: [
                 new ToolResult('call-1', MemoryTool::SLUG, ['action' => 'save'], ['success' => true]),
             ],
@@ -248,7 +251,8 @@ class RunAssistantResponseJobTest extends TestCase
             ->first();
 
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
-        $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
+        $status = $toolRun->status instanceof AiToolRunStatus ? $toolRun->status->value : (string) $toolRun->status;
+        $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $status);
         $this->assertSame(['action' => 'save'], $toolRun->input_args);
         $this->assertSame(['success' => true], $toolRun->response_output);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);

@@ -81,19 +81,13 @@ class ThreadStateService
      */
     protected function resolveTools(AiAssistant $assistant, bool $includeMemoryTool): Collection
     {
+        $memoryTool = $includeMemoryTool
+            ? $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant)
+            : null;
+
         $tools = $assistant->tools()->where('is_active', true)->get();
 
-        if (! $includeMemoryTool) {
-            return $tools;
-        }
-
-        $memoryTool = $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant);
-
-        if ($memoryTool === null) {
-            return $tools;
-        }
-
-        if ($memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
+        if ($memoryTool !== null && $memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
             $tools->push($memoryTool);
         }
 
