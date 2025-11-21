@@ -15,6 +15,7 @@ return new class extends Migration
 
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
+            $table->unsignedBigInteger('group_id')->nullable()->index();
             $table->unsignedBigInteger('thread_id');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('role');

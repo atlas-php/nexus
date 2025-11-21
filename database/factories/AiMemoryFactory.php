@@ -25,6 +25,7 @@ class AiMemoryFactory extends Factory
         return [
             'owner_type' => $this->faker->randomElement(AiMemoryOwnerType::cases())->value,
             'owner_id' => $this->faker->numberBetween(1, 5_000),
+            'group_id' => null,
             'assistant_id' => $this->faker->optional()->numberBetween(1, 1_000),
             'thread_id' => $this->faker->optional()->numberBetween(1, 1_000),
             'source_message_id' => $this->faker->optional()->numberBetween(1, 5_000),

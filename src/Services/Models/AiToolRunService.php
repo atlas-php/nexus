@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Illuminate\Support\Carbon;
 
@@ -20,6 +21,30 @@ use Illuminate\Support\Carbon;
 class AiToolRunService extends ModelService
 {
     protected string $model = AiToolRun::class;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): AiToolRun
+    {
+        if (! array_key_exists('group_id', $data)) {
+            $threadId = $data['thread_id'] ?? null;
+
+            if (is_int($threadId) || is_string($threadId)) {
+                /** @var AiThread|null $thread */
+                $thread = AiThread::query()->find($threadId);
+
+                if ($thread !== null) {
+                    $data['group_id'] = $thread->group_id;
+                }
+            }
+        }
+
+        /** @var AiToolRun $run */
+        $run = parent::create($data);
+
+        return $run;
+    }
 
     public function markStatus(AiToolRun $run, AiToolRunStatus $status): AiToolRun
     {

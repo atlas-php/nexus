@@ -7,6 +7,7 @@ namespace Atlas\Nexus\Services\Models;
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiMessage;
+use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,19 @@ use Illuminate\Support\Facades\DB;
 class AiMessageService extends ModelService
 {
     protected string $model = AiMessage::class;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): AiMessage
+    {
+        $data = $this->applyGroupId($data);
+
+        /** @var AiMessage $message */
+        $message = parent::create($data);
+
+        return $message;
+    }
 
     public function markStatus(AiMessage $message, AiMessageStatus $status, ?string $failedReason = null): AiMessage
     {
@@ -45,5 +59,31 @@ class AiMessageService extends ModelService
         }
 
         return parent::delete($message, $force);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function applyGroupId(array $data): array
+    {
+        if (array_key_exists('group_id', $data)) {
+            return $data;
+        }
+
+        $threadId = $data['thread_id'] ?? null;
+
+        if (! is_int($threadId) && ! is_string($threadId)) {
+            return $data;
+        }
+
+        /** @var AiThread|null $thread */
+        $thread = AiThread::query()->find($threadId);
+
+        if ($thread !== null && $thread->group_id !== null) {
+            $data['group_id'] = $thread->group_id;
+        }
+
+        return $data;
     }
 }

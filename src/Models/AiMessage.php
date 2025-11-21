@@ -23,6 +23,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int $id
  * @property int $thread_id
  * @property int|null $user_id
+ * @property int|null $group_id
  * @property AiMessageRole $role
  * @property string $content
  * @property AiMessageContentType $content_type
@@ -52,6 +53,7 @@ class AiMessage extends AtlasModel
     protected $casts = [
         'thread_id' => 'int',
         'user_id' => 'int',
+        'group_id' => 'int',
         'sequence' => 'int',
         'status' => AiMessageStatus::class,
         'tokens_in' => 'int',

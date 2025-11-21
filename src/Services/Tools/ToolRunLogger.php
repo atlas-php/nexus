@@ -39,6 +39,7 @@ class ToolRunLogger
         $run = $this->toolRunService->create([
             'tool_id' => $tool->id,
             'thread_id' => $state->thread->id,
+            'group_id' => $state->thread->group_id,
             'assistant_message_id' => $assistantMessageId,
             'call_index' => $callIndex,
             'input_args' => $arguments,

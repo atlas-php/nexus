@@ -54,6 +54,7 @@ class ThreadMessageService
         $userMessage = $this->messageService->create([
             'thread_id' => $thread->id,
             'user_id' => $userId,
+            'group_id' => $thread->group_id,
             'role' => AiMessageRole::USER->value,
             'content' => $content,
             'content_type' => $contentType->value,
@@ -65,6 +66,7 @@ class ThreadMessageService
         $assistantMessage = $this->messageService->create([
             'thread_id' => $thread->id,
             'user_id' => null,
+            'group_id' => $thread->group_id,
             'role' => AiMessageRole::ASSISTANT->value,
             'content' => '',
             'content_type' => AiMessageContentType::TEXT->value,

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property AiMemoryOwnerType $owner_type
  * @property int $owner_id
+ * @property int|null $group_id
  * @property int|null $assistant_id
  * @property int|null $thread_id
  * @property int|null $source_message_id
@@ -43,6 +44,7 @@ class AiMemory extends AtlasModel
      */
     protected $casts = [
         'owner_id' => 'int',
+        'group_id' => 'int',
         'assistant_id' => 'int',
         'thread_id' => 'int',
         'source_message_id' => 'int',

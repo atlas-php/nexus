@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * PRD Reference: Atlas Nexus Overview — ai_tool_runs schema.
  *
  * @property int $id
+ * @property int|null $group_id
  * @property int $tool_id
  * @property int $thread_id
  * @property int $assistant_message_id
@@ -45,6 +46,7 @@ class AiToolRun extends AtlasModel
      * @var array<string, string>
      */
     protected $casts = [
+        'group_id' => 'int',
         'tool_id' => 'int',
         'thread_id' => 'int',
         'assistant_message_id' => 'int',

@@ -28,6 +28,7 @@ class AiToolRunFactory extends Factory
         return [
             'tool_id' => $this->faker->numberBetween(1, 1_000),
             'thread_id' => $this->faker->numberBetween(1, 1_000),
+            'group_id' => null,
             'assistant_message_id' => $this->faker->numberBetween(1, 5_000),
             'call_index' => $this->faker->numberBetween(0, 10),
             'input_args' => ['query' => $this->faker->sentence(3)],

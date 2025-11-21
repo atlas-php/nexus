@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiThreadStatus;
@@ -225,5 +226,74 @@ class AiModelServiceTest extends TestCase
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';
+    }
+
+    public function test_group_id_propagates_to_related_records(): void
+    {
+        $assistantService = $this->app->make(AiAssistantService::class);
+        $threadService = $this->app->make(AiThreadService::class);
+        $messageService = $this->app->make(AiMessageService::class);
+        $memoryService = $this->app->make(AiMemoryService::class);
+        $toolService = $this->app->make(AiToolService::class);
+        $toolRunService = $this->app->make(AiToolRunService::class);
+
+        /** @var array<string, mixed> $assistantData */
+        $assistantData = AiAssistant::factory()->raw(['slug' => 'grouped']);
+        $assistant = $assistantService->create($assistantData);
+
+        /** @var array<string, mixed> $threadData */
+        $threadData = AiThread::factory()->raw([
+            'assistant_id' => $assistant->id,
+            'user_id' => 11,
+            'status' => AiThreadStatus::OPEN->value,
+            'group_id' => 99,
+        ]);
+        $thread = $threadService->create($threadData);
+
+        $message = $messageService->create([
+            'thread_id' => $thread->id,
+            'user_id' => $thread->user_id,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'hello',
+            'content_type' => AiMessageContentType::TEXT->value,
+            'sequence' => 1,
+            'status' => \Atlas\Nexus\Enums\AiMessageStatus::COMPLETED->value,
+        ]);
+
+        $this->assertSame(99, $message->group_id);
+
+        $memory = $memoryService->saveForThread(
+            $assistant,
+            $thread,
+            'fact',
+            'Remember this.',
+            AiMemoryOwnerType::USER
+        );
+
+        $this->assertSame(99, $memory->group_id);
+
+        /** @var array<string, mixed> $toolData */
+        $toolData = AiTool::factory()->raw(['slug' => 'grouped-tool']);
+        $tool = $toolService->create($toolData);
+        $assistantMessage = $messageService->create([
+            'thread_id' => $thread->id,
+            'user_id' => null,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => 'response',
+            'content_type' => AiMessageContentType::TEXT->value,
+            'sequence' => 2,
+            'status' => \Atlas\Nexus\Enums\AiMessageStatus::PROCESSING->value,
+        ]);
+
+        $toolRun = $toolRunService->create([
+            'tool_id' => $tool->id,
+            'thread_id' => $thread->id,
+            'assistant_message_id' => $assistantMessage->id,
+            'call_index' => 0,
+            'input_args' => [],
+            'status' => AiToolRunStatus::RUNNING->value,
+        ]);
+
+        $this->assertSame(99, $toolRun->group_id);
     }
 }

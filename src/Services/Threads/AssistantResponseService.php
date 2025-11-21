@@ -218,6 +218,7 @@ class AssistantResponseService
             $run = $this->toolRunService->create([
                 'tool_id' => $tool->id,
                 'thread_id' => $assistantMessage->thread_id,
+                'group_id' => $assistantMessage->group_id,
                 'assistant_message_id' => $assistantMessage->id,
                 'call_index' => (int) $index,
                 'input_args' => $toolCall->arguments(),
@@ -249,6 +250,7 @@ class AssistantResponseService
                 $run = $this->toolRunService->create([
                     'tool_id' => $tool->id,
                     'thread_id' => $assistantMessage->thread_id,
+                    'group_id' => $assistantMessage->group_id,
                     'assistant_message_id' => $assistantMessage->id,
                     'call_index' => (int) $index,
                     'input_args' => $toolResult->args,

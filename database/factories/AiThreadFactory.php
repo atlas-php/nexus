@@ -26,6 +26,7 @@ class AiThreadFactory extends Factory
         return [
             'assistant_id' => $this->faker->numberBetween(1, 1_000),
             'user_id' => $this->faker->numberBetween(1, 5_000),
+            'group_id' => $this->faker->optional()->numberBetween(1, 100),
             'type' => $this->faker->randomElement(AiThreadType::cases())->value,
             'parent_thread_id' => $this->faker->optional()->numberBetween(1, 500),
             'parent_tool_run_id' => $this->faker->optional()->numberBetween(1, 500),

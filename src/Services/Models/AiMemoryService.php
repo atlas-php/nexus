@@ -31,6 +31,18 @@ class AiMemoryService extends ModelService
      */
     public function create(array $data): AiMemory
     {
+        if (! array_key_exists('group_id', $data)) {
+            $threadId = $data['thread_id'] ?? null;
+
+            if (is_int($threadId) || is_string($threadId)) {
+                $thread = \Atlas\Nexus\Models\AiThread::query()->find($threadId);
+
+                if ($thread !== null) {
+                    $data['group_id'] = $thread->group_id;
+                }
+            }
+        }
+
         /** @var AiMemory $memory */
         $memory = parent::create($data);
 
@@ -62,6 +74,7 @@ class AiMemoryService extends ModelService
             'owner_id' => $resolvedOwnerId,
             'assistant_id' => $assistant->id,
             'thread_id' => $threadScoped ? $thread->id : null,
+            'group_id' => $thread->group_id,
             'source_message_id' => $sourceMessageId,
             'source_tool_run_id' => $sourceToolRunId,
             'kind' => $kind,

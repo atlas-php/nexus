@@ -22,6 +22,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int $id
  * @property int $assistant_id
  * @property int $user_id
+ * @property int|null $group_id
  * @property AiThreadType $type
  * @property int|null $parent_thread_id
  * @property int|null $parent_tool_run_id
@@ -49,6 +50,7 @@ class AiThread extends AtlasModel
     protected $casts = [
         'assistant_id' => 'int',
         'user_id' => 'int',
+        'group_id' => 'int',
         'parent_thread_id' => 'int',
         'parent_tool_run_id' => 'int',
         'prompt_id' => 'int',
