@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Models;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Database\QueryException;
 
@@ -83,20 +81,13 @@ class AiAssistantTest extends TestCase
             'prompt_id' => $prompt->id,
         ]);
 
-        /** @var AiTool $tool */
-        $tool = AiTool::factory()->create();
-        AiAssistantTool::factory()->create([
-            'assistant_id' => $assistant->id,
-            'tool_id' => $tool->id,
-        ]);
-
+        $assistant->update(['tools' => ['memory', 'search']]);
         $assistant->refresh();
 
         $this->assertTrue($assistant->prompts()->whereKey($prompt->id)->exists());
         $this->assertTrue($assistant->threads()->whereKey($thread->id)->exists());
-        $this->assertTrue($assistant->assistantTools()->where('tool_id', $tool->id)->exists());
-        $this->assertTrue($assistant->tools()->whereKey($tool->id)->exists());
         $this->assertTrue($assistant->currentPrompt?->is($prompt));
+        $this->assertSame(['memory', 'search'], $assistant->tools);
     }
 
     private function migrationPath(): string

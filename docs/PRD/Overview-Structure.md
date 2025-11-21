@@ -15,6 +15,7 @@
 - max_output_tokens   int nullable
 - current_prompt_id   bigint nullable     -- no FK
 - is_active           boolean default 1
+- tools               json nullable       -- array of tool keys
 - metadata            json nullable
 - created_at
 - updated_at
@@ -88,38 +89,6 @@ Every message in a thread.
 -- INDEX(thread_id, sequence)
 ```
 
-### `ai_tools`
-
-Registry of all available tools.
-
-```
-- id                  bigint PK
-- slug                string unique
-- name                string
-- description         text nullable
-- schema              json              -- JSON schema for arguments
-- handler_class       string            -- Laravel class that implements the tool
-- is_active           boolean default 1
-- created_at
-- updated_at
-- deleted_at
-```
-
-### `ai_assistant_tool`
-
-Which tools each assistant can use (pivot table).
-
-```
-- id                  bigint PK
-- assistant_id        bigint        -- no FK
-- tool_id             bigint        -- no FK
-- config              json nullable
-- created_at
-- updated_at
-
--- unique pair (assistant_id, tool_id)
-```
-
 ### `ai_tool_runs`
 
 Actual execution logs for tools.
@@ -127,7 +96,7 @@ Each tool run is related to the assistant message that invoked it and may use it
 
 ```
 - id                          bigint PK
-- tool_id                     bigint              -- no FK
+- tool_key                    string              -- tool registry key
 - thread_id                   bigint              -- no FK (user or tool thread where this run is logged)
 - assistant_message_id        bigint              -- no FK (the assistant message that created tool calls)
 - call_index                  int                 -- 0,1,2... within the assistant response

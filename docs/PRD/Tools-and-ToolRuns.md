@@ -1,44 +1,32 @@
 # PRD — Tools & Tool Runs
 
-Defines how Nexus registers tools, attaches them to assistants, and records execution results.
+Defines how Nexus registers code-defined tools, assigns them to assistants, and records execution results.
 
 ## Table of Contents
 - [Tools](#tools)
-- [Assistant Tools Pivot](#assistant-tools-pivot)
+- [Assistant Tool Keys](#assistant-tool-keys)
 - [Tool Runs](#tool-runs)
 - [Execution Semantics](#execution-semantics)
 - [Services](#services)
 
 ## Tools
-Table: `ai_tools`
+Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `web_search`), and is registered inside `ToolRegistry`.
 
-| Field            | Description                                                |
-|------------------|------------------------------------------------------------|
-| `id`             | Primary key                                                |
-| `slug`           | Unique tool identifier                                     |
-| `name`           | Display name                                               |
-| `description`    | Optional description                                       |
-| `schema`         | JSON schema for tool arguments                             |
-| `handler_class`  | Fully-qualified Laravel class implementing `NexusTool`     |
-| `is_active`      | Boolean                                                    |
-| `created_at/updated_at/deleted_at` | Timestamps + soft deletes                |
+- Built-in tools register themselves (e.g., Memory) when enabled via `atlas-nexus.tools.memory.enabled`.
+- Additional tools can be registered through config (`atlas-nexus.tools.registry`) mapping `key => handler_class`.
+- Only tools with resolvable handler classes are exposed to Prism.
+
+## Assistant Tool Keys
+Field: `ai_assistants.tools`
+
+| Field  | Description                                                   |
+|--------|---------------------------------------------------------------|
+| `tools` | JSON array of tool keys allowed for the assistant (nullable) |
 
 Rules:
-- Tools with missing classes or inactive status are excluded from thread state.
-- Built-in Memory tool is seeded via `atlas:nexus:seed` and attached when active.
-
-## Assistant Tools Pivot
-Table: `ai_assistant_tool`
-
-| Field           | Description                                  |
-|-----------------|----------------------------------------------|
-| `id`            | Primary key                                  |
-| `assistant_id`  | Assistant id                                 |
-| `tool_id`       | Tool id                                      |
-| `config`        | JSON config                                  |
-| `created_at/updated_at` | Timestamps                           |
-
-Uniqueness (`assistant_id`, `tool_id`) enforced in code.
+- Keys are normalized to unique strings; empty/null means no tools.
+- Memory key is added during seeding when memory is enabled.
+- Thread state filters keys against the registered tool set.
 
 ## Tool Runs
 Table: `ai_tool_runs`
@@ -47,7 +35,7 @@ Table: `ai_tool_runs`
 |-------------------------|-----------------------------------------------------------------|
 | `id`                    | Primary key                                                     |
 | `group_id`              | Optional tenant/account grouping (inherits from thread)         |
-| `tool_id`               | Tool id                                                         |
+| `tool_key`              | Registered tool key                                             |
 | `thread_id`             | Thread owning the run                                           |
 | `assistant_message_id`  | Assistant message that initiated the call                       |
 | `call_index`            | Int call order within response                                  |
@@ -59,17 +47,17 @@ Table: `ai_tool_runs`
 | `started_at/finished_at`| Nullable timestamps                                             |
 | `created_at/updated_at` | Timestamps                                                      |
 
-Indexes: `tool_id`, `thread_id`, `assistant_message_id`.
+Indexes: `tool_key`, `thread_id`, `assistant_message_id`.
 
 ## Execution Semantics
-- `ThreadStateService` prepares tools by instantiating handlers, injecting thread state, and wiring logging when handlers implement `ToolRunLoggingAware`.
+- `ThreadStateService` collects assistant tool keys, resolves registered tool handlers, injects thread state, and wires logging when handlers implement `ToolRunLoggingAware`.
 - `AssistantResponseService` records tool calls and results, creating/updating `ai_tool_runs`.
 - `ToolRunLogger` can create and complete runs from within tool handlers.
 - Runs inherit `group_id` from the parent thread when omitted in payloads.
 
 ## Services
-- `AiToolService` — CRUD for tool records.
-- `AiAssistantToolService` — CRUD for assistant ↔ tool mappings.
+- `ToolRegistry` — maintains available tool definitions (built-ins + configured mappings).
+- `AiAssistantService` — CRUD + helpers for syncing assistant tool keys.
 - `AiToolRunService` — CRUD + status helpers; auto-applies `group_id` from thread when absent.
-- `MemoryFeatureSeeder` — seeds Memory tool and attaches to assistants.
-- `ThreadStateService` — filters tools to active, class-resolvable handlers.
+- `MemoryFeatureSeeder` — adds the Memory tool key to assistants when enabled.
+- `ThreadStateService` — resolves registered tools matching an assistant's configured keys.

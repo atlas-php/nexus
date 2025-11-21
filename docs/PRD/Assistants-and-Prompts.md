@@ -24,6 +24,7 @@ Table: `ai_assistants`
 | `max_output_tokens`  | Nullable int (token cap)                                    |
 | `current_prompt_id`  | Nullable FK to active prompt (no DB constraint)             |
 | `is_active`          | Boolean                                                     |
+| `tools`              | JSON array of allowed tool keys (nullable)                  |
 | `metadata`           | JSON metadata                                               |
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                     |
 
@@ -48,23 +49,14 @@ Table: `ai_prompts`
 - Prompt selection may be overridden per thread via `prompt_id`.
 
 ## Assistant ↔ Tool Mapping
-Pivot table: `ai_assistant_tool`
-
-| Field           | Description                              |
-|-----------------|------------------------------------------|
-| `id`            | Primary key                              |
-| `assistant_id`  | Assistant id                             |
-| `tool_id`       | Tool id                                  |
-| `config`        | JSON configuration per assistant ↔ tool  |
-| `created_at/updated_at` | Timestamps                       |
+Assistant tool availability is configured via the `ai_assistants.tools` JSON array of tool keys (e.g., `["memory","web_search"]`).
 
 Rules:
-- Unique pair (`assistant_id`, `tool_id`) enforced in code.
-- Built-in tools (e.g., Memory) are attached via seeders when enabled.
-- Tools marked inactive or missing handler classes are excluded from thread state.
+- Keys are normalized to unique strings; null/empty means no tools.
+- Seeders add the Memory tool key when enabled.
+- Thread state only exposes tool keys that exist in the registered tool set.
 
 ## Service Responsibilities
-- `AiAssistantService` — CRUD + tool attach/detach helpers.
+- `AiAssistantService` — CRUD + tool key sync helpers.
 - `AiPromptService` — CRUD + versioning constraints enforced in code.
-- `AiAssistantToolService` — CRUD for pivot records.
-- `NexusSeederService` (`MemoryFeatureSeeder`) — creates Memory tool and attaches to assistants when active.
+- `NexusSeederService` (`MemoryFeatureSeeder`) — adds the Memory tool key to assistants when active.

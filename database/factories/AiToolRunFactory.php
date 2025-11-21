@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * Class AiToolRunFactory
  *
- * Produces tool run records covering queued, running, and completed lifecycle states.
+ * Produces tool run records covering queued, running, and completed lifecycle states keyed by tool name.
  * PRD Reference: Atlas Nexus Overview — ai_tool_runs schema.
  *
  * @extends Factory<AiToolRun>
@@ -26,7 +26,7 @@ class AiToolRunFactory extends Factory
         $status = $this->faker->randomElement(AiToolRunStatus::cases());
 
         return [
-            'tool_id' => $this->faker->numberBetween(1, 1_000),
+            'tool_key' => $this->faker->randomElement(['memory', 'calendar_lookup']),
             'thread_id' => $this->faker->numberBetween(1, 1_000),
             'group_id' => null,
             'assistant_message_id' => $this->faker->numberBetween(1, 5_000),

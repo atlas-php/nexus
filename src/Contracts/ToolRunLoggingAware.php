@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Contracts;
 
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 
 /**
@@ -16,7 +15,7 @@ interface ToolRunLoggingAware
 {
     public function setToolRunLogger(ToolRunLogger $logger): void;
 
-    public function setToolModel(AiTool $tool): void;
+    public function setToolKey(string $toolKey): void;
 
     public function setAssistantMessageId(?int $assistantMessageId): void;
 }

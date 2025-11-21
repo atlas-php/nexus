@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property int $id
  * @property int|null $group_id
- * @property int $tool_id
+ * @property string $tool_key
  * @property int $thread_id
  * @property int $assistant_message_id
  * @property int $call_index
@@ -47,7 +47,7 @@ class AiToolRun extends AtlasModel
      */
     protected $casts = [
         'group_id' => 'int',
-        'tool_id' => 'int',
+        'tool_key' => 'string',
         'thread_id' => 'int',
         'assistant_message_id' => 'int',
         'call_index' => 'int',
@@ -64,17 +64,6 @@ class AiToolRun extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_tool_runs';
-    }
-
-    /**
-     * @return BelongsTo<AiTool, self>
-     */
-    public function tool(): BelongsTo
-    {
-        /** @var BelongsTo<AiTool, self> $relation */
-        $relation = $this->belongsTo(AiTool::class, 'tool_id');
-
-        return $relation;
     }
 
     /**

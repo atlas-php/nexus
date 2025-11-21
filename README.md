@@ -41,7 +41,7 @@ Full steps: [Install Guide](./docs/Install.md)
 ## Assistants & Prompts
 - Assistants live in `ai_assistants`; prompts in `ai_prompts` (versioned per assistant).
 - Set `current_prompt_id` to pick the active prompt; threads can override via `prompt_id`.
-- Attach tools through `ai_assistant_tool` mappings.
+- Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
 
 See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
 
@@ -53,9 +53,9 @@ See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
 See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 
 ## Tools & Tool Runs
-- Tools (`ai_tools`) point to a handler class implementing `NexusTool`.
-- Assistant/tool mappings drive availability; inactive or missing handlers are excluded.
-- Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, and `group_id`.
+- Tools are code-defined (`NexusTool` implementations) and registered by key via `ToolRegistry`.
+- Assistant tool keys and feature flags determine availability; missing handlers are skipped.
+- Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, `group_id`, and `tool_key`.
 
 See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
@@ -72,7 +72,7 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
 
 ## Seeding Built-ins
 - Run `php artisan atlas:nexus:seed` after migrations.
-- Default seeder: `MemoryFeatureSeeder` (creates Memory tool and attaches when enabled).
+- Default seeder: `MemoryFeatureSeeder` (adds the Memory tool key to assistants when enabled).
 - Extend via `config/atlas-nexus.php` `seeders` array or `NexusSeederService::extend()` at runtime.
 
 ## Sandbox

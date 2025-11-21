@@ -6,16 +6,12 @@ namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantTool;
-use Atlas\Nexus\Models\AiTool;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Class AiAssistantService
  *
- * Provides CRUD helpers for AI assistants and manages tool associations and prompt linkage.
- * PRD Reference: Atlas Nexus Overview — ai_assistants and ai_assistant_tool schemas.
+ * Provides CRUD helpers for AI assistants and manages tool key assignments and prompt linkage.
+ * PRD Reference: Atlas Nexus Overview — ai_assistants schema.
  *
  * @extends ModelService<AiAssistant>
  */
@@ -24,46 +20,38 @@ class AiAssistantService extends ModelService
     protected string $model = AiAssistant::class;
 
     /**
-     * Attach or update tool configuration for an assistant.
+     * Sync allowed tool keys for an assistant, normalizing unique values.
      *
-     * @param  array<string, mixed>  $config
+     * @param  array<int, string>  $tools
      */
-    public function attachTool(AiAssistant $assistant, AiTool $tool, array $config = []): AiAssistantTool
+    public function syncTools(AiAssistant $assistant, array $tools): AiAssistant
     {
-        /** @var AiAssistantTool $mapping */
-        $mapping = AiAssistantTool::query()->updateOrCreate(
-            [
-                'assistant_id' => $assistant->id,
-                'tool_id' => $tool->id,
-            ],
-            [
-                'config' => $config ?: null,
-            ]
-        );
+        $normalized = array_values(array_unique(array_filter(array_map(
+            static fn ($toolKey): string => (string) $toolKey,
+            $tools
+        ), static fn (string $toolKey): bool => $toolKey !== '')));
 
-        return $mapping;
+        /** @var AiAssistant $updated */
+        $updated = $this->update($assistant, ['tools' => $normalized ?: null]);
+
+        return $updated;
     }
 
-    public function detachTool(AiAssistant $assistant, AiTool $tool): bool
+    public function addTool(AiAssistant $assistant, string $toolKey): AiAssistant
     {
-        return AiAssistantTool::query()
-            ->where([
-                'assistant_id' => $assistant->id,
-                'tool_id' => $tool->id,
-            ])
-            ->delete() > 0;
+        $tools = $assistant->tools ?? [];
+        $tools[] = $toolKey;
+
+        return $this->syncTools($assistant, $tools);
     }
 
-    public function delete(Model $assistant, bool $force = false): bool
+    public function removeTool(AiAssistant $assistant, string $toolKey): AiAssistant
     {
-        $assistantId = $assistant->getKey();
+        $filtered = array_values(array_filter(
+            array_map(static fn ($key): string => (string) $key, $assistant->tools ?? []),
+            static fn (string $key): bool => $key !== $toolKey
+        ));
 
-        if (is_int($assistantId) || is_string($assistantId)) {
-            DB::transaction(static function () use ($assistantId): void {
-                AiAssistantTool::query()->where('assistant_id', $assistantId)->delete();
-            });
-        }
-
-        return parent::delete($assistant, $force);
+        return $this->syncTools($assistant, $filtered);
     }
 }

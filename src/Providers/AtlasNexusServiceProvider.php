@@ -8,19 +8,17 @@ use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Services\Models\AiAssistantToolService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Services\Seeders\MemoryFeatureSeeder;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
-use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
+use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 
 /**
@@ -57,15 +55,13 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AiPromptService::class);
         $this->app->singleton(AiThreadService::class);
         $this->app->singleton(AiMessageService::class);
-        $this->app->singleton(AiToolService::class);
-        $this->app->singleton(AiAssistantToolService::class);
         $this->app->singleton(AiToolRunService::class);
         $this->app->singleton(AiMemoryService::class);
+        $this->app->singleton(ToolRegistry::class);
         $this->app->singleton(ToolRunLogger::class);
         $this->app->singleton(AssistantResponseService::class);
         $this->app->singleton(ThreadStateService::class);
         $this->app->singleton(ThreadMessageService::class);
-        $this->app->singleton(MemoryToolRegistrar::class);
         $this->app->singleton(NexusSeederService::class);
         $this->app->singleton(MemoryFeatureSeeder::class);
     }

@@ -16,9 +16,7 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Models\AiToolRun;
-use Atlas\Nexus\Services\Models\AiAssistantToolService;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
@@ -56,9 +54,14 @@ class RunAssistantResponseJobTest extends TestCase
 
     public function test_it_updates_message_and_records_tool_runs(): void
     {
+        config()->set('atlas-nexus.tools.registry', [
+            'calendar_lookup' => StubTool::class,
+        ]);
+
         $assistant = AiAssistant::factory()->create([
             'slug' => 'job-assistant',
             'default_model' => 'gpt-4o',
+            'tools' => ['calendar_lookup'],
         ]);
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
@@ -95,17 +98,6 @@ class RunAssistantResponseJobTest extends TestCase
             'sequence' => 2,
             'status' => AiMessageStatus::PROCESSING->value,
             'content' => '',
-        ]);
-
-        $tool = AiTool::factory()->create([
-            'slug' => 'calendar_lookup',
-            'handler_class' => StubTool::class,
-        ]);
-
-        $this->app->make(AiAssistantToolService::class)->create([
-            'assistant_id' => $assistant->id,
-            'tool_id' => $tool->id,
-            'config' => [],
         ]);
 
         /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
@@ -150,7 +142,7 @@ class RunAssistantResponseJobTest extends TestCase
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
         $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $toolRun->status->value);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
-        $this->assertSame($tool->id, $toolRun->tool_id);
+        $this->assertSame('calendar_lookup', $toolRun->tool_key);
         $this->assertSame(['events' => 2], $toolRun->response_output);
         $this->assertSame(['date' => '2025-01-01'], $toolRun->input_args);
     }
@@ -239,10 +231,10 @@ class RunAssistantResponseJobTest extends TestCase
             text: 'Memory stored.',
             finishReason: FinishReason::Stop,
             toolCalls: [
-                new \Prism\Prism\ValueObjects\ToolCall('call-1', MemoryTool::SLUG, ['action' => 'save'], 'result-1'),
+                new \Prism\Prism\ValueObjects\ToolCall('call-1', MemoryTool::KEY, ['action' => 'save'], 'result-1'),
             ],
             toolResults: [
-                new ToolResult('call-1', MemoryTool::SLUG, ['action' => 'save'], ['success' => true]),
+                new ToolResult('call-1', MemoryTool::KEY, ['action' => 'save'], ['success' => true]),
             ],
             usage: new Usage(5, 10),
             meta: new Meta('res-555', 'gpt-4o'),
@@ -255,7 +247,7 @@ class RunAssistantResponseJobTest extends TestCase
         RunAssistantResponseJob::dispatchSync($assistantMessage->id);
 
         $toolRun = AiToolRun::query()
-            ->whereHas('tool', fn ($query) => $query->where('slug', MemoryTool::SLUG))
+            ->where('tool_key', MemoryTool::KEY)
             ->first();
 
         $this->assertInstanceOf(AiToolRun::class, $toolRun);

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Tools;
 
 use Atlas\Nexus\Enums\AiToolRunStatus;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Support\Chat\ThreadState;
@@ -28,7 +27,7 @@ class ToolRunLogger
      * @param  array<string, mixed>  $arguments
      */
     public function start(
-        AiTool $tool,
+        string $toolKey,
         ThreadState $state,
         int $assistantMessageId,
         int $callIndex,
@@ -37,7 +36,7 @@ class ToolRunLogger
     ): AiToolRun {
         /** @var AiToolRun $run */
         $run = $this->toolRunService->create([
-            'tool_id' => $tool->id,
+            'tool_key' => $toolKey,
             'thread_id' => $state->thread->id,
             'group_id' => $state->thread->group_id,
             'assistant_message_id' => $assistantMessageId,

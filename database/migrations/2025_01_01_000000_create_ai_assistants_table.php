@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedInteger('max_output_tokens')->nullable();
             $table->unsignedBigInteger('current_prompt_id')->nullable();
             $table->boolean('is_active')->default(true)->index();
+            $table->json('tools')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();

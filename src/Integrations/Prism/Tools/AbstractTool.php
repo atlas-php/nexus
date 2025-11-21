@@ -6,7 +6,6 @@ namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Atlas\Nexus\Contracts\NexusTool;
 use Atlas\Nexus\Contracts\ToolRunLoggingAware;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Prism\Prism\Tool as PrismTool;
 
@@ -17,7 +16,7 @@ use Prism\Prism\Tool as PrismTool;
  */
 abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
 {
-    protected ?AiTool $toolModel = null;
+    protected ?string $toolKey = null;
 
     protected ?ToolRunLogger $toolRunLogger = null;
 
@@ -38,9 +37,9 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
         $this->toolRunLogger = $logger;
     }
 
-    public function setToolModel(AiTool $tool): void
+    public function setToolKey(string $toolKey): void
     {
-        $this->toolModel = $tool;
+        $this->toolKey = $toolKey;
     }
 
     public function setAssistantMessageId(?int $assistantMessageId): void
@@ -82,7 +81,7 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
      */
     protected function logRunStart(array $arguments): ?\Atlas\Nexus\Models\AiToolRun
     {
-        if ($this->toolRunLogger === null || $this->toolModel === null || ! property_exists($this, 'state') || $this->assistantMessageId === null) {
+        if ($this->toolRunLogger === null || $this->toolKey === null || ! property_exists($this, 'state') || $this->assistantMessageId === null) {
             return null;
         }
 
@@ -94,7 +93,7 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
         }
 
         return $this->toolRunLogger->start(
-            $this->toolModel,
+            $this->toolKey,
             $state,
             $this->assistantMessageId,
             $this->nextCallIndex(),

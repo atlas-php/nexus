@@ -13,7 +13,6 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
-use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -28,7 +27,6 @@ class ThreadMessageService
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiThreadService $threadService,
-        private readonly MemoryToolRegistrar $memoryToolRegistrar,
         private readonly AssistantResponseService $assistantResponseService,
         private readonly ConfigRepository $config
     ) {}
@@ -44,8 +42,7 @@ class ThreadMessageService
         bool $dispatchResponse = true
     ): array {
         $this->ensureAssistantIsIdle($thread);
-        $assistant = $this->resolveAssistant($thread);
-        $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant);
+        $this->resolveAssistant($thread);
 
         $userId = $userId ?? $thread->user_id;
         $sequence = $this->nextSequence($thread);

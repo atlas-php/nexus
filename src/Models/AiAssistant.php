@@ -8,7 +8,6 @@ use Atlas\Core\Models\AtlasModel;
 use Atlas\Nexus\Database\Factories\AiAssistantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -28,6 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $max_output_tokens
  * @property int|null $current_prompt_id
  * @property bool $is_active
+ * @property array<int, string>|null $tools
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -53,6 +53,7 @@ class AiAssistant extends AtlasModel
         'max_output_tokens' => 'int',
         'current_prompt_id' => 'int',
         'is_active' => 'bool',
+        'tools' => 'array',
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -87,34 +88,6 @@ class AiAssistant extends AtlasModel
     }
 
     /**
-     * @return BelongsToMany<AiTool, self>
-     */
-    public function tools(): BelongsToMany
-    {
-        /** @var BelongsToMany<AiTool, self> $relation */
-        $relation = $this->belongsToMany(
-            AiTool::class,
-            $this->resolveConfiguredTableNameForPivot('ai_assistant_tool'),
-            'assistant_id',
-            'tool_id'
-        )->withPivot(['config'])
-            ->withTimestamps();
-
-        return $relation;
-    }
-
-    /**
-     * @return HasMany<AiAssistantTool, self>
-     */
-    public function assistantTools(): HasMany
-    {
-        /** @var HasMany<AiAssistantTool, self> $relation */
-        $relation = $this->hasMany(AiAssistantTool::class, 'assistant_id');
-
-        return $relation;
-    }
-
-    /**
      * @return BelongsTo<AiPrompt, self>
      */
     public function currentPrompt(): BelongsTo
@@ -128,10 +101,5 @@ class AiAssistant extends AtlasModel
     protected static function newFactory(): AiAssistantFactory
     {
         return AiAssistantFactory::new();
-    }
-
-    private function resolveConfiguredTableNameForPivot(string $tableKey): string
-    {
-        return config(sprintf('atlas-nexus.tables.%s', $tableKey), $tableKey);
     }
 }

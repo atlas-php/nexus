@@ -19,6 +19,9 @@ return [
         'memory' => [
             'enabled' => true,
         ],
+        'registry' => [
+            // 'web_search' => \App\Tools\WebSearchTool::class,
+        ],
     ],
 
     'seeders' => [
@@ -30,8 +33,6 @@ return [
         'ai_prompts' => env('ATLAS_NEXUS_TABLE_AI_PROMPTS', 'ai_prompts'),
         'ai_threads' => env('ATLAS_NEXUS_TABLE_AI_THREADS', 'ai_threads'),
         'ai_messages' => env('ATLAS_NEXUS_TABLE_AI_MESSAGES', 'ai_messages'),
-        'ai_tools' => env('ATLAS_NEXUS_TABLE_AI_TOOLS', 'ai_tools'),
-        'ai_assistant_tool' => env('ATLAS_NEXUS_TABLE_AI_ASSISTANT_TOOL', 'ai_assistant_tool'),
         'ai_tool_runs' => env('ATLAS_NEXUS_TABLE_AI_TOOL_RUNS', 'ai_tool_runs'),
         'ai_memories' => env('ATLAS_NEXUS_TABLE_AI_MEMORIES', 'ai_memories'),
     ],

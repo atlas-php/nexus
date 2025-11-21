@@ -11,7 +11,7 @@ use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
-use Atlas\Nexus\Services\Tools\MemoryToolRegistrar;
+use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Collection;
@@ -29,7 +29,7 @@ class ThreadStateService
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
-        private readonly MemoryToolRegistrar $memoryToolRegistrar,
+        private readonly ToolRegistry $toolRegistry,
         ConfigRepository $config
     ) {
         $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
@@ -37,7 +37,7 @@ class ThreadStateService
 
     public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
-        $thread->loadMissing(['assistant', 'prompt', 'assistant.currentPrompt', 'assistant.tools']);
+        $thread->loadMissing(['assistant', 'prompt', 'assistant.currentPrompt']);
 
         $assistant = $thread->assistant;
 
@@ -75,26 +75,19 @@ class ThreadStateService
     }
 
     /**
-     * @return Collection<int, \Atlas\Nexus\Models\AiTool>
+     * @return Collection<int, \Atlas\Nexus\Support\Tools\ToolDefinition>
      */
     protected function resolveTools(AiAssistant $assistant, bool $includeMemoryTool): Collection
     {
-        $memoryTool = $includeMemoryTool
-            ? $this->memoryToolRegistrar->ensureRegisteredForAssistant($assistant)
-            : null;
-
-        $tools = $assistant->tools()->where('is_active', true)->get();
+        $toolKeys = $assistant->tools ?? [];
 
         if (! $includeMemoryTool) {
-            return $tools
-                ->reject(fn ($tool) => $tool->slug === MemoryTool::SLUG || $tool->handler_class === MemoryTool::class)
-                ->values();
+            $toolKeys = array_values(array_filter(
+                $toolKeys,
+                static fn (string $key): bool => $key !== MemoryTool::KEY
+            ));
         }
 
-        if ($memoryTool !== null && $memoryTool->is_active && ! $tools->contains('id', $memoryTool->id)) {
-            $tools->push($memoryTool);
-        }
-
-        return $tools;
+        return collect($this->toolRegistry->forKeys($toolKeys));
     }
 }

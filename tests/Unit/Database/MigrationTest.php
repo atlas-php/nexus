@@ -41,6 +41,7 @@ class MigrationTest extends TestCase
             'max_output_tokens',
             'current_prompt_id',
             'is_active',
+            'tools',
             'metadata',
             'created_at',
             'updated_at',
@@ -97,31 +98,9 @@ class MigrationTest extends TestCase
             'updated_at',
         ]));
 
-        $this->assertTrue(Schema::hasColumns('ai_tools', [
-            'id',
-            'slug',
-            'name',
-            'description',
-            'schema',
-            'handler_class',
-            'is_active',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ]));
-
-        $this->assertTrue(Schema::hasColumns('ai_assistant_tool', [
-            'id',
-            'assistant_id',
-            'tool_id',
-            'config',
-            'created_at',
-            'updated_at',
-        ]));
-
         $this->assertTrue(Schema::hasColumns('ai_tool_runs', [
             'id',
-            'tool_id',
+            'tool_key',
             'thread_id',
             'assistant_message_id',
             'call_index',
@@ -169,7 +148,7 @@ class MigrationTest extends TestCase
 
         $this->assertContains('custom_ai_assistants', $tables);
         $this->assertNotContains('ai_assistants', $tables);
-        $this->assertTrue(Schema::hasTable('ai_tools'));
+        $this->assertTrue(Schema::hasTable('ai_tool_runs'));
     }
 
     private function migrationPath(): string

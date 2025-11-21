@@ -9,6 +9,7 @@ use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Prism\Prism\Schema\ArraySchema;
@@ -27,7 +28,7 @@ use Throwable;
  */
 class MemoryTool extends AbstractTool implements ThreadStateAwareTool
 {
-    public const SLUG = 'atlas_memory';
+    public const KEY = 'memory';
 
     protected ?ThreadState $state = null;
 
@@ -62,19 +63,9 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public static function toolRecordDefinition(): array
+    public static function definition(): ToolDefinition
     {
-        return [
-            'slug' => self::SLUG,
-            'name' => 'Memory Manager',
-            'description' => 'Save, recall, and remove user and assistant memories.',
-            'schema' => self::toolSchema(),
-            'handler_class' => self::class,
-            'is_active' => true,
-        ];
+        return new ToolDefinition(self::KEY, self::class);
     }
 
     public function setThreadState(ThreadState $state): void

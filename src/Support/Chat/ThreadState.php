@@ -9,7 +9,7 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
+use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Collection;
 
 /**
@@ -17,14 +17,14 @@ use Illuminate\Support\Collection;
  *
  * @property Collection<int, AiMessage> $messages
  * @property Collection<int, AiMemory> $memories
- * @property Collection<int, AiTool> $tools
+ * @property Collection<int, ToolDefinition> $tools
  */
 class ThreadState
 {
     /**
      * @param  Collection<int, AiMessage>  $messages
      * @param  Collection<int, AiMemory>  $memories
-     * @param  Collection<int, AiTool>  $tools
+     * @param  Collection<int, ToolDefinition>  $tools
      */
     public function __construct(
         public readonly AiThread $thread,

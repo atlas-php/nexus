@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Tests\Unit\Console;
 
 use Atlas\Nexus\Console\Commands\NexusSeedCommand;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
-use Atlas\Nexus\Models\AiTool;
+use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -27,7 +27,9 @@ class NexusSeedCommandTest extends TestCase
             '--realpath' => true,
         ])->run();
 
-        $this->assertSame(0, AiTool::query()->where('slug', MemoryTool::SLUG)->count());
+        /** @var AiAssistant $assistant */
+        $assistant = AiAssistant::factory()->create(['tools' => []]);
+        $this->assertSame([], $assistant->tools);
 
         $command = new NexusSeedCommand;
         $command->setLaravel($this->app);
@@ -36,7 +38,8 @@ class NexusSeedCommandTest extends TestCase
         $status = $command->run(new ArrayInput([]), new NullOutput);
         $this->assertSame(0, $status);
 
-        $this->assertSame(1, AiTool::query()->where('slug', MemoryTool::SLUG)->count());
+        $assistant->refresh();
+        $this->assertContains(MemoryTool::KEY, $assistant->tools ?? []);
     }
 
     private function migrationPath(): string

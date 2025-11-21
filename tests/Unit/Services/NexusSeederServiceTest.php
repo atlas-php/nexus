@@ -6,8 +6,6 @@ namespace Atlas\Nexus\Tests\Unit\Services;
 
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantTool;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Tests\Fixtures\DummyNexusSeeder;
 use Atlas\Nexus\Tests\TestCase;
@@ -33,22 +31,18 @@ class NexusSeederServiceTest extends TestCase
     public function test_it_seeds_memory_tool_and_is_idempotent(): void
     {
         /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create(['slug' => 'seedable']);
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'seedable',
+            'tools' => [],
+        ]);
 
         $service = $this->app->make(NexusSeederService::class);
 
         $service->run();
         $service->run();
 
-        $toolCount = AiTool::query()->where('slug', MemoryTool::SLUG)->count();
-        $this->assertSame(1, $toolCount);
-
-        $pivot = AiAssistantTool::query()
-            ->where('assistant_id', $assistant->id)
-            ->whereHas('tool', fn ($query) => $query->where('slug', MemoryTool::SLUG))
-            ->first();
-
-        $this->assertInstanceOf(AiAssistantTool::class, $pivot);
+        $assistant->refresh();
+        $this->assertContains(MemoryTool::KEY, $assistant->tools ?? []);
     }
 
     public function test_consumers_can_extend_seeders(): void

@@ -14,8 +14,6 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
-use Atlas\Nexus\Services\Models\AiAssistantToolService;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
@@ -41,7 +39,14 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_builds_thread_state_with_contextual_resources(): void
     {
-        $assistant = AiAssistant::factory()->create(['slug' => 'state-assistant']);
+        config()->set('atlas-nexus.tools.registry', [
+            'calendar_lookup' => StubTool::class,
+        ]);
+
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'state-assistant',
+            'tools' => ['calendar_lookup'],
+        ]);
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'version' => 1,
@@ -77,30 +82,20 @@ class ThreadStateServiceTest extends TestCase
             'content' => 'User prefers morning updates.',
         ]);
 
-        $tool = AiTool::factory()->create([
-            'slug' => 'calendar_lookup',
-            'handler_class' => StubTool::class,
-        ]);
-
         $this->app->make(NexusSeederService::class)->run();
-        $this->app->make(AiAssistantToolService::class)->create([
-            'assistant_id' => $assistant->id,
-            'tool_id' => $tool->id,
-            'config' => [],
-        ]);
 
         $freshThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $freshThread);
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
-        $toolSlugs = $state->tools->pluck('slug')->all();
+        $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
 
         $this->assertSame($prompt->id, $state->prompt?->id);
         $this->assertCount(1, $state->messages);
         $this->assertTrue($state->memories->contains('id', $memory->id));
-        $this->assertTrue(in_array($tool->slug, $toolSlugs, true));
-        $this->assertTrue(in_array(MemoryTool::SLUG, $toolSlugs, true), 'Available slugs: '.implode(', ', $toolSlugs));
+        $this->assertTrue(in_array('calendar_lookup', $toolKeys, true));
+        $this->assertTrue(in_array(MemoryTool::KEY, $toolKeys, true), 'Available keys: '.implode(', ', $toolKeys));
     }
 
     public function test_it_can_exclude_memory_tool_when_requested(): void
@@ -117,7 +112,7 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread, false);
 
-        $this->assertFalse($state->tools->contains('slug', MemoryTool::SLUG));
+        $this->assertFalse($state->tools->contains(fn ($definition) => $definition->key() === MemoryTool::KEY));
     }
 
     private function migrationPath(): string

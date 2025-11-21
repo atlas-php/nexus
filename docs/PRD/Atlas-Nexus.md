@@ -28,8 +28,6 @@ All tables support soft deletes unless noted otherwise. Default names are config
 | `ai_prompts`      | Versioned system prompts per assistant                      |
 | `ai_threads`      | Conversation containers (user/tool threads)                 |
 | `ai_messages`     | User and assistant messages in a thread                     |
-| `ai_tools`        | Registered tools with handler classes and schemas           |
-| `ai_assistant_tool` | Pivot for assistant → tool mapping                        |
 | `ai_tool_runs`    | Execution logs for tool calls                               |
 | `ai_memories`     | Reusable memory items scoped to users/assistants/orgs       |
 
@@ -39,6 +37,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - `atlas-nexus.default_pipeline` — name of the default orchestration pipeline.
 - `atlas-nexus.pipelines` — placeholder for persona-defined pipelines.
 - `atlas-nexus.tools.memory.enabled` — toggles inclusion of the built-in memory tool in thread state.
+- `atlas-nexus.tools.registry` — maps custom tool keys to handler classes.
 - `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.
 - `atlas-nexus.seeders` — list of seeders executed by `atlas:nexus:seed`.
 
@@ -49,7 +48,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 
 ## Seeded Built-ins
 - `atlas:nexus:seed` runs all configured seeders. Default: `MemoryFeatureSeeder`.
-- Memory seeding ensures the built-in memory tool exists and is attached to assistants when active.
+- Memory seeding ensures the built-in memory tool key is added to assistants when active.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 
 ## Multi-Tenancy Support

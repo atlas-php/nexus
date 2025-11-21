@@ -10,21 +10,17 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Services\Models\AiAssistantToolService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
 
@@ -50,7 +46,6 @@ class AiModelServiceTest extends TestCase
     public function test_assistant_service_manages_tools_and_soft_deletes(): void
     {
         $assistantService = $this->app->make(AiAssistantService::class);
-        $toolService = $this->app->make(AiToolService::class);
 
         /** @var array<string, mixed> $assistantData */
         $assistantData = AiAssistant::factory()->raw(['slug' => 'svc-assistant']);
@@ -58,17 +53,16 @@ class AiModelServiceTest extends TestCase
 
         $assistantService->update($assistant, ['name' => 'Updated Assistant']);
 
-        /** @var array<string, mixed> $toolData */
-        $toolData = AiTool::factory()->raw(['slug' => 'svc-tool']);
-        $tool = $toolService->create($toolData);
+        $assistantService->addTool($assistant, 'memory');
+        $assistantService->addTool($assistant, 'search');
 
-        $mapping = $assistantService->attachTool($assistant, $tool, ['mode' => 'sync']);
+        $this->assertSame(['memory', 'search'], $assistant->refresh()->tools);
 
-        $this->assertInstanceOf(AiAssistantTool::class, $mapping);
-        $this->assertTrue($assistant->tools()->whereKey($tool->id)->exists());
+        $assistantService->removeTool($assistant, 'memory');
+        $this->assertSame(['search'], $assistant->refresh()->tools);
 
-        $assistantService->detachTool($assistant, $tool);
-        $this->assertFalse($assistant->tools()->whereKey($tool->id)->exists());
+        $assistantService->syncTools($assistant, ['alpha', 'beta', 'beta', '']);
+        $this->assertSame(['alpha', 'beta'], $assistant->refresh()->tools);
 
         $this->assertTrue($assistantService->delete($assistant));
         $this->assertSoftDeleted($assistant);
@@ -82,7 +76,6 @@ class AiModelServiceTest extends TestCase
         $messageService = $this->app->make(AiMessageService::class);
         $memoryService = $this->app->make(AiMemoryService::class);
         $toolRunService = $this->app->make(AiToolRunService::class);
-        $toolService = $this->app->make(AiToolService::class);
 
         /** @var array<string, mixed> $assistantData */
         $assistantData = AiAssistant::factory()->raw(['slug' => 'svc-assistant-thread']);
@@ -114,13 +107,9 @@ class AiModelServiceTest extends TestCase
         ]);
         $message = $messageService->create($messageData);
 
-        /** @var array<string, mixed> $toolData */
-        $toolData = AiTool::factory()->raw(['slug' => 'svc-tool-status']);
-        $tool = $toolService->create($toolData);
-
         /** @var array<string, mixed> $runData */
         $runData = AiToolRun::factory()->raw([
-            'tool_id' => $tool->id,
+            'tool_key' => 'svc-tool-status',
             'thread_id' => $thread->id,
             'assistant_message_id' => $message->id,
             'status' => AiToolRunStatus::QUEUED->value,
@@ -168,8 +157,6 @@ class AiModelServiceTest extends TestCase
     public function test_tool_run_and_mapping_services_update_status_and_cleanup(): void
     {
         $assistantService = $this->app->make(AiAssistantService::class);
-        $toolService = $this->app->make(AiToolService::class);
-        $assistantToolService = $this->app->make(AiAssistantToolService::class);
         $toolRunService = $this->app->make(AiToolRunService::class);
         $threadService = $this->app->make(AiThreadService::class);
         $messageService = $this->app->make(AiMessageService::class);
@@ -177,17 +164,6 @@ class AiModelServiceTest extends TestCase
         /** @var array<string, mixed> $assistantData */
         $assistantData = AiAssistant::factory()->raw(['slug' => 'svc-assistant-tool-run']);
         $assistant = $assistantService->create($assistantData);
-
-        /** @var array<string, mixed> $toolData */
-        $toolData = AiTool::factory()->raw(['slug' => 'svc-tool-run']);
-        $tool = $toolService->create($toolData);
-        /** @var array<string, mixed> $assistantToolData */
-        $assistantToolData = [
-            'assistant_id' => $assistant->id,
-            'tool_id' => $tool->id,
-            'config' => ['mode' => 'async'],
-        ];
-        $assistantTool = $assistantToolService->create($assistantToolData);
 
         /** @var array<string, mixed> $threadData */
         $threadData = AiThread::factory()->raw([
@@ -207,7 +183,7 @@ class AiModelServiceTest extends TestCase
 
         /** @var array<string, mixed> $runData */
         $runData = AiToolRun::factory()->raw([
-            'tool_id' => $tool->id,
+            'tool_key' => 'svc-tool-run',
             'thread_id' => $thread->id,
             'assistant_message_id' => $message->id,
             'status' => AiToolRunStatus::QUEUED->value,
@@ -218,9 +194,6 @@ class AiModelServiceTest extends TestCase
 
         $updatedRun = $toolRunService->markStatus($run, AiToolRunStatus::RUNNING);
         $this->assertTrue($updatedRun->status === AiToolRunStatus::RUNNING);
-
-        $this->assertTrue($assistantToolService->delete($assistantTool));
-        $this->assertModelMissing($assistantTool);
     }
 
     private function migrationPath(): string
@@ -234,7 +207,6 @@ class AiModelServiceTest extends TestCase
         $threadService = $this->app->make(AiThreadService::class);
         $messageService = $this->app->make(AiMessageService::class);
         $memoryService = $this->app->make(AiMemoryService::class);
-        $toolService = $this->app->make(AiToolService::class);
         $toolRunService = $this->app->make(AiToolRunService::class);
 
         /** @var array<string, mixed> $assistantData */
@@ -272,9 +244,6 @@ class AiModelServiceTest extends TestCase
 
         $this->assertSame(99, $memory->group_id);
 
-        /** @var array<string, mixed> $toolData */
-        $toolData = AiTool::factory()->raw(['slug' => 'grouped-tool']);
-        $tool = $toolService->create($toolData);
         $assistantMessage = $messageService->create([
             'thread_id' => $thread->id,
             'user_id' => null,
@@ -286,7 +255,7 @@ class AiModelServiceTest extends TestCase
         ]);
 
         $toolRun = $toolRunService->create([
-            'tool_id' => $tool->id,
+            'tool_key' => 'grouped-tool',
             'thread_id' => $thread->id,
             'assistant_message_id' => $assistantMessage->id,
             'call_index' => 0,

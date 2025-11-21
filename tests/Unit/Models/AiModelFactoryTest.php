@@ -10,12 +10,10 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantTool;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -77,22 +75,9 @@ class AiModelFactoryTest extends TestCase
             'metadata' => ['sentiment' => 'positive'],
         ]);
 
-        /** @var AiTool $tool */
-        $tool = AiTool::factory()->create([
-            'schema' => ['type' => 'object', 'properties' => ['query' => ['type' => 'string']]],
-            'is_active' => true,
-        ]);
-
-        /** @var AiAssistantTool $assistantTool */
-        $assistantTool = AiAssistantTool::factory()->create([
-            'assistant_id' => $assistant->id,
-            'tool_id' => $tool->id,
-            'config' => ['mode' => 'sync'],
-        ]);
-
         /** @var AiToolRun $toolRun */
         $toolRun = AiToolRun::factory()->create([
-            'tool_id' => $tool->id,
+            'tool_key' => 'calendar_lookup',
             'thread_id' => $thread->id,
             'assistant_message_id' => $message->id,
             'call_index' => 0,
@@ -141,30 +126,17 @@ class AiModelFactoryTest extends TestCase
         $this->assertTrue($message->thread->is($thread));
         $this->assertSame(['sentiment' => 'positive'], $message->metadata);
 
-        $this->assertSame(['type' => 'object', 'properties' => ['query' => ['type' => 'string']]], $tool->schema);
-        $this->assertTrue($tool->is_active);
-        $this->assertTrue($tool->assistants()->whereKey($assistant->id)->exists());
-
+        $this->assertSame('calendar_lookup', $toolRun->tool_key);
         $this->assertTrue($toolRun->status === AiToolRunStatus::SUCCEEDED);
         $this->assertSame(['query' => 'demo'], $toolRun->input_args);
         $this->assertSame(['ok' => true], $toolRun->response_output);
         $this->assertNotNull($toolRun->started_at);
         $this->assertNotNull($toolRun->finished_at);
         $this->assertTrue($toolRun->finished_at->greaterThan($toolRun->started_at));
-        $this->assertNotNull($toolRun->tool);
         $this->assertNotNull($toolRun->thread);
         $this->assertNotNull($toolRun->assistantMessage);
-        $this->assertTrue($toolRun->tool->is($tool));
         $this->assertTrue($toolRun->thread->is($thread));
         $this->assertTrue($toolRun->assistantMessage->is($message));
-
-        $this->assertSame($assistant->id, $assistantTool->assistant_id);
-        $this->assertSame($tool->id, $assistantTool->tool_id);
-        $this->assertSame(['mode' => 'sync'], $assistantTool->config);
-        $this->assertNotNull($assistantTool->assistant);
-        $this->assertNotNull($assistantTool->tool);
-        $this->assertTrue($assistantTool->assistant->is($assistant));
-        $this->assertTrue($assistantTool->tool->is($tool));
 
         $this->assertSame($assistant->id, $memory->assistant_id);
         $this->assertSame($thread->id, $memory->thread_id);

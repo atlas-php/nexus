@@ -11,13 +11,12 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiTool;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Services\Models\AiToolService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Prism\Prism\Tool;
@@ -39,7 +38,6 @@ class AssistantResponseService
         private readonly ThreadStateService $threadStateService,
         private readonly AiMessageService $messageService,
         private readonly AiToolRunService $toolRunService,
-        private readonly AiToolService $toolService,
         private readonly TextRequestFactory $textRequestFactory,
         private readonly ToolRunLogger $toolRunLogger
     ) {}
@@ -145,22 +143,16 @@ class AssistantResponseService
     }
 
     /**
-     * @return array{tools: array<int, Tool>, map: array<string, AiTool>}
+     * @return array{tools: array<int, Tool>, map: array<string, ToolDefinition>}
      */
     protected function prepareTools(ThreadState $state, int $assistantMessageId): array
     {
         $toolMap = [];
         $prismTools = [];
 
-        /** @var AiTool $tool */
-        foreach ($state->tools as $tool) {
-            $handlerClass = $tool->handler_class;
-
-            if (! class_exists($handlerClass)) {
-                continue;
-            }
-
-            $handler = app($handlerClass);
+        /** @var ToolDefinition $definition */
+        foreach ($state->tools as $definition) {
+            $handler = $definition->makeHandler();
 
             if (! $handler instanceof NexusTool) {
                 continue;
@@ -172,14 +164,14 @@ class AssistantResponseService
 
             if ($handler instanceof \Atlas\Nexus\Contracts\ToolRunLoggingAware) {
                 $handler->setToolRunLogger($this->toolRunLogger);
-                $handler->setToolModel($tool);
+                $handler->setToolKey($definition->key());
                 $handler->setAssistantMessageId($assistantMessageId);
             }
 
             /** @var Tool $prismTool */
-            $prismTool = $handler->toPrismTool()->as($tool->slug);
+            $prismTool = $handler->toPrismTool()->as($definition->key());
             $prismTools[] = $prismTool;
-            $toolMap[$prismTool->name()] = $tool;
+            $toolMap[$prismTool->name()] = $definition;
         }
 
         return [
@@ -191,7 +183,7 @@ class AssistantResponseService
     /**
      * @param  ToolCall[]  $toolCalls
      * @param  ToolResult[]  $toolResults
-     * @param  array<string, AiTool>  $toolMap
+     * @param  array<string, ToolDefinition>  $toolMap
      * @return array<int, int>
      */
     protected function recordToolResults(
@@ -204,19 +196,10 @@ class AssistantResponseService
         $runsByCallId = [];
 
         foreach ($toolCalls as $index => $toolCall) {
-            $tool = $toolMap[$toolCall->name]
-                ?? $this->toolService->query()->withTrashed()->where('slug', $toolCall->name)->first();
-
-            if ($tool !== null && $tool->trashed()) {
-                $tool->restore();
-            }
-
-            if ($tool === null) {
-                continue;
-            }
+            $toolKey = $this->toolKeyFromMap($toolCall->name, $toolMap);
 
             $run = $this->toolRunService->create([
-                'tool_id' => $tool->id,
+                'tool_key' => $toolKey,
                 'thread_id' => $assistantMessage->thread_id,
                 'group_id' => $assistantMessage->group_id,
                 'assistant_message_id' => $assistantMessage->id,
@@ -233,22 +216,13 @@ class AssistantResponseService
         }
 
         foreach ($toolResults as $index => $toolResult) {
-            $tool = $toolMap[$toolResult->toolName]
-                ?? $this->toolService->query()->withTrashed()->where('slug', $toolResult->toolName)->first();
-
-            if ($tool !== null && $tool->trashed()) {
-                $tool->restore();
-            }
-
-            if ($tool === null) {
-                continue;
-            }
+            $toolKey = $this->toolKeyFromMap($toolResult->toolName, $toolMap);
 
             $run = $runsByCallId[$toolResult->toolCallId] ?? null;
 
             if ($run === null) {
                 $run = $this->toolRunService->create([
-                    'tool_id' => $tool->id,
+                    'tool_key' => $toolKey,
                     'thread_id' => $assistantMessage->thread_id,
                     'group_id' => $assistantMessage->group_id,
                     'assistant_message_id' => $assistantMessage->id,
@@ -284,6 +258,20 @@ class AssistantResponseService
         }
 
         return $recordedIds;
+    }
+
+    /**
+     * @param  array<string, ToolDefinition>  $toolMap
+     */
+    protected function toolKeyFromMap(string $name, array $toolMap): string
+    {
+        $definition = $toolMap[$name] ?? null;
+
+        if ($definition instanceof ToolDefinition) {
+            return $definition->key();
+        }
+
+        return $name;
     }
 
     protected function resolveProvider(): string

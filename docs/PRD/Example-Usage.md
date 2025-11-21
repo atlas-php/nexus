@@ -17,9 +17,9 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 3. Set `current_prompt_id` on the assistant to the active prompt.
 
 ## Register Tools
-1. Define a tool record (`slug`, `handler_class`, `schema`, `is_active=true`).
-2. Attach it to the assistant via `ai_assistant_tool` mapping with optional config.
-3. Run `atlas:nexus:seed` to ensure built-in tools (Memory) exist and are attached when enabled.
+1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`).
+2. Register the tool via `atlas-nexus.tools.registry` (`key => handler_class`) or rely on built-ins.
+3. Add the tool key to the assistant `tools` array; run `atlas:nexus:seed` to add the Memory key when enabled.
 
 ## Start a Thread
 1. Create `ai_threads` row with `assistant_id`, `user_id`, optional `group_id`, `type=user`, `status=open`.
