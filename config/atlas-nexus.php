@@ -41,6 +41,9 @@ return [
                 'allowed_domains' => null,
             ],
         ],
+        'file_search' => [
+            'vector_store_ids' => [],
+        ],
     ],
 
     'seeders' => [

@@ -41,9 +41,12 @@ return [
                 'allowed_domains' => [
                     'inveloapp.com',
                     'helpdesk.inveloapp.com',
-                    'blog.inveloapp.com'
+                    'blog.inveloapp.com',
                 ],
             ],
+        ],
+        'file_search' => [
+            'vector_store_ids' => [],
         ],
     ],
 

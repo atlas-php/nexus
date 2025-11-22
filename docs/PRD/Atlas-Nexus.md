@@ -35,6 +35,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 ## Configuration
 - `atlas-nexus.tools.registry` — maps custom tool keys to handler classes.
 - `atlas-nexus.tools.options` — per-tool overrides (e.g., web search content limits, summary models).
+- `atlas-nexus.provider_tools` — provider-level tool definitions passed directly to Prism (e.g., `web_search` domain filters); `file_search` is only registered when `vector_store_ids` contains at least one id.
 - `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.
 - `atlas-nexus.seeders` — list of seeders executed by `atlas:nexus:seed`.
 
