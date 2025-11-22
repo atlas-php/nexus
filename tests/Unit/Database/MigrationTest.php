@@ -85,6 +85,7 @@ class MigrationTest extends TestCase
             'role',
             'content',
             'content_type',
+            'raw_response',
             'sequence',
             'status',
             'failed_reason',

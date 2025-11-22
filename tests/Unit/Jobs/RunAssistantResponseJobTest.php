@@ -133,6 +133,9 @@ class RunAssistantResponseJobTest extends TestCase
         $this->assertSame('res-123', $assistantMessage->provider_response_id);
         $this->assertSame(10, $assistantMessage->tokens_in);
         $this->assertSame(20, $assistantMessage->tokens_out);
+        $this->assertIsArray($assistantMessage->raw_response);
+        $this->assertSame('Here is your update.', $assistantMessage->raw_response['text']);
+        $this->assertSame('calendar_lookup', $assistantMessage->raw_response['tool_results'][0]['tool_name'] ?? null);
         $this->assertArrayHasKey('memory_ids', $metadata);
         $this->assertArrayHasKey('tool_run_ids', $metadata);
         $this->assertContains($memory->id, $metadata['memory_ids']);

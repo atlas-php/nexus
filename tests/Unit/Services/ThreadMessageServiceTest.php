@@ -191,6 +191,8 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertTrue($assistantMessage->status === AiMessageStatus::COMPLETED);
         $this->assertSame('Inline reply', $assistantMessage->content);
         $this->assertSame('inline-1', $assistantMessage->provider_response_id);
+        $this->assertIsArray($assistantMessage->raw_response);
+        $this->assertSame('Inline reply', $assistantMessage->raw_response['text']);
     }
 
     public function test_it_marks_inline_failures_as_failed(): void

@@ -34,6 +34,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int|null $tokens_in
  * @property int|null $tokens_out
  * @property string|null $provider_response_id
+ * @property array<string, mixed>|null $raw_response
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -60,6 +61,7 @@ class AiMessage extends AtlasModel
         'tokens_out' => 'int',
         'role' => AiMessageRole::class,
         'content_type' => AiMessageContentType::class,
+        'raw_response' => 'array',
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

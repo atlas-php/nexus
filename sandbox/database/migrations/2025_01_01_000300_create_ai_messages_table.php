@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('role');
             $table->text('content');
             $table->string('content_type');
+            $table->longText('raw_response')->nullable();
             $table->unsignedInteger('sequence');
             $table->string('status')->default('completed');
             $table->text('failed_reason')->nullable();

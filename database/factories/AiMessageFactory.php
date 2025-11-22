@@ -38,6 +38,7 @@ class AiMessageFactory extends Factory
             'tokens_in' => $this->faker->optional()->numberBetween(1, 8_000),
             'tokens_out' => $this->faker->optional()->numberBetween(1, 8_000),
             'provider_response_id' => $this->faker->optional()->uuid(),
+            'raw_response' => null,
             'metadata' => $this->faker->optional()->randomElement([
                 ['tone' => 'friendly'],
                 ['tone' => 'formal'],
