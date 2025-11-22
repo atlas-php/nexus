@@ -47,7 +47,7 @@ class NexusSetupCommand extends Command
         $name = (string) $this->option('name');
         $assistantSlug = Str::slug((string) $this->option('assistant'));
         $systemPrompt = "##ROLE:\nYou are a helpful assistant.\n##CONTEXT:\nThe user is {USER.NAME}";
-        
+
         $model = (string) $this->option('model');
 
         $user = User::query()->firstOrCreate(
