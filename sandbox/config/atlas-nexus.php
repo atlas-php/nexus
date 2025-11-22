@@ -38,7 +38,11 @@ return [
     'provider_tools' => [
         'web_search' => [
             'filters' => [
-                'allowed_domains' => null,
+                'allowed_domains' => [
+                    'inveloapp.com',
+                    'helpdesk.inveloapp.com',
+                    'blog.inveloapp.com'
+                ],
             ],
         ],
     ],
