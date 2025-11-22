@@ -251,6 +251,31 @@ class ThreadStateServiceTest extends TestCase
         $this->assertSame(['filters' => ['allowed_domains' => ['example.com']]], $state->providerTools->first()?->options());
     }
 
+    public function test_provider_tools_do_not_enable_regular_tools_with_same_key(): void
+    {
+        /** @var AiAssistant $assistant */
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'provider-only',
+            'provider_tools' => ['web_search'],
+            'tools' => [],
+        ]);
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
+        $providerKeys = $state->providerTools->map(fn ($definition) => $definition->key())->all();
+
+        $this->assertNotContains('web_search', $toolKeys);
+        $this->assertSame(['web_search'], $providerKeys);
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';

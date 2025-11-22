@@ -134,14 +134,18 @@ class ThreadStateService
      */
     protected function resolveTools(AiAssistant $assistant, bool $includeMemoryTool): Collection
     {
-        $registeredKeys = array_keys($this->toolRegistry->all());
-        $toolKeys = array_values(array_unique(array_merge($registeredKeys, $assistant->tools ?? [])));
+        $toolKeys = array_values(array_unique(array_map(
+            static fn ($key): string => (string) $key,
+            $assistant->tools ?? []
+        )));
 
         if (! $includeMemoryTool) {
             $toolKeys = array_values(array_filter(
                 $toolKeys,
                 static fn (string $key): bool => $key !== MemoryTool::KEY
             ));
+        } elseif (! in_array(MemoryTool::KEY, $toolKeys, true)) {
+            $toolKeys[] = MemoryTool::KEY;
         }
 
         return collect($this->toolRegistry->forKeys($toolKeys));
