@@ -288,6 +288,7 @@ class WebSearchToolWithoutConverter extends WebSearchTool
      */
     protected function converterClass(): string
     {
-        return \League\HTMLToMarkdown\NonExistentConverter::class;
+        /** @phpstan-ignore-next-line */
+        return 'League\\HTMLToMarkdown\\NonExistentConverter';
     }
 }
