@@ -60,7 +60,7 @@ class WebSearchToolTest extends TestCase
         $this->assertCount(1, $meta['results']);
         $this->assertSame('https://example.com', $meta['results'][0]['url']);
         $this->assertNull($meta['results'][0]['error']);
-        $this->assertSame("Hello\n=====\n\nWorld", (string) $meta['results'][0]['content']);
+        $this->assertSame('Hello World', (string) $meta['results'][0]['content']);
         $this->assertStringNotContainsString('<h1>', (string) $meta['results'][0]['content']);
     }
 
@@ -221,6 +221,23 @@ class WebSearchToolTest extends TestCase
         $result = $response->meta()['results'][0];
         $this->assertStringContainsString('<h1>Hello</h1>', $result['content']);
         $this->assertStringContainsString('<p>World</p>', $result['content']);
+    }
+
+    public function test_it_strips_scripts_styles_and_head_in_markdown_mode(): void
+    {
+        Http::fake([
+            'https://example.com' => Http::response('<html><head><title>Secret</title></head><body><script>var a=1;</script><style>.a{}</style><h1>Hello</h1><p>World</p></body></html>', 200),
+        ]);
+
+        $tool = $this->app->make(WebSearchTool::class);
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $result = $response->meta()['results'][0];
+        $this->assertSame('Hello World', $result['content']);
+        $this->assertStringNotContainsString('Secret', $result['content']);
+        $this->assertStringNotContainsString('var a=1', $result['content']);
     }
 
     protected function createState(): ThreadState

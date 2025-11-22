@@ -458,7 +458,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         $instance = $this->markdownConverter ?? null;
 
         if ($instance !== null) {
-            return $instance->convert($body);
+            return $instance->convert($this->stripScriptsStylesAndHead($body));
         }
 
         /** @var \League\HTMLToMarkdown\HtmlConverter $instance */
@@ -466,7 +466,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
         $this->markdownConverter = $instance;
 
-        return $instance->convert($body);
+        return $instance->convert($this->stripScriptsStylesAndHead($body));
     }
 
     /**
@@ -495,10 +495,19 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         return \League\HTMLToMarkdown\HtmlConverter::class;
     }
 
+    protected function stripScriptsStylesAndHead(string $body): string
+    {
+        $withoutScripts = preg_replace('#<script\b[^>]*>.*?</script>#is', ' ', $body) ?? $body;
+        $withoutStyles = preg_replace('#<style\b[^>]*>.*?</style>#is', ' ', $withoutScripts) ?? $withoutScripts;
+
+        return preg_replace('#<head\b[^>]*>.*?</head>#is', ' ', $withoutStyles) ?? $withoutStyles;
+    }
+
     protected function plainTextFallback(string $body): string
     {
         $decoded = html_entity_decode($body, ENT_QUOTES | ENT_HTML5);
-        $withoutTags = preg_replace('/<[^>]+>/', ' ', $decoded) ?? $decoded;
+        $sanitized = $this->stripScriptsStylesAndHead($decoded);
+        $withoutTags = preg_replace('/<[^>]+>/', ' ', $sanitized) ?? $sanitized;
         $stripped = strip_tags($withoutTags);
         $singleSpaced = preg_replace('/\s+/', ' ', $stripped) ?? '';
 

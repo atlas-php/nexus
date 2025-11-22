@@ -26,6 +26,7 @@ return [
             'web_search' => [
                 'content_limit' => 8000,
                 'summary_model' => null,
+                'parse_mode' => 'text_only', // markdown | text_only | null
                 'allowed_domains' => [
                     'inveloapp.com',
                     'helpdesk.inveloapp.com',
