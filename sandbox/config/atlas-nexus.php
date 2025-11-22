@@ -26,15 +26,19 @@ return [
             'web_search' => [
                 'content_limit' => 8000,
                 'summary_model' => null,
+                'allowed_domains' => null,
                 'parse_mode' => 'text_only', // markdown | text_only | null
-                'allowed_domains' => [
-                    'inveloapp.com',
-                    'helpdesk.inveloapp.com',
-                    'blog.inveloapp.com',
-                ],
             ],
             'thread_manager' => [
                 'model' => null,
+            ],
+        ],
+    ],
+
+    'provider_tools' => [
+        'web_search' => [
+            'filters' => [
+                'allowed_domains' => null,
             ],
         ],
     ],

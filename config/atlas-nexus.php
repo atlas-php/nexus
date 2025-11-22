@@ -38,13 +38,7 @@ return [
     'provider_tools' => [
         'web_search' => [
             'filters' => [
-                'allowed_domains' => [
-                    'pubmed.ncbi.nlm.nih.gov',
-                    'clinicaltrials.gov',
-                    'www.who.int',
-                    'www.cdc.gov',
-                    'www.fda.gov',
-                ],
+                'allowed_domains' => null,
             ],
         ],
     ],
