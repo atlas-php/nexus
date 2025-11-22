@@ -301,7 +301,7 @@ class AssistantResponseService
             'usage' => $this->serializeUsage($response->usage),
             'tool_calls' => array_map(fn (ToolCall $call): array => $this->serializeToolCall($call), $response->toolCalls),
             'tool_results' => array_map(fn (ToolResult $result): array => $this->serializeToolResult($result), $response->toolResults),
-            'messages' => $this->serializeMessages($response->messages->all()),
+            // 'messages' => $this->serializeMessages($response->messages->all()),
             'steps' => $response->steps->map(fn (Step $step): array => $this->serializeStep($step))->all(),
             'additional_content' => $response->additionalContent,
         ];
@@ -318,11 +318,11 @@ class AssistantResponseService
             'tool_calls' => array_map(fn (ToolCall $call): array => $this->serializeToolCall($call), $step->toolCalls),
             'tool_results' => array_map(fn (ToolResult $result): array => $this->serializeToolResult($result), $step->toolResults),
             'provider_tool_calls' => array_map(fn (ProviderToolCall $call): array => $this->serializeProviderToolCall($call), $step->providerToolCalls),
-            'usage' => $this->serializeUsage($step->usage),
+            // 'usage' => $this->serializeUsage($step->usage),
             'meta' => $this->serializeMeta($step->meta),
-            'messages' => $this->serializeMessages($step->messages),
+            // 'messages' => $this->serializeMessages($step->messages),
             'system_prompts' => array_map(static fn (SystemMessage $message): string => $message->content, $step->systemPrompts),
-            'additional_content' => $step->additionalContent,
+            // 'additional_content' => $step->additionalContent,
         ];
     }
 
