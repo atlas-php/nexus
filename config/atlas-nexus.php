@@ -27,6 +27,7 @@ return [
                 'content_limit' => 8000,
                 'summary_model' => null,
                 'allowed_domains' => null,
+                'parse_mode' => 'markdown', // markdown | text_only | null
             ],
             'thread_manager' => [
                 'model' => null,

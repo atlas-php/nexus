@@ -188,6 +188,41 @@ class WebSearchToolTest extends TestCase
         $this->assertNull($result['error']);
     }
 
+    public function test_it_respects_text_only_parse_mode(): void
+    {
+        config()->set('atlas-nexus.tools.options.web_search.parse_mode', 'text_only');
+
+        Http::fake([
+            'https://example.com' => Http::response('<html><body><h1>Hello</h1><p>World</p></body></html>', 200),
+        ]);
+
+        $tool = $this->app->make(WebSearchTool::class);
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $result = $response->meta()['results'][0];
+        $this->assertSame('Hello World', $result['content']);
+    }
+
+    public function test_it_respects_null_parse_mode(): void
+    {
+        config()->set('atlas-nexus.tools.options.web_search.parse_mode', null);
+
+        Http::fake([
+            'https://example.com' => Http::response('<html><body><h1>Hello</h1><p>World</p></body></html>', 200),
+        ]);
+
+        $tool = $this->app->make(WebSearchTool::class);
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $result = $response->meta()['results'][0];
+        $this->assertStringContainsString('<h1>Hello</h1>', $result['content']);
+        $this->assertStringContainsString('<p>World</p>', $result['content']);
+    }
+
     protected function createState(): ThreadState
     {
         $assistant = AiAssistant::factory()->create([

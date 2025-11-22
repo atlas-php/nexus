@@ -35,6 +35,8 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected ?array $allowedDomains;
 
+    protected ?string $parseMode = 'markdown';
+
     protected ?AiToolRun $activeRun = null;
 
     public function __construct(
@@ -45,6 +47,9 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         $this->contentLimit = max(500, $limit);
         $this->allowedDomains = $this->normalizeAllowedDomains(
             $config->get('atlas-nexus.tools.options.web_search.allowed_domains')
+        );
+        $this->parseMode = $this->normalizeParseMode(
+            $config->get('atlas-nexus.tools.options.web_search.parse_mode', 'markdown')
         );
     }
 
@@ -238,10 +243,19 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     protected function normalizeContent(string $body): string
     {
-        $markdown = $this->convertToMarkdown($body);
-        $normalizedLineBreaks = preg_replace("/\r\n?/", "\n", $markdown) ?? '';
-        $deduplicatedSpacing = preg_replace("/\n{3,}/", "\n\n", $normalizedLineBreaks) ?? '';
-        $trimmed = trim($deduplicatedSpacing);
+        if ($this->parseMode === null) {
+            $trimmed = trim($body);
+        } elseif ($this->parseMode === 'text_only') {
+            $text = $this->plainTextFallback($body);
+            $normalizedLineBreaks = preg_replace("/\r\n?/", "\n", $text) ?? '';
+            $deduplicatedSpacing = preg_replace("/\n{3,}/", "\n\n", $normalizedLineBreaks) ?? '';
+            $trimmed = trim($deduplicatedSpacing);
+        } else {
+            $markdown = $this->convertToMarkdown($body);
+            $normalizedLineBreaks = preg_replace("/\r\n?/", "\n", $markdown) ?? '';
+            $deduplicatedSpacing = preg_replace("/\n{3,}/", "\n\n", $normalizedLineBreaks) ?? '';
+            $trimmed = trim($deduplicatedSpacing);
+        }
 
         if ($trimmed === '') {
             return '';
@@ -416,6 +430,17 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         }
 
         return implode(', ', $this->allowedDomains);
+    }
+
+    protected function normalizeParseMode(mixed $parseMode): ?string
+    {
+        if ($parseMode === null) {
+            return null;
+        }
+
+        $value = strtolower((string) $parseMode);
+
+        return in_array($value, ['markdown', 'text_only'], true) ? $value : 'markdown';
     }
 
     /**
