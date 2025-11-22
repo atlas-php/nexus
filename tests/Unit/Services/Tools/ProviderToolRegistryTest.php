@@ -63,4 +63,21 @@ class ProviderToolRegistryTest extends TestCase
         $this->assertNull($registry->definition('file_search'));
         $this->assertInstanceOf(ProviderToolDefinition::class, $registry->definition('web_search'));
     }
+
+    public function test_code_interpreter_is_registered_with_container_options(): void
+    {
+        config()->set('atlas-nexus.provider_tools', [
+            'code_interpreter' => ['container' => ['type' => 'auto', 'memory_limit' => '4g']],
+        ]);
+
+        $registry = $this->app->make(ProviderToolRegistry::class);
+
+        $definition = $registry->definition('code_interpreter');
+
+        $this->assertInstanceOf(ProviderToolDefinition::class, $definition);
+        $this->assertSame(
+            ['container' => ['type' => 'auto', 'memory_limit' => '4g']],
+            $definition->options()
+        );
+    }
 }

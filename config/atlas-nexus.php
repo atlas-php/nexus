@@ -44,6 +44,12 @@ return [
         'file_search' => [
             'vector_store_ids' => [],
         ],
+        'code_interpreter' => [
+            'container' => [
+                'type' => 'auto',
+                'memory_limit' => '4g',
+            ],
+        ],
     ],
 
     'seeders' => [

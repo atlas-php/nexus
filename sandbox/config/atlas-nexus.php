@@ -50,6 +50,12 @@ return [
                 'vs_691f2d4727dc8191b759981539c2751f',
             ],
         ],
+        'code_interpreter' => [
+            'container' => [
+                'type' => 'auto',
+                'memory_limit' => '4g',
+            ],
+        ],
     ],
 
     'seeders' => [
