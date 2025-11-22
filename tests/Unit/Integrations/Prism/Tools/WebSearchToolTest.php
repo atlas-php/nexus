@@ -266,6 +266,9 @@ class WebSearchToolTest extends TestCase
             $prompt,
             collect(),
             collect(),
+            collect(),
+            null,
+            null,
             collect()
         );
     }

@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Prism\Prism\Tool;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\ValueObjects\ProviderTool;
 use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
 use RuntimeException;
@@ -89,6 +90,12 @@ class AssistantResponseService
 
             if ($toolContext['tools'] !== []) {
                 $request->withTools($toolContext['tools']);
+            }
+
+            $providerTools = $this->prepareProviderTools($state);
+
+            if ($providerTools !== []) {
+                $request->withProviderTools($providerTools);
             }
 
             $response = $textRequest->asText();
@@ -178,6 +185,17 @@ class AssistantResponseService
             'tools' => $prismTools,
             'map' => $toolMap,
         ];
+    }
+
+    /**
+     * @return array<int, ProviderTool>
+     */
+    protected function prepareProviderTools(ThreadState $state): array
+    {
+        return $state->providerTools
+            ->map(static fn ($definition): ProviderTool => $definition->toPrismProviderTool())
+            ->values()
+            ->all();
     }
 
     /**
@@ -313,5 +331,4 @@ class AssistantResponseService
 
         return "Contextual memories:\n".implode("\n", $lines);
     }
-
 }

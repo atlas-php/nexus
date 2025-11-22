@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $max_output_tokens
  * @property int|null $current_prompt_id
  * @property bool $is_active
+ * @property array<int, string>|null $provider_tools
  * @property array<int, string>|null $tools
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -53,6 +54,7 @@ class AiAssistant extends AtlasModel
         'max_output_tokens' => 'int',
         'current_prompt_id' => 'int',
         'is_active' => 'bool',
+        'provider_tools' => 'array',
         'tools' => 'array',
         'metadata' => 'array',
         'created_at' => 'datetime',

@@ -25,6 +25,7 @@ use Prism\Prism\Tool;
  * @method self withMessages(iterable<int, Message> $messages)
  * @method self withMaxSteps(int $steps)
  * @method self withTools(array<int, Tool> $tools)
+ * @method self withProviderTools(array<int, \Prism\Prism\ValueObjects\ProviderTool> $providerTools)
  * @method self withSystemPrompt(string $prompt)
  * @method self withMaxTokens(int $maxTokens)
  * @method self usingTemperature(float $temperature)

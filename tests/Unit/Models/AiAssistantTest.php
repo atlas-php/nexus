@@ -49,6 +49,7 @@ class AiAssistantTest extends TestCase
         $this->assertSame(256, $assistant->max_output_tokens);
         $this->assertSame(99, $assistant->current_prompt_id);
         $this->assertTrue($assistant->is_active);
+        $this->assertSame(['web_search'], $assistant->provider_tools);
         $this->assertSame(['tier' => 'pro'], $assistant->metadata);
     }
 

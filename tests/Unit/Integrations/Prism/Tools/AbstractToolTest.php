@@ -87,6 +87,9 @@ class AbstractToolTest extends TestCase
             $prompt,
             collect(),
             collect(),
+            collect(),
+            null,
+            null,
             collect()
         );
     }

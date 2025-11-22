@@ -24,9 +24,6 @@ class PromptSnapshot
         public readonly string $renderedSystemPrompt
     ) {}
 
-    /**
-     * @param  mixed  $snapshot
-     */
     public static function fromArray(mixed $snapshot): ?self
     {
         if (! is_array($snapshot)) {

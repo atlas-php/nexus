@@ -47,6 +47,9 @@ class MemoryToolTest extends TestCase
             null,
             collect(),
             collect(),
+            collect(),
+            null,
+            null,
             collect()
         ));
 
@@ -100,6 +103,9 @@ class MemoryToolTest extends TestCase
             null,
             new Collection,
             new Collection,
+            new Collection,
+            null,
+            null,
             new Collection
         ));
 
@@ -127,6 +133,9 @@ class MemoryToolTest extends TestCase
             null,
             new Collection,
             new Collection,
+            new Collection,
+            null,
+            null,
             new Collection
         ));
 

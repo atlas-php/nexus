@@ -12,6 +12,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
+use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Prompts\PromptSnapshot;
@@ -35,6 +36,7 @@ class ThreadStateService
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
+        private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
         ConfigRepository $config
@@ -67,6 +69,7 @@ class ThreadStateService
             $assistant,
             $includeMemoryTool ?? $this->includeMemoryTool
         );
+        $providerTools = $this->resolveProviderTools($assistant);
 
         $state = new ThreadState(
             $thread,
@@ -75,7 +78,9 @@ class ThreadStateService
             $messages,
             $memories,
             $tools,
-            $snapshot
+            $snapshot,
+            null,
+            $providerTools
         );
 
         if ($snapshot === null) {
@@ -90,7 +95,9 @@ class ThreadStateService
                     $messages,
                     $memories,
                     $tools,
-                    $snapshot
+                    $snapshot,
+                    null,
+                    $providerTools
                 );
             }
         }
@@ -105,7 +112,8 @@ class ThreadStateService
             $memories,
             $tools,
             $snapshot,
-            $systemPrompt
+            $systemPrompt,
+            $providerTools
         );
     }
 
@@ -137,6 +145,19 @@ class ThreadStateService
         }
 
         return collect($this->toolRegistry->forKeys($toolKeys));
+    }
+
+    /**
+     * @return Collection<int, \Atlas\Nexus\Support\Tools\ProviderToolDefinition>
+     */
+    protected function resolveProviderTools(AiAssistant $assistant): Collection
+    {
+        $keys = array_values(array_unique(array_map(
+            static fn ($key): string => (string) $key,
+            $assistant->provider_tools ?? []
+        )));
+
+        return collect($this->providerToolRegistry->forKeys($keys));
     }
 
     protected function snapshotFromThread(AiThread $thread): ?PromptSnapshot

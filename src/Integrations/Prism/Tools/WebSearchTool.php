@@ -225,11 +225,11 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         $normalized = $this->normalizeContent((string) $response->body());
 
         if ($normalized === '') {
-        return [
-            'url' => $url,
-            'status' => $response->status(),
-            'content' => null,
-            'error' => 'No readable content found for this page.',
+            return [
+                'url' => $url,
+                'status' => $response->status(),
+                'content' => null,
+                'error' => 'No readable content found for this page.',
             ];
         }
 

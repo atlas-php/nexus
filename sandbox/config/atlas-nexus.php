@@ -30,7 +30,7 @@ return [
                 'allowed_domains' => [
                     'inveloapp.com',
                     'helpdesk.inveloapp.com',
-                    'blog.inveloapp.com'
+                    'blog.inveloapp.com',
                 ],
             ],
             'thread_manager' => [

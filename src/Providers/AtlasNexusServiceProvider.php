@@ -19,6 +19,7 @@ use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 
@@ -59,6 +60,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AiMemoryService::class);
         $this->app->singleton(PromptVariableRegistry::class);
         $this->app->singleton(PromptVariableService::class);
+        $this->app->singleton(ProviderToolRegistry::class);
         $this->app->singleton(ToolRegistry::class);
         $this->app->singleton(ToolRunLogger::class);
         $this->app->singleton(AssistantResponseService::class);

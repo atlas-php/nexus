@@ -185,6 +185,9 @@ class ThreadManagerToolTest extends TestCase
             $prompt,
             $messages,
             collect(),
+            collect(),
+            null,
+            null,
             collect()
         );
     }

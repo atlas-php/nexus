@@ -34,6 +34,7 @@ class AiAssistantFactory extends Factory
             'max_output_tokens' => $this->faker->optional()->numberBetween(1, 4096),
             'current_prompt_id' => $this->faker->optional()->numberBetween(1, 5_000),
             'is_active' => $this->faker->boolean(90),
+            'provider_tools' => ['web_search'],
             'tools' => ['memory'],
             'metadata' => $this->faker->optional()->randomElement([
                 ['category' => 'support'],

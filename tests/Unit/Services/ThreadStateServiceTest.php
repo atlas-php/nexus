@@ -223,6 +223,34 @@ class ThreadStateServiceTest extends TestCase
         $this->assertSame('Welcome back Grace M. Hopper', $liveState->systemPrompt);
     }
 
+    public function test_it_resolves_configured_provider_tools_for_assistant(): void
+    {
+        config()->set('atlas-nexus.provider_tools', [
+            'web_search' => ['filters' => ['allowed_domains' => ['example.com']]],
+            'site_search' => ['filters' => ['allowed_domains' => ['example.org']]],
+        ]);
+
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'provider-tools',
+            'provider_tools' => ['web_search', 'missing_tool'],
+        ]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+        ]);
+
+        $this->app->make(NexusSeederService::class)->run();
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $keys = $state->providerTools->map(fn ($definition) => $definition->key())->all();
+
+        $this->assertSame(['web_search'], $keys);
+        $this->assertSame(['filters' => ['allowed_domains' => ['example.com']]], $state->providerTools->first()?->options());
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';
