@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Services;
 
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
+use Atlas\Nexus\Support\Assistants\DefaultAssistantDefaults;
 use Atlas\Nexus\Tests\Fixtures\DummyNexusSeeder;
 use Atlas\Nexus\Tests\TestCase;
 
@@ -33,11 +34,14 @@ class NexusSeederServiceTest extends TestCase
         $service->run();
         $service->run();
 
+        $defaultAssistant = \Atlas\Nexus\Models\AiAssistant::query()->where('slug', DefaultAssistantDefaults::ASSISTANT_SLUG)->first();
         $webAssistant = \Atlas\Nexus\Models\AiAssistant::query()->where('slug', 'web-summarizer')->first();
         $threadAssistant = \Atlas\Nexus\Models\AiAssistant::query()->where('slug', 'thread-manager')->first();
 
+        $this->assertNotNull($defaultAssistant);
         $this->assertNotNull($webAssistant);
         $this->assertNotNull($threadAssistant);
+        $this->assertFalse($defaultAssistant->is_hidden);
         $this->assertTrue($webAssistant->is_hidden);
         $this->assertTrue($threadAssistant->is_hidden);
     }

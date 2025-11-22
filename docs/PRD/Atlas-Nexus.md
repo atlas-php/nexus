@@ -49,6 +49,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - Default seeders:
   - `WebSearchAssistantSeeder` — provisions the built-in web summarizer assistant/prompt used by the `web_search` tool when enabled.
   - `ThreadManagerAssistantSeeder` — provisions the built-in thread manager assistant/prompt for title/summary generation when enabled.
+  - `DefaultAssistantSeeder` — provisions a general-purpose assistant/prompt so consumers have a ready default.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 - `ThreadManagerTool` is available as a built-in tool when enabled via config.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
