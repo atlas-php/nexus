@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('provider_response_id')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['thread_id', 'sequence']);
             $table->index('thread_id');

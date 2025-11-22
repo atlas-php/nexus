@@ -12,6 +12,7 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
@@ -38,6 +39,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 class AiMessage extends AtlasModel
 {
@@ -47,6 +49,8 @@ class AiMessage extends AtlasModel
 
     /** @use HasFactory<AiMessageFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     /**
      * @var array<string, string>
@@ -65,6 +69,7 @@ class AiMessage extends AtlasModel
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected function defaultTableName(): string

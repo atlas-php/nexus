@@ -7,6 +7,7 @@ Atlas Nexus centralizes AI assistants, prompts, threads, messages, tools, tool r
 - [Core Data Tables](#core-data-tables)
 - [Job vs Inline Execution](#job-vs-inline-execution)
 - [Seeded Built-ins](#seeded-built-ins)
+- [Purge & Retention](#purge--retention)
 - [Multi-Tenancy Support](#multi-tenancy-support)
 - [Failure Semantics](#failure-semantics)
 - [Also See](#also-see)
@@ -53,6 +54,11 @@ Each table definition with fields is detailed in the linked PRDs below.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 - `ThreadManagerTool` is available as a built-in tool when enabled via config.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
+
+## Purge & Retention
+- Trashed assistants, prompts, messages, and memories retain their data until explicitly purged.
+- `Atlas\Nexus\Services\NexusPurgeService::purge()` permanently deletes trashed rows in chunked batches so cascading deletes (e.g., tool runs tied to messages) reuse the existing model services.
+- `php artisan atlas:nexus:purge --chunk=500` exposes the purge flow via CLI for scheduled maintenance.
 
 ## Multi-Tenancy Support
 All conversation artifacts carry an optional `group_id` to align with tenant/account scoping:

@@ -9,6 +9,7 @@ This guide outlines the minimal steps to install Atlas Nexus and prepare its dat
 - [Publish Migrations](#publish-migrations)
 - [Run Migrations](#run-migrations)
 - [Run Seeds](#run-seeds)
+- [Purge Soft Deletes](#purge-soft-deletes)
 - [Usage Entry Points](#usage-entry-points)
 - [Also See](#also-see)
 
@@ -57,6 +58,15 @@ Default seeders:
 - `ThreadManagerAssistantSeeder` creates the built-in thread manager assistant/prompt used for title/summary generation when `atlas-nexus.tools.thread_manager.enabled=true`.
 
 You can add custom seeders by extending the `seeders` array in `config/atlas-nexus.php` or by calling the `NexusSeederService::extend()` method at runtime.
+
+## Purge Soft Deletes
+Soft-deleted assistants, prompts, messages, and memories remain queryable via `withTrashed()` until they are purged. Schedule the purge command to permanently delete the rows:
+
+```bash
+php artisan atlas:nexus:purge --chunk=250
+```
+
+The chunk option is optional and defaults to 100.
 
 ## Usage Entry Points
 - `Atlas\Nexus\NexusManager` — access Prism text requests.

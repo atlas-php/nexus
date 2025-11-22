@@ -16,6 +16,7 @@
 - [Memories](#memories)
 - [Inline vs Queued Responses](#inline-vs-queued-responses)
 - [Seeding Built-ins](#seeding-built-ins)
+- [Purging Soft Deletes](#purging-soft-deletes)
 - [Sandbox](#sandbox)
 - [Also See](#also-see)
 - [Contributing](#contributing)
@@ -84,6 +85,11 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
   - `ThreadManagerAssistantSeeder` (creates the built-in thread manager assistant/prompt for title/summary generation).
 - Built-in tools: `memory` (persist/query memories), `web_search` (fetch and optionally summarize website content), and `thread_manager` (update or generate thread title/summary).
 - Extend via `config/atlas-nexus.php` `seeders` array or `NexusSeederService::extend()` at runtime.
+
+## Purging Soft Deletes
+- Soft-deleted assistants, prompts, messages, and memories remain in the database until purged.
+- Run `php artisan atlas:nexus:purge` to permanently delete trashed rows; ideal for scheduled retention workflows.
+- Pass `--chunk=500` (or any positive number) to tune how many rows are processed per chunk. The command delegates to `NexusPurgeService` so cascading deletes (like tool runs tied to messages) stay consistent.
 
 ## Sandbox
 A Laravel sandbox lives in [`sandbox/`](./sandbox) to try Nexus + Prism flows.

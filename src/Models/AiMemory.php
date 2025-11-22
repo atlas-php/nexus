@@ -9,6 +9,7 @@ use Atlas\Nexus\Database\Factories\AiMemoryFactory;
 use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class AiMemory
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 class AiMemory extends AtlasModel
 {
@@ -38,6 +40,8 @@ class AiMemory extends AtlasModel
 
     /** @use HasFactory<AiMemoryFactory> */
     use HasFactory;
+
+    use SoftDeletes;
 
     /**
      * @var array<string, string>
@@ -53,6 +57,7 @@ class AiMemory extends AtlasModel
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected function defaultTableName(): string
