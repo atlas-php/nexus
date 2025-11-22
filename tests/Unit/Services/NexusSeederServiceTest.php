@@ -38,6 +38,8 @@ class NexusSeederServiceTest extends TestCase
 
         $this->assertNotNull($webAssistant);
         $this->assertNotNull($threadAssistant);
+        $this->assertTrue($webAssistant->is_hidden);
+        $this->assertTrue($threadAssistant->is_hidden);
     }
 
     public function test_consumers_can_extend_seeders(): void

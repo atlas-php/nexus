@@ -41,6 +41,7 @@ class MigrationTest extends TestCase
             'max_output_tokens',
             'current_prompt_id',
             'is_active',
+            'is_hidden',
             'tools',
             'metadata',
             'created_at',

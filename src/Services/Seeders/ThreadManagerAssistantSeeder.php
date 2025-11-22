@@ -40,6 +40,7 @@ class ThreadManagerAssistantSeeder implements NexusSeeder
                 'description' => ThreadManagerDefaults::ASSISTANT_DESCRIPTION,
                 'default_model' => $this->defaultModel(),
                 'is_active' => true,
+                'is_hidden' => true,
                 'tools' => [],
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
@@ -88,6 +89,7 @@ class ThreadManagerAssistantSeeder implements NexusSeeder
             'name' => ThreadManagerDefaults::ASSISTANT_NAME,
             'description' => ThreadManagerDefaults::ASSISTANT_DESCRIPTION,
             'is_active' => true,
+            'is_hidden' => true,
         ];
 
         if (! is_string($assistant->default_model) || $assistant->default_model === '') {

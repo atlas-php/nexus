@@ -40,6 +40,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
                 'description' => WebSummaryDefaults::ASSISTANT_DESCRIPTION,
                 'default_model' => $this->defaultModel(),
                 'is_active' => true,
+                'is_hidden' => true,
                 'tools' => [],
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
@@ -88,6 +89,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
             'name' => WebSummaryDefaults::ASSISTANT_NAME,
             'description' => WebSummaryDefaults::ASSISTANT_DESCRIPTION,
             'is_active' => true,
+            'is_hidden' => true,
         ];
 
         if (! is_string($assistant->default_model) || $assistant->default_model === '') {

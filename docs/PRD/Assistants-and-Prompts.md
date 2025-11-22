@@ -24,6 +24,7 @@ Table: `ai_assistants`
 | `max_output_tokens`  | Nullable int (token cap)                                    |
 | `current_prompt_id`  | Nullable FK to active prompt (no DB constraint)             |
 | `is_active`          | Boolean                                                     |
+| `is_hidden`          | Boolean for internal-only assistants                        |
 | `tools`              | JSON array of allowed tool keys (nullable)                  |
 | `metadata`           | JSON metadata                                               |
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                     |
