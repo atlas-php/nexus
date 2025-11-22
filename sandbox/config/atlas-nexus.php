@@ -26,7 +26,11 @@ return [
             'web_search' => [
                 'content_limit' => 8000,
                 'summary_model' => null,
-                'allowed_domains' => null,
+                'allowed_domains' => [
+                    'inveloapp.com',
+                    'helpdesk.inveloapp.com',
+                    'blog.inveloapp.com'
+                ],
             ],
             'thread_manager' => [
                 'model' => null,

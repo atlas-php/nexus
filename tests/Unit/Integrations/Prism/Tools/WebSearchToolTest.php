@@ -11,8 +11,10 @@ use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
+use Atlas\Nexus\Services\WebSearch\WebSummaryService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Http;
 use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
@@ -58,7 +60,8 @@ class WebSearchToolTest extends TestCase
         $this->assertCount(1, $meta['results']);
         $this->assertSame('https://example.com', $meta['results'][0]['url']);
         $this->assertNull($meta['results'][0]['error']);
-        $this->assertStringContainsString('Hello', (string) $meta['results'][0]['content']);
+        $this->assertSame("Hello\n=====\n\nWorld", (string) $meta['results'][0]['content']);
+        $this->assertStringNotContainsString('<h1>', (string) $meta['results'][0]['content']);
     }
 
     public function test_it_returns_errors_for_invalid_urls(): void
@@ -163,6 +166,28 @@ class WebSearchToolTest extends TestCase
         $this->assertStringContainsString('Fetched 1 website', $response->message());
     }
 
+    public function test_it_falls_back_when_markdown_converter_is_missing(): void
+    {
+        Http::fake([
+            'https://example.com' => Http::response('<html><body><h1>Hello</h1><p>World</p></body></html>', 200),
+        ]);
+
+        $tool = new WebSearchToolWithoutConverter(
+            $this->app->make(WebSummaryService::class),
+            $this->app->make(ConfigRepository::class)
+        );
+
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $this->assertStringContainsString('Fetched 1 website', $response->message());
+
+        $result = $response->meta()['results'][0];
+        $this->assertSame('Hello World', $result['content']);
+        $this->assertNull($result['error']);
+    }
+
     protected function createState(): ThreadState
     {
         $assistant = AiAssistant::factory()->create([
@@ -196,5 +221,21 @@ class WebSearchToolTest extends TestCase
     private function migrationPath(): string
     {
         return __DIR__.'/../../../../../database/migrations';
+    }
+}
+
+/**
+ * Class WebSearchToolWithoutConverter
+ *
+ * Test-only subclass that forces fallback behavior when the Markdown converter is unavailable.
+ */
+class WebSearchToolWithoutConverter extends WebSearchTool
+{
+    /**
+     * @return class-string
+     */
+    protected function converterClass(): string
+    {
+        return \League\HTMLToMarkdown\NonExistentConverter::class;
     }
 }

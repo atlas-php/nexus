@@ -20,7 +20,7 @@ use Throwable;
 /**
  * Class WebSearchTool
  *
- * Fetches website content for assistants and optionally summarizes it inline using the built-in web summarizer, with optional allowed-domain restrictions.
+ * Fetches website content for assistants, normalizes it to Markdown, and optionally summarizes it inline using the built-in web summarizer, with optional allowed-domain restrictions.
  */
 class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 {
@@ -220,11 +220,11 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         $normalized = $this->normalizeContent((string) $response->body());
 
         if ($normalized === '') {
-            return [
-                'url' => $url,
-                'status' => $response->status(),
-                'content' => null,
-                'error' => 'No readable content found for this page.',
+        return [
+            'url' => $url,
+            'status' => $response->status(),
+            'content' => null,
+            'error' => 'No readable content found for this page.',
             ];
         }
 
@@ -238,10 +238,10 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     protected function normalizeContent(string $body): string
     {
-        $decoded = html_entity_decode($body, ENT_QUOTES | ENT_HTML5);
-        $stripped = strip_tags($decoded);
-        $withoutWhitespace = preg_replace('/\s+/', ' ', $stripped) ?? '';
-        $trimmed = trim($withoutWhitespace);
+        $markdown = $this->convertToMarkdown($body);
+        $normalizedLineBreaks = preg_replace("/\r\n?/", "\n", $markdown) ?? '';
+        $deduplicatedSpacing = preg_replace("/\n{3,}/", "\n\n", $normalizedLineBreaks) ?? '';
+        $trimmed = trim($deduplicatedSpacing);
 
         if ($trimmed === '') {
             return '';
@@ -416,5 +416,67 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         }
 
         return implode(', ', $this->allowedDomains);
+    }
+
+    /**
+     * Convert HTML to Markdown, falling back to stripped text if the converter dependency is unavailable.
+     */
+    protected function convertToMarkdown(string $body): string
+    {
+        $converterClass = $this->converterClass();
+
+        if (! class_exists($converterClass)) {
+            return $this->plainTextFallback($body);
+        }
+
+        /** @var \League\HTMLToMarkdown\HtmlConverter|null $instance */
+        $instance = $this->markdownConverter ?? null;
+
+        if ($instance !== null) {
+            return $instance->convert($body);
+        }
+
+        /** @var \League\HTMLToMarkdown\HtmlConverter $instance */
+        $instance = new $converterClass($this->markdownConverterOptions());
+
+        $this->markdownConverter = $instance;
+
+        return $instance->convert($body);
+    }
+
+    /**
+     * @var \League\HTMLToMarkdown\HtmlConverter|null
+     */
+    private $markdownConverter = null;
+
+    /**
+     * Converter options pulled directly from the upstream library.
+     *
+     * @return array<string, mixed>
+     */
+    protected function markdownConverterOptions(): array
+    {
+        return [
+            'strip_tags' => true,
+            'remove_nodes' => 'script style',
+        ];
+    }
+
+    /**
+     * @return class-string
+     */
+    protected function converterClass(): string
+    {
+        return \League\HTMLToMarkdown\HtmlConverter::class;
+    }
+
+    protected function plainTextFallback(string $body): string
+    {
+        $decoded = html_entity_decode($body, ENT_QUOTES | ENT_HTML5);
+        $withoutTags = preg_replace('/<[^>]+>/', ' ', $decoded) ?? $decoded;
+        $stripped = strip_tags($withoutTags);
+        $singleSpaced = preg_replace('/\s+/', ' ', $stripped) ?? '';
+
+        return trim($singleSpaced);
     }
 }

@@ -53,11 +53,12 @@
             "dist": {
                 "type": "path",
                 "url": "..",
-                "reference": "be2567c7eb046d9c7fe6fa31ddce2c96db1215f1"
+                "reference": "3fa8824da9c9b7b44d04898f5659bf2e7132f1e5"
             },
             "require": {
                 "atlas-php/core": "^0.3.0",
                 "illuminate/support": "^10.0|^11.0|^12.0",
+                "league/html-to-markdown": "^5.1",
                 "php": "^8.2",
                 "prism-php/prism": "^0.98.3"
             },
@@ -85,7 +86,8 @@
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Atlas\\Nexus\\Tests\\": "tests/"
+                    "Atlas\\Nexus\\Tests\\": "tests/",
+                    "Atlas\\Nexus\\Database\\Factories\\": "database/factories/"
                 }
             },
             "scripts": {
@@ -1883,6 +1885,95 @@
             "time": "2025-11-10T11:23:37+00:00"
         },
         {
+            "name": "league/html-to-markdown",
+            "version": "5.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/html-to-markdown.git",
+                "reference": "0b4066eede55c48f38bcee4fb8f0aa85654390fd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/html-to-markdown/zipball/0b4066eede55c48f38bcee4fb8f0aa85654390fd",
+                "reference": "0b4066eede55c48f38bcee4fb8f0aa85654390fd",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-xml": "*",
+                "php": "^7.2.5 || ^8.0"
+            },
+            "require-dev": {
+                "mikehaertl/php-shellcommand": "^1.1.0",
+                "phpstan/phpstan": "^1.8.8",
+                "phpunit/phpunit": "^8.5 || ^9.2",
+                "scrutinizer/ocular": "^1.6",
+                "unleashedtech/php-coding-standard": "^2.7 || ^3.0",
+                "vimeo/psalm": "^4.22 || ^5.0"
+            },
+            "bin": [
+                "bin/html-to-markdown"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.2-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "League\\HTMLToMarkdown\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Colin O'Dell",
+                    "email": "colinodell@gmail.com",
+                    "homepage": "https://www.colinodell.com",
+                    "role": "Lead Developer"
+                },
+                {
+                    "name": "Nick Cernis",
+                    "email": "nick@cern.is",
+                    "homepage": "http://modernnerd.net",
+                    "role": "Original Author"
+                }
+            ],
+            "description": "An HTML-to-markdown conversion helper for PHP",
+            "homepage": "https://github.com/thephpleague/html-to-markdown",
+            "keywords": [
+                "html",
+                "markdown"
+            ],
+            "support": {
+                "issues": "https://github.com/thephpleague/html-to-markdown/issues",
+                "source": "https://github.com/thephpleague/html-to-markdown/tree/5.1.1"
+            },
+            "funding": [
+                {
+                    "url": "https://www.colinodell.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://www.paypal.me/colinpodell/10.00",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/colinodell",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/league/html-to-markdown",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2023-07-12T21:21:09+00:00"
+        },
+        {
             "name": "league/mime-type-detection",
             "version": "1.16.0",
             "source": {
@@ -2704,16 +2795,16 @@
         },
         {
             "name": "prism-php/prism",
-            "version": "v0.98.3",
+            "version": "v0.98.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/prism-php/prism.git",
-                "reference": "4e2c1f006d81eafeb6688fb2d9b42d292c2c81fb"
+                "reference": "9592e3c1b6facf9028cd16e3ffd6220302764779"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/prism-php/prism/zipball/4e2c1f006d81eafeb6688fb2d9b42d292c2c81fb",
-                "reference": "4e2c1f006d81eafeb6688fb2d9b42d292c2c81fb",
+                "url": "https://api.github.com/repos/prism-php/prism/zipball/9592e3c1b6facf9028cd16e3ffd6220302764779",
+                "reference": "9592e3c1b6facf9028cd16e3ffd6220302764779",
                 "shasum": ""
             },
             "require": {
@@ -2771,7 +2862,7 @@
             "description": "A powerful Laravel package for integrating Large Language Models (LLMs) into your applications.",
             "support": {
                 "issues": "https://github.com/prism-php/prism/issues",
-                "source": "https://github.com/prism-php/prism/tree/v0.98.3"
+                "source": "https://github.com/prism-php/prism/tree/v0.98.4"
             },
             "funding": [
                 {
@@ -2779,7 +2870,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-20T14:48:33+00:00"
+            "time": "2025-11-21T11:23:46+00:00"
         },
         {
             "name": "psr/clock",

@@ -6,8 +6,10 @@ namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Atlas\Nexus\Contracts\NexusTool;
 use Atlas\Nexus\Contracts\ToolRunLoggingAware;
+use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Prism\Prism\Tool as PrismTool;
+use Throwable;
 
 /**
  * Class AbstractTool
@@ -55,8 +57,14 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
             ->using(function (mixed ...$arguments): string {
                 $normalizedArguments = $this->normalizeArguments($arguments);
                 $run = $this->logRunStart($normalizedArguments);
-                $response = $this->handle($normalizedArguments);
-                $this->logRunComplete($run, $response);
+                $response = null;
+
+                try {
+                    $response = $this->handle($normalizedArguments);
+                    $this->logRunComplete($run, $response);
+                } catch (Throwable $exception) {
+                    $response = $this->handleFailure($run, $exception);
+                }
 
                 return $response->message();
             });
@@ -108,6 +116,22 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
         }
 
         $this->toolRunLogger->complete($run, $response->meta()['result'] ?? $response->meta() ?: $response->message());
+    }
+
+    protected function handleFailure(?AiToolRun $run, Throwable $exception): ToolResponse
+    {
+        if ($run !== null && $this->toolRunLogger !== null) {
+            $this->toolRunLogger->fail($run, $exception->getMessage());
+        }
+
+        return $this->output(
+            'Tool execution error: '.$exception->getMessage(),
+            [
+                'error' => true,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]
+        );
     }
 
     protected function nextCallIndex(): int

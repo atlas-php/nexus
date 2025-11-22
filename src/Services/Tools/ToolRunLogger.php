@@ -73,4 +73,27 @@ class ToolRunLogger
             'finished_at' => Carbon::now(),
         ]);
     }
+
+    /**
+     * Mark a tool run as failed with an error message and optional result payload.
+     *
+     * @param  array<string, mixed>|int|float|string|null  $result
+     */
+    public function fail(AiToolRun $run, string $errorMessage, int|string|float|array|null $result = null, ?string $toolCallResultId = null): AiToolRun
+    {
+        $responseOutput = is_array($result)
+            ? $result
+            : ($result === null ? null : ['result' => $result]);
+
+        $metadata = $run->metadata ?? [];
+        $metadata['tool_call_result_id'] = $toolCallResultId;
+
+        return $this->toolRunService->update($run, [
+            'status' => AiToolRunStatus::FAILED->value,
+            'response_output' => $responseOutput,
+            'metadata' => $metadata,
+            'error_message' => $errorMessage,
+            'finished_at' => Carbon::now(),
+        ]);
+    }
 }
