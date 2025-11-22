@@ -47,6 +47,7 @@ class NexusSetupCommand extends Command
         $name = (string) $this->option('name');
         $assistantSlug = Str::slug((string) $this->option('assistant'));
         $systemPrompt = "##ROLE:\nYou are a helpful assistant.\n##CONTEXT:\nThe user is {USER.NAME}";
+        
         $model = (string) $this->option('model');
 
         $user = User::query()->firstOrCreate(
@@ -67,7 +68,7 @@ class NexusSetupCommand extends Command
                 'name' => Str::title(str_replace('-', ' ', $assistantSlug)),
                 'description' => 'Sandbox assistant for local Nexus chat tests.',
                 'default_model' => $model,
-                'provider_tools' => ['web_search'],
+                'provider_tools' => ['web_search', 'file_search'],
                 'tools' => ['memory', 'thread_manager'],
                 'is_active' => true,
             ]);

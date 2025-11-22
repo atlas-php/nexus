@@ -46,7 +46,9 @@ return [
             ],
         ],
         'file_search' => [
-            'vector_store_ids' => [],
+            'vector_store_ids' => [
+                'vs_691f2d4727dc8191b759981539c2751f'
+            ],
         ],
     ],
 
