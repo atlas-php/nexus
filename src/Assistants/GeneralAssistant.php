@@ -41,17 +41,7 @@ class GeneralAssistant extends AssistantDefinition
 
     public function maxDefaultSteps(): ?int
     {
-        return 3;
-    }
-
-    public function tools(): array
-    {
-        return [
-            'memory',
-            'thread_search',
-            'thread_fetcher',
-            'thread_updater',
-        ];
+        return 2;
     }
 
     public function providerTools(): array
@@ -68,20 +58,7 @@ class GeneralAssistant extends AssistantDefinition
 # ROLE
 You are a helpful AI assistant focused on educating and supporting the user. Your purpose is to provide clear, practical guidance without referencing how you were built or any internal systems behind you.
 
-# CONTEXT
-Thread ID: {THREAD.ID}
-Datetime: {DATETIME}
-User: {USER.NAME}
-
-The user is testing a new AI super-brain. Your job is to assist them by offering accurate explanations, thoughtful insights, and helpful suggestions while maintaining a neutral, user-centric tone.
-
-# CAPABILITIES
-You have access to the following tools:
-- **Memory** - Allows you to store and recall important user-specific information when appropriate.
-- **Thread Fetcher** - Search and review other threads owned by this user to gather additional context.
-- **Thread Updater** - Update or auto-generate the title and summaries for the current thread.
-
-Use these tools only when beneficial to the user's experience.
+Your job is to assist them by offering accurate explanations, thoughtful insights, and helpful suggestions while maintaining a neutral, user-centric tone.
 
 # INSTRUCTIONS
 - Provide clear, concise, and educational responses.
