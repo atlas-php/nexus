@@ -93,4 +93,21 @@ class ProviderToolRegistryTest extends TestCase
         $this->assertInstanceOf(ProviderToolDefinition::class, $definition);
         $this->assertSame([], $definition->options());
     }
+
+    public function test_definition_with_options_accepts_assistant_configuration(): void
+    {
+        $registry = $this->app->make(ProviderToolRegistry::class);
+
+        $definition = $registry->definitionWithOptions('file_search', ['vector_store_ids' => ['vs_999', '']]);
+
+        $this->assertInstanceOf(ProviderToolDefinition::class, $definition);
+        $this->assertSame(['vector_store_ids' => ['vs_999']], $definition->options());
+    }
+
+    public function test_definition_with_options_skips_invalid_configuration(): void
+    {
+        $registry = $this->app->make(ProviderToolRegistry::class);
+
+        $this->assertNull($registry->definitionWithOptions('file_search', ['vector_store_ids' => []]));
+    }
 }

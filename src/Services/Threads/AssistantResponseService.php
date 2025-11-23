@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Threads;
 
+use Atlas\Nexus\Contracts\ConfigurableTool;
 use Atlas\Nexus\Contracts\NexusTool;
 use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Enums\AiMessageRole;
@@ -90,7 +91,7 @@ class AssistantResponseService
             $request = $textRequest
                 ->using($providerKey, $modelKey)
                 ->withMessages($this->convertMessages($state))
-                ->withMaxSteps($this->maxSteps());
+                ->withMaxSteps($this->resolveMaxSteps($state));
 
             $maxTokens = $state->assistant->maxOutputTokens();
 
@@ -200,6 +201,14 @@ class AssistantResponseService
 
             if ($handler instanceof ThreadStateAwareTool) {
                 $handler->setThreadState($state);
+            }
+
+            if ($handler instanceof ConfigurableTool) {
+                $configuration = $state->assistant->toolConfiguration($definition->key());
+
+                if ($configuration !== null) {
+                    $handler->applyConfiguration($configuration);
+                }
             }
 
             if ($handler instanceof \Atlas\Nexus\Contracts\ToolRunLoggingAware) {
@@ -545,9 +554,17 @@ class AssistantResponseService
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
     }
 
-    protected function maxSteps(): int
+    protected function resolveMaxSteps(ThreadState $state): int
     {
-        return (int) config('prism.max_steps', 8);
+        $assistantMax = $state->assistant->maxDefaultSteps();
+
+        if (is_int($assistantMax) && $assistantMax > 0) {
+            return $assistantMax;
+        }
+
+        $configured = (int) config('prism.max_steps', 8);
+
+        return $configured > 0 ? $configured : 1;
     }
 
     protected function formatRateLimitedFailure(

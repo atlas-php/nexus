@@ -44,6 +44,11 @@ abstract class AssistantDefinition
         return null;
     }
 
+    public function maxDefaultSteps(): ?int
+    {
+        return null;
+    }
+
     public function isActive(): bool
     {
         return true;
@@ -55,7 +60,7 @@ abstract class AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function tools(): array
     {
@@ -63,7 +68,7 @@ abstract class AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function providerTools(): array
     {
@@ -93,6 +98,9 @@ abstract class AssistantDefinition
      */
     final public function assistantAttributes(): array
     {
+        [$toolKeys, $toolConfigurations] = $this->normalizeToolDeclarations($this->tools());
+        [$providerToolKeys, $providerToolConfigurations] = $this->normalizeToolDeclarations($this->providerTools());
+
         return [
             'assistant_key' => $this->key(),
             'key' => $this->key(),
@@ -102,10 +110,13 @@ abstract class AssistantDefinition
             'temperature' => $this->temperature(),
             'top_p' => $this->topP(),
             'max_output_tokens' => $this->maxOutputTokens(),
+            'max_default_steps' => $this->maxDefaultSteps(),
             'is_active' => $this->isActive(),
             'is_hidden' => $this->isHidden(),
-            'tools' => $this->normalizeStringArray($this->tools()),
-            'provider_tools' => $this->normalizeStringArray($this->providerTools()),
+            'tools' => $toolKeys,
+            'tool_configuration' => $toolConfigurations,
+            'provider_tools' => $providerToolKeys,
+            'provider_tool_configuration' => $providerToolConfigurations,
             'metadata' => $this->normalizeMetadata($this->metadata()),
         ];
     }
@@ -120,33 +131,6 @@ abstract class AssistantDefinition
             'is_active' => $this->promptIsActive(),
             'user_id' => $this->promptUserId(),
         ];
-    }
-
-    /**
-     * @param  array<int, mixed>  $values
-     * @return array<int, string>|null
-     */
-    final protected function normalizeStringArray(array $values): ?array
-    {
-        $normalized = [];
-
-        foreach ($values as $value) {
-            if (! is_string($value)) {
-                continue;
-            }
-
-            $trimmed = trim($value);
-
-            if ($trimmed === '') {
-                continue;
-            }
-
-            $normalized[$trimmed] = true;
-        }
-
-        $keys = array_keys($normalized);
-
-        return $keys !== [] ? $keys : null;
     }
 
     /**
@@ -166,5 +150,104 @@ abstract class AssistantDefinition
         }
 
         return $normalized !== [] ? $normalized : null;
+    }
+
+    /**
+     * @param  array<int|string, string|array<string, mixed>>  $declarations
+     * @return array{0: array<int, string>|null, 1: array<string, array<string, mixed>>|null}
+     */
+    final protected function normalizeToolDeclarations(array $declarations): array
+    {
+        $keys = [];
+        $configurations = [];
+
+        foreach ($declarations as $index => $value) {
+            $toolKey = null;
+            $config = null;
+
+            if (is_int($index)) {
+                if (is_string($value)) {
+                    $toolKey = trim($value);
+                } elseif (is_array($value)) {
+                    $toolKey = $this->normalizeToolKeyFromDeclaration($value);
+                    $config = $this->extractToolConfigFromDeclaration($value);
+                }
+            } else {
+                $toolKey = trim((string) $index);
+                $config = is_array($value) ? $value : null;
+            }
+
+            if ($toolKey === null || $toolKey === '') {
+                continue;
+            }
+
+            $keys[$toolKey] = true;
+
+            if ($config !== null) {
+                $normalized = $this->normalizeConfigurationArray($config);
+
+                if ($normalized !== null) {
+                    $configurations[$toolKey] = $normalized;
+                }
+            }
+        }
+
+        $normalizedKeys = array_keys($keys);
+
+        return [
+            $normalizedKeys !== [] ? $normalizedKeys : null,
+            $configurations !== [] ? $configurations : null,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $declaration
+     */
+    private function normalizeToolKeyFromDeclaration(array $declaration): ?string
+    {
+        $key = $declaration['key'] ?? null;
+
+        if (! is_string($key)) {
+            return null;
+        }
+
+        $trimmed = trim($key);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    /**
+     * @param  array<string, mixed>  $declaration
+     * @return array<string, mixed>|null
+     */
+    private function extractToolConfigFromDeclaration(array $declaration): ?array
+    {
+        $config = $declaration['config'] ?? $declaration['configuration'] ?? $declaration['options'] ?? null;
+
+        if (! is_array($config)) {
+            $config = $declaration;
+            unset($config['key'], $config['config'], $config['configuration'], $config['options']);
+        }
+
+        return $config === [] ? null : $config;
+    }
+
+    /**
+     * @param  array<string|int, mixed>  $config
+     * @return array<string, mixed>|null
+     */
+    final protected function normalizeConfigurationArray(array $config): ?array
+    {
+        $normalized = [];
+
+        foreach ($config as $key => $value) {
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
+
+            $normalized[$key] = $value;
+        }
+
+        return $normalized === [] ? null : $normalized;
     }
 }

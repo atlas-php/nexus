@@ -39,7 +39,7 @@ php artisan migrate
 Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
-- Assistants are defined via `atlas-nexus.assistants` where each class extends `AssistantDefinition`. These classes control the assistant key, name/description, system prompt, default model, temperature/top_p/max tokens, available tool keys, and provider tool passthrough.
+- Assistants are defined via `atlas-nexus.assistants` where each class extends `AssistantDefinition`. These classes control the assistant key, name/description, system prompt, default model, temperature/top_p/max tokens, default max steps, availability flags, and the full configuration for tools + provider tools.
 - Runtime tables reference assistants via an `assistant_key` string so definitions stay code-driven and stateless.
 
 See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Integrations\Prism\Tools;
 
+use Atlas\Nexus\Contracts\ConfigurableTool;
 use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\WebSearch\WebSummaryService;
@@ -21,7 +22,7 @@ use Throwable;
  *
  * Fetches website content for assistants, normalizes it to Markdown, and optionally summarizes it inline using the built-in web summarizer, with optional allowed-domain restrictions.
  */
-class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
+class WebSearchTool extends AbstractTool implements ConfigurableTool, ThreadStateAwareTool
 {
     public const KEY = 'web_search';
 
@@ -67,6 +68,22 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
         if ($parseMode !== null) {
             $this->parseMode = $this->normalizeParseMode($parseMode);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $configuration
+     */
+    public function applyConfiguration(array $configuration): void
+    {
+        $contentLimit = $configuration['content_limit'] ?? null;
+        $allowedDomains = $configuration['allowed_domains'] ?? null;
+        $parseMode = $configuration['parse_mode'] ?? null;
+
+        $this->configure(
+            is_numeric($contentLimit) ? (int) $contentLimit : null,
+            $allowedDomains,
+            is_string($parseMode) ? $parseMode : null
+        );
     }
 
     public static function definition(): ToolDefinition

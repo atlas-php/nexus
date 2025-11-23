@@ -93,6 +93,33 @@ class ThreadStateServiceTest extends TestCase
         $this->assertFalse($state->tools->contains(fn ($definition) => $definition->key() === MemoryTool::KEY));
     }
 
+    public function test_it_applies_provider_tool_configuration_from_assistant(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'provider_tools' => [
+                'file_search' => ['vector_store_ids' => ['vs_123', '']],
+            ],
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $this->assertCount(1, $state->providerTools);
+
+        $definition = $state->providerTools->first();
+
+        $this->assertInstanceOf(\Atlas\Nexus\Support\Tools\ProviderToolDefinition::class, $definition);
+        $this->assertSame('file_search', $definition->key());
+        $this->assertSame(['vector_store_ids' => ['vs_123']], $definition->options());
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';

@@ -19,11 +19,13 @@ Each definition class must implement:
 | `name()` / `description()` | Display metadata for UIs or logs. |
 | `systemPrompt()` | Raw system prompt text that `ThreadStateService` renders with prompt variables. |
 | `defaultModel()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
-| `tools()` | Array of regular tool keys the assistant may call. |
-| `providerTools()` | Provider-native tool configuration passed straight to Prism. |
+| `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
+| `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
+| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['web_search' => ['allowed_domains' => ['atlasphp.com']]]` to pass options to the tool handler. |
+| `providerTools()` | Provider-native tool declarations with assistant-owned options. Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |
 | `metadata()` | Arbitrary assistant metadata exposed to consumers. |
 
-The base class normalizes arrays and exposes helper setters (`promptIsActive`, `promptUserId`) for future overrides.
+The base class normalizes arrays, deduplicates tool keys, and exposes helper setters (`promptIsActive`, `promptUserId`). Tool and provider tool declarations may be strings or associative arrays; any configuration arrays are preserved and supplied to the runtime services so every assistant can own its own tool options.
 
 ## Runtime Columns
 

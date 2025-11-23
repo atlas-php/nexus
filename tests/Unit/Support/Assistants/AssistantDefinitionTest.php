@@ -28,6 +28,8 @@ class AssistantDefinitionTest extends TestCase
 
             private int $maxTokensValue = 1024;
 
+            private int $maxStepsValue = 6;
+
             private bool $promptActive = false;
 
             private int $promptUser = 77;
@@ -87,6 +89,14 @@ class AssistantDefinitionTest extends TestCase
                 return $this->maxTokensValue > 0 ? $this->maxTokensValue : null;
             }
 
+            /**
+             * @phpstan-return int
+             */
+            public function maxDefaultSteps(): ?int
+            {
+                return $this->maxStepsValue > 0 ? $this->maxStepsValue : null;
+            }
+
             public function isActive(): bool
             {
                 return false;
@@ -98,19 +108,29 @@ class AssistantDefinitionTest extends TestCase
             }
 
             /**
-             * @return array<int, string>
+             * @return array<int|string, string|array<string, mixed>>
              */
             public function tools(): array
             {
-                return [' memory ', 'thread_fetcher', '', 'memory'];
+                return [
+                    ' memory ',
+                    'thread_fetcher' => ['mode' => 'summary'],
+                    ['key' => 'thread_updater', 'config' => ['fields' => ['title']]],
+                    '',
+                    'memory',
+                ];
             }
 
             /**
-             * @return array<int, string>
+             * @return array<int|string, string|array<string, mixed>>
              */
             public function providerTools(): array
             {
-                return [' web_search ', 'file_search', ''];
+                return [
+                    ' web_search ' => ['filters' => ['allowed_domains' => ['example.com']]],
+                    ['key' => 'file_search', 'options' => ['vector_store_ids' => ['vs_123']]],
+                    '',
+                ];
             }
 
             /**
@@ -145,10 +165,19 @@ class AssistantDefinitionTest extends TestCase
         $this->assertSame(0.25, $assistant['temperature']);
         $this->assertSame(0.8, $assistant['top_p']);
         $this->assertSame(1024, $assistant['max_output_tokens']);
+        $this->assertSame(6, $assistant['max_default_steps']);
         $this->assertFalse($assistant['is_active']);
         $this->assertTrue($assistant['is_hidden']);
-        $this->assertSame(['memory', 'thread_fetcher'], $assistant['tools']);
+        $this->assertSame(['memory', 'thread_fetcher', 'thread_updater'], $assistant['tools']);
+        $this->assertSame([
+            'thread_fetcher' => ['mode' => 'summary'],
+            'thread_updater' => ['fields' => ['title']],
+        ], $assistant['tool_configuration']);
         $this->assertSame(['web_search', 'file_search'], $assistant['provider_tools']);
+        $this->assertSame([
+            'web_search' => ['filters' => ['allowed_domains' => ['example.com']]],
+            'file_search' => ['vector_store_ids' => ['vs_123']],
+        ], $assistant['provider_tool_configuration']);
         $this->assertSame(['tier' => 'pro', 'segment' => 'beta'], $assistant['metadata']);
 
         $this->assertSame('System prompt', $prompt['system_prompt']);
@@ -181,8 +210,11 @@ class AssistantDefinitionTest extends TestCase
 
         $this->assertSame('minimal-assistant', $assistant['assistant_key']);
         $this->assertNull($assistant['tools']);
+        $this->assertNull($assistant['tool_configuration']);
         $this->assertNull($assistant['provider_tools']);
+        $this->assertNull($assistant['provider_tool_configuration']);
         $this->assertNull($assistant['metadata']);
+        $this->assertNull($assistant['max_default_steps']);
 
         $this->assertSame('Prompt', $prompt['system_prompt']);
         $this->assertTrue($prompt['is_active']);

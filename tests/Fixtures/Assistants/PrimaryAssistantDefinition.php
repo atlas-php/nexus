@@ -20,6 +20,7 @@ class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
             'temperature' => 0.2,
             'top_p' => 0.5,
             'max_output_tokens' => 512,
+            'max_default_steps' => 8,
             'tools' => ['memory', 'thread_search'],
             'provider_tools' => [],
             'metadata' => [],

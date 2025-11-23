@@ -12,14 +12,34 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 - [Manage Memories](#manage-memories)
 
 ## Create an Assistant & Prompt
-1. Create a class that extends `Atlas\Nexus\Support\Assistants\AssistantDefinition` and implement the required methods (`key`, `name`, `systemPrompt`, defaults, tools, etc.).
+1. Create a class that extends `Atlas\Nexus\Support\Assistants\AssistantDefinition` and implement the required methods (`key`, `name`, `systemPrompt`, defaults, tools, etc.). Override `maxDefaultSteps()`, `isActive()`, and `isHidden()` as needed for routing/UI controls.
 2. Register the class inside `config/atlas-nexus.php` under `assistants`.
 3. Reference the assistant by its `key` everywhere else (threads, messages, tool runs, memories).
 
 ## Register Tools
-1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`).
+1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`). Handlers may implement `ConfigurableTool` to accept assistant-level configuration arrays.
 2. Register the tool by resolving `Atlas\Nexus\Services\Tools\ToolRegistry` from the container and calling `register(new ToolDefinition('calendar_lookup', CustomCalendarTool::class))`, or rely on built-ins.
-3. Include the tool key in the assistant definition’s `tools()` return value.
+3. Include the tool key in the assistant definition’s `tools()` return value. Strings work for defaults, or return keyed arrays to attach options per assistant:
+
+```php
+public function tools(): array
+{
+    return [
+        'memory',
+        'web_search' => [
+            'content_limit' => 6000,
+            'allowed_domains' => ['atlasphp.com'],
+        ],
+    ];
+}
+
+public function providerTools(): array
+{
+    return [
+        'file_search' => ['vector_store_ids' => ['vs_123']],
+    ];
+}
+```
 
 ## Start a Thread
 1. Create an `ai_threads` row with `assistant_key`, `user_id`, optional `group_id`, `type=user`, `status=open`.

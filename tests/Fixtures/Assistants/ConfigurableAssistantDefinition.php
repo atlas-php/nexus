@@ -88,6 +88,11 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
         return $this->data('max_output_tokens');
     }
 
+    public function maxDefaultSteps(): ?int
+    {
+        return $this->data('max_default_steps');
+    }
+
     public function isActive(): bool
     {
         return (bool) $this->data('is_active', true);
@@ -99,7 +104,7 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function tools(): array
     {
@@ -107,7 +112,7 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function providerTools(): array
     {

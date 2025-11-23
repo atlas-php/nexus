@@ -25,6 +25,8 @@ class ResolvedAssistant
 
     private ?int $maxOutputTokens;
 
+    private ?int $maxDefaultSteps;
+
     private bool $isActive;
 
     private bool $isHidden;
@@ -38,6 +40,16 @@ class ResolvedAssistant
      * @var array<int, string>
      */
     private array $providerTools;
+
+    /**
+     * @var array<string, array<string, mixed>>
+     */
+    private array $toolConfigurations;
+
+    /**
+     * @var array<string, array<string, mixed>>
+     */
+    private array $providerToolConfigurations;
 
     /**
      * @var array<string, mixed>|null
@@ -57,10 +69,13 @@ class ResolvedAssistant
         $this->temperature = $this->normalizeNullableFloat($attributes['temperature'] ?? null);
         $this->topP = $this->normalizeNullableFloat($attributes['top_p'] ?? null);
         $this->maxOutputTokens = $this->normalizeNullableInt($attributes['max_output_tokens'] ?? null);
+        $this->maxDefaultSteps = $this->normalizeNullableInt($attributes['max_default_steps'] ?? null);
         $this->isActive = (bool) ($attributes['is_active'] ?? true);
         $this->isHidden = (bool) ($attributes['is_hidden'] ?? false);
         $this->tools = $this->normalizeStringArray($attributes['tools'] ?? null);
         $this->providerTools = $this->normalizeStringArray($attributes['provider_tools'] ?? null);
+        $this->toolConfigurations = $this->normalizeConfigurationMap($attributes['tool_configuration'] ?? null);
+        $this->providerToolConfigurations = $this->normalizeConfigurationMap($attributes['provider_tool_configuration'] ?? null);
         $this->metadata = $this->normalizeMetadata($attributes['metadata'] ?? null);
     }
 
@@ -104,6 +119,11 @@ class ResolvedAssistant
         return $this->maxOutputTokens;
     }
 
+    public function maxDefaultSteps(): ?int
+    {
+        return $this->maxDefaultSteps;
+    }
+
     public function isActive(): bool
     {
         return $this->isActive;
@@ -128,6 +148,42 @@ class ResolvedAssistant
     public function providerTools(): array
     {
         return $this->providerTools;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function toolConfigurations(): array
+    {
+        return $this->toolConfigurations;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function providerToolConfigurations(): array
+    {
+        return $this->providerToolConfigurations;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function toolConfiguration(string $key): ?array
+    {
+        $normalized = trim($key);
+
+        return $normalized === '' ? null : ($this->toolConfigurations[$normalized] ?? null);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function providerToolConfiguration(string $key): ?array
+    {
+        $normalized = trim($key);
+
+        return $normalized === '' ? null : ($this->providerToolConfigurations[$normalized] ?? null);
     }
 
     /**
@@ -222,5 +278,29 @@ class ResolvedAssistant
         }
 
         return $normalized === [] ? null : $normalized;
+    }
+
+    /**
+     * @phpstan-param array<string, array<string, mixed>>|null  $config
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function normalizeConfigurationMap(mixed $config): array
+    {
+        if (! is_array($config)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($config as $key => $value) {
+            if ($key === '') {
+                continue;
+            }
+
+            $normalized[$key] = $value;
+        }
+
+        return $normalized;
     }
 }

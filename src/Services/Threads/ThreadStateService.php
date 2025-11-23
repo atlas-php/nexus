@@ -107,7 +107,24 @@ class ThreadStateService
     {
         $keys = $assistant->providerTools();
 
-        return collect($this->providerToolRegistry->forKeys($keys));
+        if ($keys === []) {
+            return collect();
+        }
+
+        $definitions = [];
+
+        foreach ($keys as $key) {
+            $options = $assistant->providerToolConfiguration($key);
+            $definition = $this->providerToolRegistry->definitionWithOptions($key, $options);
+
+            if ($definition === null) {
+                continue;
+            }
+
+            $definitions[] = $definition;
+        }
+
+        return collect($definitions);
     }
 
     protected function resolveSystemPrompt(ThreadState $state): ?string

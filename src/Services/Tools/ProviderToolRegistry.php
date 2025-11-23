@@ -49,6 +49,30 @@ class ProviderToolRegistry
     }
 
     /**
+     * @param  array<string, mixed>|null  $options
+     */
+    public function definitionWithOptions(string $key, ?array $options = null): ?ProviderToolDefinition
+    {
+        $normalizedKey = trim($key);
+
+        if ($normalizedKey === '') {
+            return null;
+        }
+
+        if ($options === null) {
+            return $this->definition($normalizedKey);
+        }
+
+        $normalizedOptions = $this->normalizeOptions($normalizedKey, $options);
+
+        if ($normalizedOptions === null) {
+            return null;
+        }
+
+        return new ProviderToolDefinition($normalizedKey, $normalizedOptions);
+    }
+
+    /**
      * @return array<string, ProviderToolDefinition>
      */
     public function all(): array
