@@ -20,7 +20,8 @@ return [
         'registry' => [
             'memory' => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,
             'web_search' => \Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool::class,
-            'thread_manager' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadManagerTool::class,
+            'thread_fetcher' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool::class,
+            'thread_updater' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool::class,
             // 'custom_tool' => \App\Tools\CustomTool::class,
         ],
         'options' => [
@@ -30,7 +31,7 @@ return [
                 'allowed_domains' => null,
                 'parse_mode' => 'text_only', // markdown | text_only | null
             ],
-            'thread_manager' => [
+            'thread_updater' => [
                 'model' => null,
             ],
         ],

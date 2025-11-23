@@ -60,7 +60,7 @@ Assistant tool availability is configured via the `ai_assistants.tools` JSON arr
 
 Rules:
 - Keys are normalized to unique strings; null/empty means no tools.
-- Built-in tools (memory, web_search, thread_manager) are registered automatically when enabled in config; thread state filters to registered tool keys.
+- Built-in tools (memory, web_search, thread_fetcher, thread_updater) are registered automatically when enabled in config; thread state filters to registered tool keys.
 - Seeders provision built-in assistants/prompts where required (e.g., web search summarizer, thread manager).
 
 ## Service Responsibilities

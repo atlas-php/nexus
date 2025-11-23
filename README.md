@@ -84,7 +84,7 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
 - Default seeders:
   - `WebSearchAssistantSeeder` (creates the built-in web summarizer assistant/prompt used by the `web_search` tool).
   - `ThreadManagerAssistantSeeder` (creates the built-in thread manager assistant/prompt for title/summary generation).
-- Built-in tools: `memory` (persist/query memories), `web_search` (fetch and optionally summarize website content), and `thread_manager` (update or generate thread title/summary).
+- Built-in tools: `memory` (persist/query memories), `web_search` (fetch and optionally summarize website content), `thread_fetcher` (search or fetch threads), and `thread_updater` (update or auto-generate thread title/summary metadata).
 - Extend via `config/atlas-nexus.php` `seeders` array or `NexusSeederService::extend()` at runtime.
 
 ## Purging Soft Deletes

@@ -11,7 +11,6 @@ use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\BooleanSchema;
 use Prism\Prism\Schema\NumberSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
@@ -20,13 +19,13 @@ use Throwable;
 use function collect;
 
 /**
- * Class ThreadManagerTool
+ * Class ThreadFetcherTool
  *
- * Enables assistants to search, inspect, and summarize user threads within the Nexus workspace.
+ * Enables assistants to search and inspect existing threads that belong to the current assistant + user context.
  */
-class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
+class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 {
-    public const KEY = 'thread_manager';
+    public const KEY = 'thread_fetcher';
 
     protected ?ThreadState $state = null;
 
@@ -46,12 +45,12 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
 
     public function name(): string
     {
-        return 'Thread Manager';
+        return 'Thread Fetcher';
     }
 
     public function description(): string
     {
-        return 'Search threads by their title, summaries, keywords, and message content. Use fetch_thread with a thread_id to inspect the full conversation; search does not look up users.';
+        return 'Search threads by title, summaries, keywords, and message content. Use fetch_thread with a thread_id to inspect a conversation.';
     }
 
     /**
@@ -60,15 +59,11 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new StringSchema('action', 'Action to perform: search_threads, fetch_thread, update_thread.', true), true),
+            new ToolParameter(new StringSchema('action', 'Action to perform: search_threads or fetch_thread.', true), true),
             new ToolParameter(new NumberSchema('page', 'Page number when listing/searching threads.', true), false),
             new ToolParameter(new ArraySchema('search', 'Search terms within title, short summary, long summary, keywords, and all message content (search action).', new StringSchema('term', 'Search term', true), true), false),
             new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
-            new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch/update actions.', true), false),
-            new ToolParameter(new StringSchema('title', 'New thread title (optional).', true), false),
-            new ToolParameter(new StringSchema('summary', 'New short summary (optional).', true), false),
-            new ToolParameter(new StringSchema('long_summary', 'New long summary (optional).', true), false),
-            new ToolParameter(new BooleanSchema('generate_summary', 'Generate thread summaries via assistant.', true), false),
+            new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch action.', true), false),
         ];
     }
 
@@ -78,7 +73,7 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
     public function handle(array $arguments): ToolResponse
     {
         if (! isset($this->state)) {
-            return $this->output('Thread manager unavailable: missing thread context.', ['error' => true]);
+            return $this->output('Thread fetcher unavailable: missing thread context.', ['error' => true]);
         }
 
         try {
@@ -88,13 +83,12 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
             return match ($action) {
                 'search' => $this->handleSearch($state, $arguments),
                 'fetch' => $this->handleFetch($state, $arguments),
-                'update' => $this->handleUpdate($state, $arguments),
-                default => $this->output('Provide a valid action: search_threads, fetch_thread, or update_thread.', ['error' => true]),
+                default => $this->output('Provide a valid action: search_threads or fetch_thread.', ['error' => true]),
             };
         } catch (RuntimeException $exception) {
             return $this->output($exception->getMessage(), ['error' => true]);
         } catch (Throwable $exception) {
-            return $this->output('Thread manager failed: '.$exception->getMessage(), ['error' => true]);
+            return $this->output('Thread fetcher failed: '.$exception->getMessage(), ['error' => true]);
         }
     }
 
@@ -167,50 +161,6 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
         ]);
     }
 
-    /**
-     * @param  array<string, mixed>  $arguments
-     */
-    protected function handleUpdate(ThreadState $state, array $arguments): ToolResponse
-    {
-        $threadId = $this->normalizeThreadId($arguments['thread_id'] ?? $state->thread->getKey());
-
-        if ($threadId === null) {
-            throw new RuntimeException('Provide a thread_id to update.');
-        }
-
-        $title = $this->trimValue($arguments['title'] ?? null);
-        $summary = $this->trimValue($arguments['summary'] ?? null);
-        $longSummary = $this->trimValue($arguments['long_summary'] ?? null);
-        $autoGenerate = $this->shouldAutoGenerate($arguments);
-
-        $result = $this->threadManagerService->updateThread(
-            $state,
-            $threadId,
-            $title,
-            $summary,
-            $longSummary,
-            $autoGenerate
-        );
-
-        $message = $autoGenerate
-            ? 'Thread title and summaries generated.'
-            : 'Thread updated.';
-
-        return $this->output($message, [
-            'thread_id' => $result['thread']->id,
-            'title' => $result['title'],
-            'summary' => $result['summary'],
-            'long_summary' => $result['long_summary'],
-            'keywords' => $result['keywords'],
-            'result' => [
-                'title' => $result['title'],
-                'summary' => $result['summary'],
-                'long_summary' => $result['long_summary'],
-                'keywords' => $result['keywords'],
-            ],
-        ]);
-    }
-
     protected function normalizeAction(mixed $value): ?string
     {
         if (! is_string($value)) {
@@ -222,29 +172,8 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
         return match ($normalized) {
             'search', 'search_threads', 'search_thread', 'list', 'list_threads', 'list_thread' => 'search',
             'fetch', 'fetch_thread', 'show_thread' => 'fetch',
-            'update', 'update_thread', 'set_thread' => 'update',
             default => null,
         };
-    }
-
-    /**
-     * @param  array<string, mixed>  $arguments
-     */
-    protected function shouldAutoGenerate(array $arguments): bool
-    {
-        $flag = $arguments['generate_summary'] ?? false;
-
-        if (is_bool($flag)) {
-            return $flag;
-        }
-
-        if (is_string($flag)) {
-            $normalized = strtolower($flag);
-
-            return in_array($normalized, ['1', 'true', 'yes', 'y', 'auto', 'generate'], true);
-        }
-
-        return (bool) $flag;
     }
 
     protected function normalizeInt(mixed $value): ?int
@@ -269,17 +198,6 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
         }
 
         return $id > 0 ? $id : null;
-    }
-
-    protected function trimValue(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
     }
 
     /**

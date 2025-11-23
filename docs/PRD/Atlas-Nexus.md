@@ -52,7 +52,7 @@ Each table definition with fields is detailed in the linked PRDs below.
   - `ThreadManagerAssistantSeeder` — provisions the built-in thread manager assistant/prompt for title/summary generation when enabled.
   - `DefaultAssistantSeeder` — provisions a general-purpose assistant/prompt so consumers have a ready default.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
-- `ThreadManagerTool` is available as a built-in tool when enabled via config.
+- Built-in tools include `memory`, `web_search`, `thread_fetcher`, and `thread_updater`; configuration toggles exposure by assistant.
 - Seeders are idempotent and safe to run repeatedly. Consumers can extend via config or `NexusSeederService::extend()`.
 
 ## Purge & Retention
