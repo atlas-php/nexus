@@ -200,5 +200,4 @@ class AiMemoryService extends ModelService
                     ->orWhere('assistant_id', $assistant->id);
             });
     }
-
 }
