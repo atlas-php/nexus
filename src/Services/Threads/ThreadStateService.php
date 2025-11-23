@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMemoryService;
@@ -35,7 +34,7 @@ class ThreadStateService
         private readonly AssistantRegistry $assistantRegistry
     ) {}
 
-    public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
+    public function forThread(AiThread $thread): ThreadState
     {
         $assistantKey = $thread->assistant_key;
 
@@ -53,7 +52,7 @@ class ThreadStateService
 
         $memories = $this->memoryService->listForThread($assistant, $thread);
 
-        $tools = $this->resolveTools($assistant, $includeMemoryTool ?? true);
+        $tools = $this->resolveTools($assistant);
         $providerTools = $this->resolveProviderTools($assistant);
 
         $state = new ThreadState(
@@ -84,18 +83,9 @@ class ThreadStateService
     /**
      * @return Collection<int, \Atlas\Nexus\Support\Tools\ToolDefinition>
      */
-    protected function resolveTools(ResolvedAssistant $assistant, bool $includeMemoryTool): Collection
+    protected function resolveTools(ResolvedAssistant $assistant): Collection
     {
         $toolKeys = $assistant->tools();
-
-        if (! $includeMemoryTool) {
-            $toolKeys = array_values(array_filter(
-                $toolKeys,
-                static fn (string $key): bool => $key !== MemoryTool::KEY
-            ));
-        } elseif (! in_array(MemoryTool::KEY, $toolKeys, true)) {
-            $toolKeys[] = MemoryTool::KEY;
-        }
 
         return collect($this->toolRegistry->forKeys($toolKeys));
     }

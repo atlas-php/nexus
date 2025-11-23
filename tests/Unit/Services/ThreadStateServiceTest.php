@@ -37,7 +37,7 @@ class ThreadStateServiceTest extends TestCase
     public function test_it_builds_thread_state_with_messages_memories_and_tools(): void
     {
         PrimaryAssistantDefinition::updateConfig([
-            'tools' => ['calendar_lookup'],
+            'tools' => ['memory', 'calendar_lookup'],
             'system_prompt' => 'Stay helpful.',
         ]);
 
@@ -74,12 +74,16 @@ class ThreadStateServiceTest extends TestCase
         $this->assertCount(1, $state->memories);
         $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
 
-        $this->assertTrue(in_array(MemoryTool::KEY, $toolKeys, true));
         $this->assertTrue(in_array('calendar_lookup', $toolKeys, true));
+        $this->assertTrue(in_array(MemoryTool::KEY, $toolKeys, true));
     }
 
-    public function test_it_can_disable_memory_tool(): void
+    public function test_it_excludes_memory_tool_when_not_enabled(): void
     {
+        PrimaryAssistantDefinition::updateConfig([
+            'tools' => ['calendar_lookup'],
+        ]);
+
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
@@ -88,9 +92,28 @@ class ThreadStateServiceTest extends TestCase
         $freshThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $freshThread);
 
-        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread, false);
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
         $this->assertFalse($state->tools->contains(fn ($definition) => $definition->key() === MemoryTool::KEY));
+    }
+
+    public function test_it_returns_no_tools_when_assistant_has_none(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'tools' => [],
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $this->assertCount(0, $state->tools);
     }
 
     public function test_it_applies_provider_tool_configuration_from_assistant(): void
@@ -118,6 +141,25 @@ class ThreadStateServiceTest extends TestCase
         $this->assertInstanceOf(\Atlas\Nexus\Support\Tools\ProviderToolDefinition::class, $definition);
         $this->assertSame('file_search', $definition->key());
         $this->assertSame(['vector_store_ids' => ['vs_123']], $definition->options());
+    }
+
+    public function test_it_returns_no_provider_tools_when_assistant_has_none(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'provider_tools' => [],
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $this->assertCount(0, $state->providerTools);
     }
 
     private function migrationPath(): string
