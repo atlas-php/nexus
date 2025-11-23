@@ -121,6 +121,8 @@ class ThreadTitleSummaryServiceTest extends TestCase
         $this->assertSame(AiMessageRole::ASSISTANT, $messages[1]->role);
         $this->assertSame('resp-summary', $messages[1]->provider_response_id);
         $this->assertSame($response->text, $messages[1]->metadata['thread_manager_payload'] ?? null);
+        $this->assertIsArray($messages[1]->raw_response);
+        $this->assertSame($response->text, $messages[1]->raw_response['text'] ?? null);
 
         $metadata = $summaryThread->metadata ?? [];
         $this->assertSame($response->text, $metadata['thread_manager_payload'] ?? null);

@@ -21,25 +21,17 @@ use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Prism\TextResponseSerializer;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Prism\Prism\Contracts\Message;
 use Prism\Prism\Exceptions\PrismRateLimitedException;
-use Prism\Prism\Text\Response;
-use Prism\Prism\Text\Step;
 use Prism\Prism\Tool;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
-use Prism\Prism\ValueObjects\Messages\ToolResultMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\ValueObjects\Meta;
-use Prism\Prism\ValueObjects\ProviderRateLimit;
 use Prism\Prism\ValueObjects\ProviderTool;
-use Prism\Prism\ValueObjects\ProviderToolCall;
 use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
-use Prism\Prism\ValueObjects\Usage;
 use RuntimeException;
 use Throwable;
 
@@ -148,7 +140,10 @@ class AssistantResponseService
 
                 $this->messageService->update($assistantMessage, [
                     'content' => $response->text,
-                    'raw_response' => $this->serializeResponse($response),
+                    'raw_response' => TextResponseSerializer::serialize(
+                        $response,
+                        fn (ToolResult $result) => $this->recordedToolOutputs[$result->toolCallId] ?? $result->result
+                    ),
                     'status' => AiMessageStatus::COMPLETED->value,
                     'failed_reason' => null,
                     'model' => $response->meta->model ?? $state->assistant->model(),
@@ -398,167 +393,6 @@ class AssistantResponseService
         }
 
         return $recordedIds;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeResponse(Response $response): array
-    {
-        return [
-            'text' => $response->text,
-            'finish_reason' => $response->finishReason->value,
-            'model' => $response->meta->model,
-            'provider_response_id' => $response->meta->id,
-            'usage' => $this->serializeUsage($response->usage),
-            'tool_calls' => array_map(fn (ToolCall $call): array => $this->serializeToolCall($call), $response->toolCalls),
-            'tool_results' => array_map(fn (ToolResult $result): array => $this->serializeToolResult($result), $response->toolResults),
-            // 'messages' => $this->serializeMessages($response->messages->all()),
-            'steps' => $response->steps->map(fn (Step $step): array => $this->serializeStep($step))->all(),
-            'additional_content' => $response->additionalContent,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeStep(Step $step): array
-    {
-        return [
-            'text' => $step->text,
-            'finish_reason' => $step->finishReason->value,
-            'tool_calls' => array_map(fn (ToolCall $call): array => $this->serializeToolCall($call), $step->toolCalls),
-            'tool_results' => array_map(fn (ToolResult $result): array => $this->serializeToolResult($result), $step->toolResults),
-            'provider_tool_calls' => array_map(fn (ProviderToolCall $call): array => $this->serializeProviderToolCall($call), $step->providerToolCalls),
-            // 'usage' => $this->serializeUsage($step->usage),
-            'meta' => $this->serializeMeta($step->meta),
-            // 'messages' => $this->serializeMessages($step->messages),
-            'system_prompts' => array_map(static fn (SystemMessage $message): string => $message->content, $step->systemPrompts),
-            // 'additional_content' => $step->additionalContent,
-        ];
-    }
-
-    /**
-     * @param  array<int, Message>  $messages
-     * @return array<int, array<string, mixed>>
-     */
-    protected function serializeMessages(array $messages): array
-    {
-        return array_map(function (Message $message): array {
-            if ($message instanceof UserMessage) {
-                return [
-                    'type' => 'user',
-                    'content' => $message->text(),
-                    'additional_content' => $message->additionalContent,
-                    'provider_options' => $message->providerOptions(),
-                ];
-            }
-
-            if ($message instanceof AssistantMessage) {
-                return [
-                    'type' => 'assistant',
-                    'content' => $message->content,
-                    'tool_calls' => array_map(fn (ToolCall $call): array => $this->serializeToolCall($call), $message->toolCalls),
-                    'additional_content' => $message->additionalContent,
-                    'provider_options' => $message->providerOptions(),
-                ];
-            }
-
-            if ($message instanceof ToolResultMessage) {
-                return [
-                    'type' => 'tool_result',
-                    'tool_results' => array_map(fn (ToolResult $result): array => $this->serializeToolResult($result), $message->toolResults),
-                    'provider_options' => $message->providerOptions(),
-                ];
-            }
-
-            if ($message instanceof SystemMessage) {
-                return [
-                    'type' => 'system',
-                    'content' => $message->content,
-                    'provider_options' => $message->providerOptions(),
-                ];
-            }
-
-            return [
-                'type' => get_debug_type($message),
-            ];
-        }, $messages);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeToolCall(ToolCall $toolCall): array
-    {
-        return [
-            'id' => $toolCall->id,
-            'name' => $toolCall->name,
-            'arguments' => $toolCall->arguments(),
-            'result_id' => $toolCall->resultId,
-            'reasoning_id' => $toolCall->reasoningId,
-            'reasoning_summary' => $toolCall->reasoningSummary,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeToolResult(ToolResult $toolResult): array
-    {
-        $result = $this->recordedToolOutputs[$toolResult->toolCallId] ?? $toolResult->result;
-
-        return [
-            'tool_call_id' => $toolResult->toolCallId,
-            'tool_name' => $toolResult->toolName,
-            'args' => $toolResult->args,
-            'result' => $result,
-            'tool_call_result_id' => $toolResult->toolCallResultId,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeProviderToolCall(ProviderToolCall $providerToolCall): array
-    {
-        return [
-            'id' => $providerToolCall->id,
-            'type' => $providerToolCall->type,
-            'status' => $providerToolCall->status,
-            'data' => $providerToolCall->data,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeUsage(Usage $usage): array
-    {
-        return [
-            'prompt_tokens' => $usage->promptTokens,
-            'completion_tokens' => $usage->completionTokens,
-            'cache_write_input_tokens' => $usage->cacheWriteInputTokens,
-            'cache_read_input_tokens' => $usage->cacheReadInputTokens,
-            'thought_tokens' => $usage->thoughtTokens,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function serializeMeta(Meta $meta): array
-    {
-        return [
-            'id' => $meta->id,
-            'model' => $meta->model,
-            'rate_limits' => array_map(fn (ProviderRateLimit $limit): array => [
-                'name' => $limit->name,
-                'limit' => $limit->limit,
-                'remaining' => $limit->remaining,
-                'resets_at' => $limit->resetsAt?->toIso8601String(),
-            ], $meta->rateLimits),
-        ];
     }
 
     protected function findExistingToolRun(int $assistantMessageId, string $toolKey, int $callIndex): ?AiToolRun

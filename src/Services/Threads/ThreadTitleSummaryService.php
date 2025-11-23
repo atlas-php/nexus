@@ -17,6 +17,7 @@ use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Prism\TextResponseSerializer;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -272,6 +273,7 @@ class ThreadTitleSummaryService
             'tokens_in' => $response->usage->promptTokens,
             'tokens_out' => $response->usage->completionTokens,
             'provider_response_id' => $response->meta->id ?? null,
+            'raw_response' => TextResponseSerializer::serialize($response),
             'metadata' => [
                 'thread_manager_payload' => $rawPayload,
             ],
