@@ -5,31 +5,31 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 
 /**
- * Class AiPromptService
+ * Class AiAssistantPromptService
  *
  * Wraps CRUD operations for prompts so assistant versions can be managed consistently.
  * PRD Reference: Atlas Nexus Overview — ai_assistant_prompts schema.
  *
- * @extends ModelService<AiPrompt>
+ * @extends ModelService<AiAssistantPrompt>
  */
-class AiPromptService extends ModelService
+class AiAssistantPromptService extends ModelService
 {
-    protected string $model = AiPrompt::class;
+    protected string $model = AiAssistantPrompt::class;
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function create(array $data): AiPrompt
+    public function create(array $data): AiAssistantPrompt
     {
         $assistantId = $this->extractAssistantId($data);
         $data['assistant_id'] = $assistantId;
 
         $data['version'] = $data['version'] ?? $this->nextVersionForAssistant($assistantId);
 
-        /** @var AiPrompt $prompt */
+        /** @var AiAssistantPrompt $prompt */
         $prompt = parent::create($data);
 
         return $prompt;
@@ -40,7 +40,7 @@ class AiPromptService extends ModelService
      *
      * @param  array<string, mixed>  $data
      */
-    public function edit(AiPrompt $prompt, array $data): AiPrompt
+    public function edit(AiAssistantPrompt $prompt, array $data): AiAssistantPrompt
     {
         return $this->createVersionFrom($prompt, $data);
     }
@@ -48,7 +48,7 @@ class AiPromptService extends ModelService
     /**
      * @param  array<string, mixed>  $data
      */
-    protected function createVersionFrom(AiPrompt $prompt, array $data): AiPrompt
+    protected function createVersionFrom(AiAssistantPrompt $prompt, array $data): AiAssistantPrompt
     {
         $assistantId = (int) $prompt->assistant_id;
 
@@ -70,7 +70,7 @@ class AiPromptService extends ModelService
             'system_prompt' => $prompt->system_prompt,
         ], $data);
 
-        /** @var AiPrompt $newPrompt */
+        /** @var AiAssistantPrompt $newPrompt */
         $newPrompt = parent::create($payload);
 
         return $newPrompt;

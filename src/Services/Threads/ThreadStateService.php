@@ -7,7 +7,7 @@ namespace Atlas\Nexus\Services\Threads;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
@@ -42,7 +42,7 @@ class ThreadStateService
 
     public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
-        $thread->loadMissing(['assistant', 'assistant.currentPrompt']);
+        $thread->loadMissing(['assistant', 'assistant.currentPrompt', 'assistantPrompt']);
 
         $assistant = $thread->assistant;
 
@@ -50,7 +50,7 @@ class ThreadStateService
             throw new RuntimeException('Thread is missing an associated assistant.');
         }
 
-        $prompt = $this->resolvePrompt($assistant);
+        $prompt = $this->resolvePrompt($thread, $assistant);
         $messages = $this->messageService->query()
             ->where('thread_id', $thread->id)
             ->where('status', AiMessageStatus::COMPLETED->value)
@@ -93,8 +93,13 @@ class ThreadStateService
     }
 
     protected function resolvePrompt(
+        AiThread $thread,
         AiAssistant $assistant
-    ): ?AiPrompt {
+    ): ?AiAssistantPrompt {
+        if ($thread->assistantPrompt !== null) {
+            return $thread->assistantPrompt;
+        }
+
         return $assistant->currentPrompt;
     }
 

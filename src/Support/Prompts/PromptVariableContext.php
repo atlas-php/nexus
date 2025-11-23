@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Support\Prompts;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -23,7 +23,7 @@ class PromptVariableContext
 
     public function __construct(
         public readonly ThreadState $threadState,
-        public readonly AiPrompt $prompt,
+        public readonly AiAssistantPrompt $prompt,
         public readonly AiAssistant $assistant,
         private ?Authenticatable $user = null
     ) {
@@ -40,7 +40,7 @@ class PromptVariableContext
         return $this->assistant;
     }
 
-    public function prompt(): AiPrompt
+    public function prompt(): AiAssistantPrompt
     {
         return $this->prompt;
     }

@@ -10,15 +10,15 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
-use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Tests\TestCase;
@@ -71,7 +71,7 @@ class AiModelServiceTest extends TestCase
     public function test_prompt_thread_message_and_memory_services_coordinate_crud(): void
     {
         $assistantService = $this->app->make(AiAssistantService::class);
-        $promptService = $this->app->make(AiPromptService::class);
+        $promptService = $this->app->make(AiAssistantPromptService::class);
         $threadService = $this->app->make(AiThreadService::class);
         $messageService = $this->app->make(AiMessageService::class);
         $memoryService = $this->app->make(AiMemoryService::class);
@@ -82,7 +82,7 @@ class AiModelServiceTest extends TestCase
         $assistant = $assistantService->create($assistantData);
 
         /** @var array<string, mixed> $promptData */
-        $promptData = AiPrompt::factory()->raw([
+        $promptData = AiAssistantPrompt::factory()->raw([
             'assistant_id' => $assistant->id,
         ]);
         $prompt = $promptService->create($promptData);

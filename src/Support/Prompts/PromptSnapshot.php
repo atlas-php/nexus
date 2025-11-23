@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Support\Prompts;
 
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 
 /**
  * Class PromptSnapshot
@@ -60,9 +60,9 @@ class PromptSnapshot
         ];
     }
 
-    public function toPromptModel(): AiPrompt
+    public function toPromptModel(): AiAssistantPrompt
     {
-        $prompt = new AiPrompt;
+        $prompt = new AiAssistantPrompt;
         $raw = $this->prompt;
         $raw['system_prompt'] = $raw['system_prompt'] ?? $this->renderedSystemPrompt;
 

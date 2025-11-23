@@ -42,8 +42,8 @@ Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
 - Assistants live in `ai_assistants`; assistant-specific prompt versions live in `ai_assistant_prompts` (lineage scoped to each assistant via `original_prompt_id`).
-- Each prompt row belongs to a single assistant; calling `AiPromptService::edit()` always creates a new version rather than mutating the row.
-- Set `current_prompt_id` to pick the active prompt; threads can override via `prompt_id`.
+- Each prompt row belongs to a single assistant; calling `AiAssistantPromptService::edit()` always creates a new version rather than mutating the row.
+- Set `current_prompt_id` to pick the active prompt; threads can override via `assistant_prompt_id`.
 - Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
 
 See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)

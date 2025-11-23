@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Services;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
-use Atlas\Nexus\Services\Models\AiPromptService;
+use Atlas\Nexus\Models\AiAssistantPrompt;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
- * Class AiPromptServiceTest
+ * Class AiAssistantPromptServiceTest
  *
  * Ensures prompt edits can be applied inline or as auto-versioned copies.
  */
-class AiPromptServiceTest extends TestCase
+class AiAssistantPromptServiceTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -29,11 +29,11 @@ class AiPromptServiceTest extends TestCase
 
     public function test_create_assigns_first_version_and_lineage(): void
     {
-        $service = $this->app->make(AiPromptService::class);
+        $service = $this->app->make(AiAssistantPromptService::class);
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create();
 
-        /** @var AiPrompt $prompt */
+        /** @var AiAssistantPrompt $prompt */
         $prompt = $service->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Hello world',
@@ -47,7 +47,7 @@ class AiPromptServiceTest extends TestCase
 
     public function test_edit_always_generates_new_version(): void
     {
-        $service = $this->app->make(AiPromptService::class);
+        $service = $this->app->make(AiAssistantPromptService::class);
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create();
 

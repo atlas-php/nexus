@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Models;
 
 use Atlas\Core\Models\AtlasModel;
-use Atlas\Nexus\Database\Factories\AiPromptFactory;
+use Atlas\Nexus\Database\Factories\AiAssistantPromptFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
- * Class AiPrompt
+ * Class AiAssistantPrompt
  *
  * Stores versioned system prompts for assistants with optional user scoping.
  * PRD Reference: Atlas Nexus Overview — ai_assistant_prompts schema.
@@ -30,13 +30,13 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
  */
-class AiPrompt extends AtlasModel
+class AiAssistantPrompt extends AtlasModel
 {
     protected string $configPrefix = 'atlas-nexus';
 
     protected string $tableKey = 'ai_assistant_prompts';
 
-    /** @use HasFactory<AiPromptFactory> */
+    /** @use HasFactory<AiAssistantPromptFactory> */
     use HasFactory;
 
     use SoftDeletes;
@@ -117,9 +117,9 @@ class AiPrompt extends AtlasModel
         return $relation;
     }
 
-    protected static function newFactory(): AiPromptFactory
+    protected static function newFactory(): AiAssistantPromptFactory
     {
-        return AiPromptFactory::new();
+        return AiAssistantPromptFactory::new();
     }
 
     protected static function booted(): void

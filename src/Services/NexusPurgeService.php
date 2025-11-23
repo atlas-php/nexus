@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
-use Atlas\Nexus\Services\Models\AiPromptService;
 
 /**
  * Class NexusPurgeService
@@ -22,7 +22,7 @@ class NexusPurgeService
 
     public function __construct(
         private readonly AiAssistantService $assistantService,
-        private readonly AiPromptService $promptService,
+        private readonly AiAssistantPromptService $promptService,
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
     ) {}

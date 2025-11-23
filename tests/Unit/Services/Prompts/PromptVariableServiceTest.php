@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Services\Prompts;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
@@ -56,7 +56,7 @@ class PromptVariableServiceTest extends TestCase
         ]);
 
         $assistant = AiAssistant::factory()->create(['slug' => 'prompt-variables']);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Hello {USER.NAME} ({USER.EMAIL})',
         ]);
@@ -95,7 +95,7 @@ class PromptVariableServiceTest extends TestCase
         ]);
 
         $assistant = AiAssistant::factory()->create(['slug' => 'prompt-variables-custom']);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Thread {THREAD.ID}: {USER.NAME} - {INLINE.FLAG}',
         ]);

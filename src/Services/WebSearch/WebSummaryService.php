@@ -61,6 +61,7 @@ class WebSummaryService
 
         $thread = $this->threadService->create([
             'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $assistant->current_prompt_id,
             'user_id' => $state->thread->user_id,
             'group_id' => $state->thread->group_id,
             'type' => AiThreadType::TOOL->value,

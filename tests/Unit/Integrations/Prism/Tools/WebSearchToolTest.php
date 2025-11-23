@@ -8,7 +8,7 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\WebSearch\WebSummaryService;
@@ -247,7 +247,7 @@ class WebSearchToolTest extends TestCase
             'tools' => [WebSearchTool::KEY],
         ]);
 
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
 

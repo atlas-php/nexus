@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('group_id')->nullable()->index();
             $table->unsignedBigInteger('assistant_id')->index();
+            $table->unsignedBigInteger('assistant_prompt_id')->nullable()->index();
             $table->unsignedBigInteger('user_id')->index();
             $table->string('type');
             $table->unsignedBigInteger('parent_thread_id')->nullable()->index();

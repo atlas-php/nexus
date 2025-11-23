@@ -10,9 +10,9 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Tests\TestCase;
@@ -44,8 +44,8 @@ class AiModelFactoryTest extends TestCase
             'metadata' => ['tier' => 'enterprise'],
         ]);
 
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'is_active' => true,
         ]);

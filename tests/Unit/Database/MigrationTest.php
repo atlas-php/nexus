@@ -66,6 +66,7 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ai_threads', [
             'id',
             'assistant_id',
+            'assistant_prompt_id',
             'user_id',
             'type',
             'parent_thread_id',

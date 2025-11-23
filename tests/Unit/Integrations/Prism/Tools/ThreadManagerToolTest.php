@@ -11,8 +11,8 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadManagerTool;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Tests\TestCase;
@@ -127,13 +127,13 @@ class ThreadManagerToolTest extends TestCase
                 'slug' => 'thread-manager',
             ]);
 
-        /** @var AiPrompt|null $prompt */
+        /** @var AiAssistantPrompt|null $prompt */
         $prompt = $assistant->current_prompt_id
-            ? AiPrompt::query()->find($assistant->current_prompt_id)
+            ? AiAssistantPrompt::query()->find($assistant->current_prompt_id)
             : null;
 
         if ($prompt === null) {
-            $prompt = AiPrompt::factory()->create([
+            $prompt = AiAssistantPrompt::factory()->create([
                 'assistant_id' => $assistant->id,
             ]);
             $assistant->current_prompt_id = $prompt->id;

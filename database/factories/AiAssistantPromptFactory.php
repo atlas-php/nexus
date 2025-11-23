@@ -5,20 +5,20 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Database\Factories;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * Class AiPromptFactory
+ * Class AiAssistantPromptFactory
  *
  * Produces versioned prompt records for assistants with optional user ownership.
  * PRD Reference: Atlas Nexus Overview — ai_assistant_prompts schema.
  *
- * @extends Factory<AiPrompt>
+ * @extends Factory<AiAssistantPrompt>
  */
-class AiPromptFactory extends Factory
+class AiAssistantPromptFactory extends Factory
 {
-    protected $model = AiPrompt::class;
+    protected $model = AiAssistantPrompt::class;
 
     public function definition(): array
     {

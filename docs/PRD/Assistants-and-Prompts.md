@@ -52,8 +52,8 @@ Table: `ai_assistant_prompts`
 ## Assistant ↔ Prompt Behavior
 - `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt` and ignores prompts that belong to other assistants.
 - Prompts are *not* global — each row belongs to a single assistant via `assistant_id`, and a prompt cannot be shared between assistants.
-- `original_prompt_id` links all versions for an assistant; the initial prompt references its own id. `AiPromptService::create` automatically assigns version `1` for a new assistant, and `AiPromptService::edit($prompt, $data)` always clones a new version (no inline updates).
-- Prompt selection may be overridden per thread via `prompt_id`, but consumer code must reference a prompt that belongs to the same assistant.
+- `original_prompt_id` links all versions for an assistant; the initial prompt references its own id. `AiAssistantPromptService::create` automatically assigns version `1` for a new assistant, and `AiAssistantPromptService::edit($prompt, $data)` always clones a new version (no inline updates).
+- Prompt selection may be overridden per thread via `assistant_prompt_id`, but consumer code must reference a prompt that belongs to the same assistant.
 
 ## Assistant ↔ Tool Mapping
 Assistant tool availability is configured via the `ai_assistants.tools` JSON array of tool keys (e.g., `["memory","web_search"]`).
@@ -65,5 +65,5 @@ Rules:
 
 ## Service Responsibilities
 - `AiAssistantService` — CRUD + tool key sync helpers.
-- `AiPromptService` — CRUD plus lineage-aware editing; `create()` requires an `assistant_id` and `edit()` always creates a new version for that assistant.
+- `AiAssistantPromptService` — CRUD plus lineage-aware editing; `create()` requires an `assistant_id` and `edit()` always creates a new version for that assistant.
 - `NexusSeederService` executes configured seeders (e.g., WebSearchAssistantSeeder, ThreadManagerAssistantSeeder) to provision built-in assistants/prompts.

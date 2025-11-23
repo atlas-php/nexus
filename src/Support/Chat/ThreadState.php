@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Support\Chat;
 
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Prompts\PromptSnapshot;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
@@ -39,7 +39,7 @@ class ThreadState
     public function __construct(
         public readonly AiThread $thread,
         public readonly AiAssistant $assistant,
-        public readonly ?AiPrompt $prompt,
+        public readonly ?AiAssistantPrompt $prompt,
         public readonly Collection $messages,
         public readonly Collection $memories,
         public readonly Collection $tools,

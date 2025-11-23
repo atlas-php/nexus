@@ -21,6 +21,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  *
  * @property int $id
  * @property int $assistant_id
+ * @property int|null $assistant_prompt_id
  * @property int $user_id
  * @property int|null $group_id
  * @property AiThreadType $type
@@ -48,6 +49,7 @@ class AiThread extends AtlasModel
      */
     protected $casts = [
         'assistant_id' => 'int',
+        'assistant_prompt_id' => 'int',
         'user_id' => 'int',
         'group_id' => 'int',
         'parent_thread_id' => 'int',
@@ -72,6 +74,17 @@ class AiThread extends AtlasModel
     {
         /** @var BelongsTo<AiAssistant, self> $relation */
         $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return BelongsTo<AiAssistantPrompt, self>
+     */
+    public function assistantPrompt(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistantPrompt, self> $relation */
+        $relation = $this->belongsTo(AiAssistantPrompt::class, 'assistant_prompt_id');
 
         return $relation;
     }

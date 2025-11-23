@@ -52,7 +52,7 @@ One conversation session. Supports user-facing threads and tool-internal threads
 - parent_tool_run_id  bigint nullable     -- no FK, tool run that spawned this thread
 - title               string nullable
 - status              string              -- 'open','archived','closed'
-- prompt_id           bigint nullable     -- no FK
+- assistant_prompt_id bigint nullable     -- no FK
 - summary             text nullable       -- rolling summary (short-term memory)
 - last_message_at     datetime nullable
 - metadata            json nullable

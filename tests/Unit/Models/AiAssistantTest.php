@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Models;
 
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Database\QueryException;
@@ -71,8 +71,8 @@ class AiAssistantTest extends TestCase
     {
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create();
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);

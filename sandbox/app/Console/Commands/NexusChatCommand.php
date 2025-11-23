@@ -134,10 +134,10 @@ class NexusChatCommand extends Command
         /** @var AiThread $thread */
         $thread = $this->threadService->create([
             'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $assistant->current_prompt_id,
             'user_id' => $userId,
             'type' => AiThreadType::USER->value,
             'status' => AiThreadStatus::OPEN->value,
-            'prompt_id' => $assistant->current_prompt_id,
             'title' => $this->option('title') !== null ? (string) $this->option('title') : null,
             'summary' => null,
             'metadata' => [],

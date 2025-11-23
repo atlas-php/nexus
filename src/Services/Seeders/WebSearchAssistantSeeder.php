@@ -6,9 +6,9 @@ namespace Atlas\Nexus\Services\Seeders;
 
 use Atlas\Nexus\Contracts\NexusSeeder;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Support\Web\WebSummaryDefaults;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
@@ -21,7 +21,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
 {
     public function __construct(
         private readonly AiAssistantService $assistantService,
-        private readonly AiPromptService $promptService,
+        private readonly AiAssistantPromptService $promptService,
         private readonly ConfigRepository $config
     ) {}
 
@@ -86,7 +86,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
         return $updates;
     }
 
-    protected function ensurePromptVersion(AiAssistant $assistant, string $systemPrompt): AiPrompt
+    protected function ensurePromptVersion(AiAssistant $assistant, string $systemPrompt): AiAssistantPrompt
     {
         $prompt = $assistant->currentPrompt;
 
@@ -108,7 +108,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
         return $prompt;
     }
 
-    protected function promptRequiresUpdate(AiPrompt $prompt, string $systemPrompt): bool
+    protected function promptRequiresUpdate(AiAssistantPrompt $prompt, string $systemPrompt): bool
     {
         return trim($prompt->system_prompt) !== trim($systemPrompt) || ! $prompt->is_active;
     }

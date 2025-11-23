@@ -12,9 +12,9 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
@@ -63,7 +63,7 @@ class RunAssistantResponseJobTest extends TestCase
             'default_model' => 'gpt-4o',
             'tools' => ['calendar_lookup'],
         ]);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Assist politely.',
         ]);
@@ -152,7 +152,7 @@ class RunAssistantResponseJobTest extends TestCase
     public function test_it_marks_message_as_failed_when_prism_errors(): void
     {
         $assistant = AiAssistant::factory()->create(['slug' => 'job-failure']);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -195,7 +195,7 @@ class RunAssistantResponseJobTest extends TestCase
             'default_model' => 'gpt-4o',
         ]);
         $this->app->make(NexusSeederService::class)->run();
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);

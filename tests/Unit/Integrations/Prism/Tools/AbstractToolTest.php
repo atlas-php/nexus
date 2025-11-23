@@ -11,7 +11,7 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\AbstractTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ToolResponse;
 use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
@@ -68,7 +68,7 @@ class AbstractToolTest extends TestCase
             'tools' => ['failing_tool'],
         ]);
 
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
 

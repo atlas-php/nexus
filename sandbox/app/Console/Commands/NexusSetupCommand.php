@@ -7,9 +7,9 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
-use Atlas\Nexus\Models\AiPrompt;
+use Atlas\Nexus\Models\AiAssistantPrompt;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -36,7 +36,7 @@ class NexusSetupCommand extends Command
 
     public function __construct(
         private readonly AiAssistantService $assistantService,
-        private readonly AiPromptService $promptService,
+        private readonly AiAssistantPromptService $promptService,
         private readonly AiThreadService $threadService
     ) {
         parent::__construct();
@@ -106,10 +106,10 @@ class NexusSetupCommand extends Command
         if ($thread === null) {
             $thread = $this->threadService->create([
                 'assistant_id' => $assistant->id,
+                'assistant_prompt_id' => $assistant->current_prompt_id,
                 'user_id' => $user->id,
                 'type' => AiThreadType::USER->value,
                 'status' => AiThreadStatus::OPEN->value,
-                'prompt_id' => $prompt->id,
                 'title' => 'Sandbox Chat',
                 'summary' => null,
                 'metadata' => [],
@@ -126,7 +126,7 @@ class NexusSetupCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function promptNeedsUpdate(?AiPrompt $prompt, string $systemPrompt): bool
+    protected function promptNeedsUpdate(?AiAssistantPrompt $prompt, string $systemPrompt): bool
     {
         if ($prompt === null) {
             return true;

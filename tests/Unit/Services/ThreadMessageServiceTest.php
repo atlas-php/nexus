@@ -9,8 +9,8 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
@@ -49,8 +49,8 @@ class ThreadMessageServiceTest extends TestCase
 
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-message']);
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -84,8 +84,8 @@ class ThreadMessageServiceTest extends TestCase
 
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-blocking']);
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -118,8 +118,8 @@ class ThreadMessageServiceTest extends TestCase
 
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-queue']);
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -146,8 +146,8 @@ class ThreadMessageServiceTest extends TestCase
             'slug' => 'thread-inline',
             'default_model' => 'gpt-inline',
         ]);
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $prompt */
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -196,7 +196,7 @@ class ThreadMessageServiceTest extends TestCase
         Queue::fake();
 
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-inline-failure']);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);

@@ -7,10 +7,10 @@ namespace Atlas\Nexus\Providers;
 use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
+use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
-use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\NexusPurgeService;
@@ -54,7 +54,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->alias(TextRequestFactory::class, 'atlas-nexus.text-factory');
 
         $this->app->singleton(AiAssistantService::class);
-        $this->app->singleton(AiPromptService::class);
+        $this->app->singleton(AiAssistantPromptService::class);
         $this->app->singleton(AiThreadService::class);
         $this->app->singleton(AiMessageService::class);
         $this->app->singleton(AiToolRunService::class);

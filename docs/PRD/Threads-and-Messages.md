@@ -23,7 +23,7 @@ Table: `ai_threads`
 | `parent_tool_run_id`  | Nullable reference to tool run (no FK)                           |
 | `title`               | Optional title                                                    |
 | `status`              | Enum (`open`, `archived`, `closed`)                               |
-| `prompt_id`           | Optional prompt override (no FK)                                  |
+| `assistant_prompt_id` | Optional prompt override pointing to an assistant prompt (no FK) |
 | `summary`             | Optional rolling summary                                          |
 | `last_message_at`     | Nullable timestamp                                                |
 | `metadata`            | JSON metadata                                                     |

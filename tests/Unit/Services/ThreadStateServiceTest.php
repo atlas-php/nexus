@@ -10,9 +10,9 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
-use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
@@ -51,7 +51,7 @@ class ThreadStateServiceTest extends TestCase
             'slug' => 'state-assistant',
             'tools' => ['calendar_lookup'],
         ]);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Stay helpful.',
         ]);
@@ -60,6 +60,7 @@ class ThreadStateServiceTest extends TestCase
 
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $prompt->id,
         ]);
 
         AiMessage::factory()->create([
@@ -123,8 +124,8 @@ class ThreadStateServiceTest extends TestCase
     {
         /** @var AiAssistant $assistant */
         $assistant = AiAssistant::factory()->create(['slug' => 'primary-assistant']);
-        /** @var AiPrompt $ownedPrompt */
-        $ownedPrompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $ownedPrompt */
+        $ownedPrompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Primary prompt',
         ]);
@@ -132,8 +133,8 @@ class ThreadStateServiceTest extends TestCase
 
         /** @var AiAssistant $foreignAssistant */
         $foreignAssistant = AiAssistant::factory()->create();
-        /** @var AiPrompt $foreignPrompt */
-        $foreignPrompt = AiPrompt::factory()->create([
+        /** @var AiAssistantPrompt $foreignPrompt */
+        $foreignPrompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $foreignAssistant->id,
             'system_prompt' => 'Foreign prompt',
         ]);
@@ -142,6 +143,7 @@ class ThreadStateServiceTest extends TestCase
 
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $ownedPrompt->id,
         ]);
 
         $freshThread = $thread->fresh();
@@ -149,8 +151,37 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
+        $this->assertNotNull($state->prompt);
         $this->assertSame($ownedPrompt->id, $state->prompt->id);
         $this->assertNotSame($foreignPrompt->id, $state->prompt->id);
+    }
+
+    public function test_thread_prefers_assistant_prompt_override(): void
+    {
+        /** @var AiAssistant $assistant */
+        $assistant = AiAssistant::factory()->create(['slug' => 'override-assistant']);
+        $threadPrompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'system_prompt' => 'Thread-specific prompt',
+        ]);
+        $assistantPrompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'system_prompt' => 'Assistant current prompt',
+        ]);
+
+        $assistant->update(['current_prompt_id' => $assistantPrompt->id]);
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $threadPrompt->id,
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+
+        $this->assertSame($threadPrompt->id, $state->prompt?->id);
     }
 
     public function test_it_renders_prompt_with_latest_values(): void
@@ -171,7 +202,7 @@ class ThreadStateServiceTest extends TestCase
         ]);
 
         $assistant = AiAssistant::factory()->create(['slug' => 'live-assistant']);
-        $prompt = AiPrompt::factory()->create([
+        $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Hello {USER.NAME}',
         ]);
@@ -180,6 +211,7 @@ class ThreadStateServiceTest extends TestCase
 
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
+            'assistant_prompt_id' => $prompt->id,
             'user_id' => $user->id,
         ]);
 
@@ -193,7 +225,10 @@ class ThreadStateServiceTest extends TestCase
         $user->update(['name' => 'Grace M. Hopper']);
         $prompt->update(['system_prompt' => 'Welcome back {USER.NAME}']);
 
-        $liveState = $this->app->make(ThreadStateService::class)->forThread($thread->fresh());
+        $liveThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $liveThread);
+
+        $liveState = $this->app->make(ThreadStateService::class)->forThread($liveThread);
 
         $this->assertSame('Welcome back Grace M. Hopper', $liveState->systemPrompt);
     }
