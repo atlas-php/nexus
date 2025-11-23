@@ -31,12 +31,12 @@ use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Prism\Prism\ValueObjects\Messages\ToolResultMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\Meta;
+use Prism\Prism\ValueObjects\ProviderRateLimit;
 use Prism\Prism\ValueObjects\ProviderTool;
 use Prism\Prism\ValueObjects\ProviderToolCall;
 use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
 use Prism\Prism\ValueObjects\Usage;
-use Prism\Prism\ValueObjects\ProviderRateLimit;
 use RuntimeException;
 use Throwable;
 
