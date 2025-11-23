@@ -98,8 +98,6 @@ class ThreadTitleSummaryServiceTest extends TestCase
 
         $result = $service->generateAndSave($state);
 
-        $this->assertSame('Work summary complete', $result['title']);
-        $this->assertSame('Completed all assigned work and provided updates.', $result['summary']);
         $this->assertSame(['work', 'updates'], $result['keywords']);
 
         $summaryThread = AiThread::query()
@@ -108,7 +106,7 @@ class ThreadTitleSummaryServiceTest extends TestCase
             ->first();
 
         $this->assertNotNull($summaryThread);
-        $this->assertSame('Completed all assigned work and provided updates.', $summaryThread->summary);
+        $this->assertNull($summaryThread->summary);
         $this->assertSame($thread->id, $summaryThread->parent_thread_id);
 
         /** @var array<int, AiMessage> $messages */

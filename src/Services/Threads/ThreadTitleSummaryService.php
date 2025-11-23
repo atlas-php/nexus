@@ -44,10 +44,9 @@ class ThreadTitleSummaryService
     /**
      * Generate and persist a title and summary based on the thread conversation.
      *
-     * @param  bool  $preserveExistingTitle  When true, retains the existing title when available.
      * @return array{thread: AiThread, title: string|null, summary: string|null, keywords: array<int, string>}
      */
-    public function generateAndSave(ThreadState $state, bool $preserveExistingTitle = false): array
+    public function generateAndSave(ThreadState $state, bool $preserveExistingTitle = true): array
     {
         $generated = $this->generate($state);
 
@@ -60,9 +59,7 @@ class ThreadTitleSummaryService
             'metadata' => $metadata,
         ];
 
-        $shouldUpdateTitle = ! $preserveExistingTitle || $state->thread->title === null;
-
-        if ($shouldUpdateTitle) {
+        if ($state->thread->title === null) {
             $payload['title'] = $generated['title'];
         }
 
@@ -90,7 +87,7 @@ class ThreadTitleSummaryService
 
         $payload = [];
 
-        if ($normalizedTitle !== null) {
+        if ($normalizedTitle !== null && $state->thread->title === null) {
             $payload['title'] = $normalizedTitle;
         }
 
@@ -239,7 +236,7 @@ class ThreadTitleSummaryService
             'parent_thread_id' => $state->thread->getKey(),
             'title' => sprintf('Summary for Thread %s', $state->thread->getKey()),
             'status' => AiThreadStatus::CLOSED->value,
-            'summary' => $summaryText,
+            'summary' => null,
             'metadata' => [
                 'source_thread_id' => $state->thread->getKey(),
                 'thread_manager_payload' => $rawPayload,
