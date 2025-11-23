@@ -45,7 +45,7 @@ class GeneralAssistant extends AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function tools(): array
     {
@@ -53,7 +53,7 @@ class GeneralAssistant extends AssistantDefinition
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int|string, string|array<string, mixed>>
      */
     public function providerTools(): array
     {
