@@ -103,7 +103,17 @@ class ThreadManagerService
     {
         $threads = $this->fetchThreads($state, [$threadId]);
 
-        return $threads[0];
+        if ($threads === []) {
+            throw new RuntimeException('Thread not found for this assistant and user.');
+        }
+
+        $thread = reset($threads);
+
+        if ($thread === false || ! $thread instanceof AiThread) {
+            throw new RuntimeException('Thread not found for this assistant and user.');
+        }
+
+        return $thread;
     }
 
     /**

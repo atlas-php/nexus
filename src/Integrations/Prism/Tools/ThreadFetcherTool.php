@@ -16,6 +16,7 @@ use RuntimeException;
 use Throwable;
 
 use function array_column;
+use function array_key_first;
 use function array_unique;
 use function array_values;
 use function collect;
@@ -96,8 +97,12 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
                 ->values()
                 ->all();
 
+            if ($payloads === []) {
+                throw new RuntimeException('Thread not found for this assistant and user.');
+            }
+
             if (count($payloads) === 1) {
-                $thread = $payloads[0];
+                $thread = $payloads[array_key_first($payloads)];
 
                 return $this->output('Fetched thread context.', [
                     'thread_ids' => [$thread['id']],

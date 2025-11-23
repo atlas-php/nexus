@@ -138,6 +138,28 @@ class ThreadFetcherToolTest extends TestCase
         $this->assertSame($first->id, $threads[1]['id']);
     }
 
+    public function test_it_accepts_string_thread_ids(): void
+    {
+        $state = $this->createState();
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'String Thread',
+        ]);
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'thread_ids' => [(string) $thread->id],
+        ]);
+
+        $this->assertSame('Fetched thread context.', $response->message());
+        $this->assertSame([$thread->id], $response->meta()['thread_ids']);
+    }
+
     public function test_it_requires_thread_identifier(): void
     {
         $state = $this->createState();
