@@ -11,6 +11,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Class AiThreadService
@@ -37,5 +38,42 @@ class AiThreadService extends ModelService
         }
 
         return parent::delete($thread, $force);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): Model
+    {
+        return parent::create($this->normalizePayload($data));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Model $model, array $data): Model
+    {
+        return parent::update($model, $this->normalizePayload($data));
+    }
+
+    /**
+     * Ensure summary fields stay within required limits before persistence.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function normalizePayload(array $data): array
+    {
+        if (array_key_exists('summary', $data) && is_string($data['summary'])) {
+            $summary = trim($data['summary']);
+            $data['summary'] = $summary === '' ? null : Str::limit($summary, 255, '');
+        }
+
+        if (array_key_exists('long_summary', $data) && is_string($data['long_summary'])) {
+            $longSummary = trim($data['long_summary']);
+            $data['long_summary'] = $longSummary === '' ? null : $longSummary;
+        }
+
+        return $data;
     }
 }

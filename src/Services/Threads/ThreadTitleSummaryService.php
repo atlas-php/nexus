@@ -33,34 +33,43 @@ class ThreadTitleSummaryService
     /**
      * Generate and persist a title and summary based on the thread conversation.
      *
-     * @return array{thread: AiThread, title: string, summary: string}
+     * @return array{thread: AiThread, title: string, summary: string, long_summary: string, keywords: array<int, string>}
      */
     public function generateAndSave(ThreadState $state): array
     {
         $generated = $this->generate($state);
 
+        $metadata = array_merge($state->thread->metadata ?? [], [
+            'summary_keywords' => $generated['keywords'],
+        ]);
+
         $updated = $this->threadService->update($state->thread, [
             'title' => $generated['title'],
             'summary' => $generated['summary'],
+            'long_summary' => $generated['long_summary'],
+            'metadata' => $metadata,
         ]);
 
         return [
             'thread' => $updated,
             'title' => $generated['title'],
             'summary' => $generated['summary'],
+            'long_summary' => $generated['long_summary'],
+            'keywords' => $generated['keywords'],
         ];
     }
 
     /**
      * Apply provided title and/or summary to the thread.
      */
-    public function apply(ThreadState $state, ?string $title, ?string $summary): AiThread
+    public function apply(ThreadState $state, ?string $title, ?string $summary, ?string $longSummary = null): AiThread
     {
         $normalizedTitle = $this->trimValue($title);
         $normalizedSummary = $this->trimValue($summary);
+        $normalizedLongSummary = $this->trimValue($longSummary);
 
-        if ($normalizedTitle === null && $normalizedSummary === null) {
-            throw new RuntimeException('Provide a title or summary to update the thread.');
+        if ($normalizedTitle === null && $normalizedSummary === null && $normalizedLongSummary === null) {
+            throw new RuntimeException('Provide a title, short summary, or long summary to update the thread.');
         }
 
         $payload = [];
@@ -73,11 +82,15 @@ class ThreadTitleSummaryService
             $payload['summary'] = $normalizedSummary;
         }
 
+        if ($normalizedLongSummary !== null) {
+            $payload['long_summary'] = $normalizedLongSummary;
+        }
+
         return $this->threadService->update($state->thread, $payload);
     }
 
     /**
-     * @return array{title: string, summary: string}
+     * @return array{title: string, summary: string, long_summary: string, keywords: array<int, string>}
      */
     protected function generate(ThreadState $state): array
     {
@@ -125,15 +138,19 @@ class ThreadTitleSummaryService
         }
 
         $title = $this->trimValue($decoded['title'] ?? null);
-        $summary = $this->trimValue($decoded['summary'] ?? null);
+        $shortSummary = $this->trimValue($decoded['short_summary'] ?? ($decoded['summary'] ?? null));
+        $longSummary = $this->trimValue($decoded['long_summary'] ?? null);
+        $keywords = $this->normalizeKeywords($decoded['keywords'] ?? null);
 
-        if ($title === null || $summary === null) {
-            throw new RuntimeException('Generated title or summary is missing.');
+        if ($title === null || $shortSummary === null || $longSummary === null) {
+            throw new RuntimeException('Generated title or summaries are missing.');
         }
 
         return [
             'title' => Str::limit($title, 120, '...'),
-            'summary' => Str::limit($summary, 1500, '...'),
+            'summary' => Str::limit($shortSummary, 255, ''),
+            'long_summary' => Str::limit($longSummary, 5000, '...'),
+            'keywords' => $keywords,
         ];
     }
 
@@ -167,6 +184,34 @@ class ThreadTitleSummaryService
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function normalizeKeywords(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $keywords = [];
+
+        foreach ($value as $keyword) {
+            if (! is_string($keyword)) {
+                continue;
+            }
+
+            $trimmed = trim($keyword);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $keywords[] = $trimmed;
+        }
+
+        return array_slice($keywords, 0, 12);
     }
 
     protected function provider(): string

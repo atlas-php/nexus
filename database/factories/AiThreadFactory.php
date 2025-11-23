@@ -8,6 +8,7 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiThread;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * Class AiThreadFactory
@@ -23,6 +24,8 @@ class AiThreadFactory extends Factory
 
     public function definition(): array
     {
+        $shortSummary = $this->faker->optional()->sentence(12);
+
         return [
             'assistant_id' => $this->faker->numberBetween(1, 1_000),
             'assistant_prompt_id' => $this->faker->optional()->numberBetween(1, 1_000),
@@ -33,7 +36,8 @@ class AiThreadFactory extends Factory
             'parent_tool_run_id' => $this->faker->optional()->numberBetween(1, 500),
             'title' => $this->faker->optional()->sentence(6),
             'status' => $this->faker->randomElement(AiThreadStatus::cases())->value,
-            'summary' => $this->faker->optional()->paragraph(),
+            'summary' => $shortSummary !== null ? Str::limit($shortSummary, 255, '') : null,
+            'long_summary' => $this->faker->optional()->paragraphs(2, true),
             'last_message_at' => $this->faker->optional()->dateTimeBetween('-2 weeks'),
             'metadata' => $this->faker->optional()->randomElement([
                 ['topic' => 'support'],
