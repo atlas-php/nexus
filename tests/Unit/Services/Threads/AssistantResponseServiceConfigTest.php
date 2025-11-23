@@ -46,7 +46,7 @@ class AssistantResponseServiceConfigTest extends TestCase
             'assistant_key' => 'general-assistant',
         ]);
 
-        $state = $this->app->make(ThreadStateService::class)->forThread($thread->fresh());
+        $state = $this->app->make(ThreadStateService::class)->forThread($thread->refresh());
         $service = $this->app->make(AssistantResponseService::class);
 
         $method = new ReflectionMethod(AssistantResponseService::class, 'prepareTools');
