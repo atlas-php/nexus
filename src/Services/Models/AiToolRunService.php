@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * Class AiToolRunService
  *
  * Provides CRUD utilities for tool runs and status transitions tied to assistant messages.
- * PRD Reference: Atlas Nexus Overview — ai_tool_runs schema.
+ * PRD Reference: Atlas Nexus Overview — ai_message_tools schema.
  *
  * @extends ModelService<AiToolRun>
  */

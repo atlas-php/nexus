@@ -24,7 +24,7 @@ class SandboxStartFreshCommand extends Command
         '2025_01_01_000100_create_ai_assistant_prompts_table.php',
         '2025_01_01_000200_create_ai_threads_table.php',
         '2025_01_01_000300_create_ai_messages_table.php',
-        '2025_01_01_000600_create_ai_tool_runs_table.php',
+        '2025_01_01_000600_create_ai_message_tools_table.php',
         '2025_01_01_000700_create_ai_memories_table.php',
     ];
 

@@ -40,6 +40,6 @@ Because assistants live in code, the other tables simply store an `assistant_key
 | `ai_threads` | `assistant_key` |
 | `ai_messages` | `assistant_key` |
 | `ai_memories` | `assistant_key` (nullable) |
-| `ai_tool_runs` | `assistant_key` |
+| `ai_message_tools` | `assistant_key` |
 
 Thread creation is now a matter of setting `assistant_key` to one of the configured keys; the rest of the assistant metadata is resolved on demand through `AssistantRegistry`.

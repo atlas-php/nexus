@@ -58,7 +58,7 @@ public function providerTools(): array
 - Both paths must mark assistant messages as `FAILED` on exceptions.
 
 ## Track Tool Runs
-- `AssistantResponseService` creates `ai_tool_runs` for tool calls/results; `group_id` inherited from the thread.
+- `AssistantResponseService` creates `ai_message_tools` for tool calls/results; `group_id` inherited from the thread.
 - Tool handlers can log via `ToolRunLogger` when implementing `ToolRunLoggingAware`.
 - Tool run metadata stores Prism `tool_call_id` and `tool_call_result_id` when available.
 

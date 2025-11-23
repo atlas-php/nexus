@@ -69,7 +69,7 @@ class MigrationTest extends TestCase
             'deleted_at',
         ]));
 
-        $this->assertTrue(Schema::hasColumns('ai_tool_runs', [
+        $this->assertTrue(Schema::hasColumns('ai_message_tools', [
             'id',
             'tool_key',
             'assistant_key',
@@ -122,7 +122,7 @@ class MigrationTest extends TestCase
 
         $this->assertContains('custom_ai_threads', $tables);
         $this->assertNotContains('ai_threads', $tables);
-        $this->assertTrue(Schema::hasTable('ai_tool_runs'));
+        $this->assertTrue(Schema::hasTable('ai_message_tools'));
     }
 
     private function migrationPath(): string

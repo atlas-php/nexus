@@ -25,7 +25,7 @@ All tables support soft deletes unless noted otherwise. Default names are config
 |-------------------|-------------------------------------------------------------|
 | `ai_threads`      | Conversation containers (user/tool threads)                 |
 | `ai_messages`     | User and assistant messages in a thread                     |
-| `ai_tool_runs`    | Execution logs for tool calls                               |
+| `ai_message_tools`    | Execution logs for tool calls                               |
 | `ai_memories`     | Reusable memory items scoped to users/assistants/orgs       |
 
 Each table definition with fields is detailed in the linked PRDs below.
@@ -56,7 +56,7 @@ All conversation artifacts carry an optional `group_id` to align with tenant/acc
 - `ai_threads.group_id`
 - `ai_messages.group_id`
 - `ai_memories.group_id`
-- `ai_tool_runs.group_id`
+- `ai_message_tools.group_id`
 
 Services propagate `group_id` from threads to messages, memories, and tool runs automatically when present.
 

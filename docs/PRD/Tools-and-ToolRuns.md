@@ -28,7 +28,7 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 Assistant definition classes control which tool keys are available by overriding `tools()`. Thread state filters these keys against the registered tool set; built-in tools are registered automatically when enabled.
 
 ## Tool Runs
-Table: `ai_tool_runs`
+Table: `ai_message_tools`
 
 | Field                   | Description                                                     |
 |-------------------------|-----------------------------------------------------------------|
@@ -51,7 +51,7 @@ Indexes: `tool_key`, `thread_id`, `assistant_message_id`.
 
 ## Execution Semantics
 - `ThreadStateService` collects assistant tool keys, resolves registered tool handlers, injects thread state, and wires logging when handlers implement `ToolRunLoggingAware`.
-- `AssistantResponseService` records tool calls and results, creating/updating `ai_tool_runs`.
+- `AssistantResponseService` records tool calls and results, creating/updating `ai_message_tools`.
 - `ToolRunLogger` can create and complete runs from within tool handlers.
 - Runs inherit `group_id` from the parent thread when omitted in payloads.
 

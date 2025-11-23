@@ -61,7 +61,7 @@ See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 ## Tools & Tool Runs
 - Tools are code-defined (`NexusTool` implementations) and registered by key via the `ToolRegistry` service. Resolve the registry from the container to call `register(new ToolDefinition('custom', CustomTool::class))` when adding custom tools.
 - Assistant tool keys determine availability; missing handlers are skipped.
-- Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, `group_id`, `assistant_key`, and `tool_key`.
+- Tool runs (`ai_message_tools`) log Prism tool calls with statuses, inputs/outputs, `group_id`, `assistant_key`, and `tool_key`.
 
 See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 

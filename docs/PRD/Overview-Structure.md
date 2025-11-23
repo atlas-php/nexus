@@ -48,7 +48,7 @@ Every message in a thread.
 -- INDEX(thread_id, sequence)
 ```
 
-### `ai_tool_runs`
+### `ai_message_tools`
 
 Actual execution logs for tools.
 Each tool run is related to the assistant message that invoked it and may use its own internal thread.
@@ -82,7 +82,7 @@ Shared memory items that can be reused across threads.
 - assistant_key       string nullable   -- which assistant this memory is for (null = global)
 - thread_id           bigint nullable   -- no FK, where it was first observed (provenance)
 - source_message_id   bigint nullable   -- no FK, ai_messages.id that produced this memory
-- source_tool_run_id  bigint nullable   -- no FK, ai_tool_runs.id if created from a tool
+- source_tool_run_id  bigint nullable   -- no FK, ai_message_tools.id if created from a tool
 - kind                string            -- 'fact','preference','summary','task','constraint', etc.
 - content             text              -- natural-language memory; 1–3 sentences ideally
 - metadata            json nullable     -- tags, domains, app-specific fields

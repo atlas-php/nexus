@@ -10,7 +10,7 @@ return [
             'ai_assistant_prompts' => 'ai_assistant_prompts',
             'ai_threads' => 'ai_threads',
             'ai_messages' => 'ai_messages',
-            'ai_tool_runs' => 'ai_tool_runs',
+            'ai_message_tools' => 'ai_message_tools',
             'ai_memories' => 'ai_memories',
         ],
     ],

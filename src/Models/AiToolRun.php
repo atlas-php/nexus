@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Class AiToolRun
  *
  * Logs individual tool executions, including request payloads, statuses, and lifecycle timestamps.
- * PRD Reference: Atlas Nexus Overview — ai_tool_runs schema.
+ * PRD Reference: Atlas Nexus Overview — ai_message_tools schema.
  *
  * @property int $id
  * @property int|null $group_id
@@ -39,7 +39,7 @@ class AiToolRun extends AtlasModel
 {
     protected string $configPrefix = 'atlas-nexus';
 
-    protected string $tableKey = 'ai_tool_runs';
+    protected string $tableKey = 'ai_message_tools';
 
     /** @use HasFactory<AiToolRunFactory> */
     use HasFactory;
@@ -67,7 +67,7 @@ class AiToolRun extends AtlasModel
 
     protected function defaultTableName(): string
     {
-        return 'ai_tool_runs';
+        return 'ai_message_tools';
     }
 
     /**
