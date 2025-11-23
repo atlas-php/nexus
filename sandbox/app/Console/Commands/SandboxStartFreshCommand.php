@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use Atlas\Nexus\Providers\AtlasNexusServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Filesystem\Filesystem;
@@ -63,8 +64,9 @@ class SandboxStartFreshCommand extends Command
 
         $this->components->info('Sandbox environment refreshed and ready.');
 
-        return self::SUCCESS;
         $this->reloadAtlasNexusConfig();
+
+        return self::SUCCESS;
     }
 
     protected function reloadAtlasNexusConfig(): void
@@ -87,47 +89,49 @@ class SandboxStartFreshCommand extends Command
 
     protected function refreshPackageAssets(): void
     {
-        $packageRoot = realpath(base_path('..'));
+        $this->components->info('Cleaning sandbox Nexus config and migration files...');
+        $this->cleanSandboxConfig();
+        $this->cleanSandboxMigrations();
 
-        if ($packageRoot === false) {
-            $this->components->warn('Unable to locate package root; skipping asset refresh.');
+        $this->components->info('Republishing Atlas Nexus config and migrations...');
+        $this->publishVendorAssetTag('atlas-nexus-config');
+        $this->publishVendorAssetTag('atlas-nexus-migrations');
+    }
+
+    protected function cleanSandboxConfig(): void
+    {
+        $configPath = base_path('config/atlas-nexus.php');
+
+        if (! $this->files->exists($configPath)) {
+            $this->components->info('No sandbox atlas-nexus config to remove.');
 
             return;
         }
 
-        $this->copyFile(
-            $packageRoot.'/config/atlas-nexus.php',
-            base_path('config/atlas-nexus.php'),
-            'config/atlas-nexus.php'
-        );
+        $this->files->delete($configPath);
+        $this->components->info('Removed sandbox config/atlas-nexus.php.');
+    }
 
+    protected function cleanSandboxMigrations(): void
+    {
         foreach ($this->aiMigrationFiles as $file) {
-            $source = $packageRoot.'/database/migrations/'.$file;
             $target = base_path('database/migrations/'.$file);
 
-            $this->copyFile($source, $target, "AI migration [{$file}]");
+            if (! $this->files->exists($target)) {
+                continue;
+            }
+
+            $this->files->delete($target);
+            $this->components->info("Removed sandbox migration [{$file}].");
         }
     }
 
-    protected function copyFile(string $source, string $target, string $label): void
+    protected function publishVendorAssetTag(string $tag): void
     {
-        if (! $this->files->exists($source)) {
-            $this->components->warn("Skipping {$label}: source missing.");
-
-            return;
-        }
-
-        if ($this->files->exists($target)) {
-            $this->files->delete($target);
-        }
-
-        $directory = dirname($target);
-
-        if (! $this->files->isDirectory($directory)) {
-            $this->files->makeDirectory($directory, 0755, true);
-        }
-
-        $this->files->copy($source, $target);
-        $this->components->info("Synced {$label} from package root.");
+        $this->call('vendor:publish', [
+            '--provider' => AtlasNexusServiceProvider::class,
+            '--tag' => $tag,
+            '--force' => true,
+        ]);
     }
 }
