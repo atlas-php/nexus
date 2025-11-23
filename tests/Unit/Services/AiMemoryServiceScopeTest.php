@@ -116,7 +116,7 @@ class AiMemoryServiceScopeTest extends TestCase
         ]);
 
         $this->assertTrue($service->removeForThread($assistant, $thread, $memory->id));
-        $this->assertModelMissing($memory);
+        $this->assertSoftDeleted($memory);
 
         $this->expectException(RuntimeException::class);
         $service->removeForThread($assistant, $thread, $memory->id + 100);

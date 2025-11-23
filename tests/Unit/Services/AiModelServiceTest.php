@@ -148,8 +148,8 @@ class AiModelServiceTest extends TestCase
 
         $this->assertTrue($threadService->delete($thread));
         $this->assertModelMissing($thread);
-        $this->assertModelMissing($memory);
-        $this->assertModelMissing($message);
+        $this->assertSoftDeleted($memory);
+        $this->assertSoftDeleted($message);
         $this->assertModelMissing($runningRun);
     }
 

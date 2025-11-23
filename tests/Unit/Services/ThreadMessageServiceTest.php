@@ -197,7 +197,6 @@ class ThreadMessageServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-inline-failure']);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
         $thread = AiThread::factory()->create([

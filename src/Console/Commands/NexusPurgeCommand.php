@@ -46,4 +46,3 @@ class NexusPurgeCommand extends Command
         return self::SUCCESS;
     }
 }
-

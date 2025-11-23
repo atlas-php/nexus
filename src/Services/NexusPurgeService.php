@@ -54,7 +54,7 @@ class NexusPurgeService
         $purged = 0;
 
         $service->query()
-            ->onlyTrashed()
+            ->whereNotNull('deleted_at')
             ->orderBy('id')
             ->chunkById($chunkSize, function (iterable $records) use ($service, &$purged): void {
                 foreach ($records as $record) {
@@ -66,4 +66,3 @@ class NexusPurgeService
         return $purged;
     }
 }
-

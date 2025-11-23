@@ -85,7 +85,7 @@ class MemoryToolTest extends TestCase
         ]);
 
         $this->assertSame('Memory removed.', $deleteResponse->message());
-        $this->assertModelMissing($memory);
+        $this->assertSoftDeleted($memory);
     }
 
     public function test_memory_tool_reports_unavailable_memory_removal(): void
@@ -169,8 +169,8 @@ class MemoryToolTest extends TestCase
         $this->assertSame([], $response->meta()['errors']);
         $this->assertTrue(in_array($memA->id, $response->meta()['removed_ids'], true));
         $this->assertTrue(in_array($memB->id, $response->meta()['removed_ids'], true));
-        $this->assertModelMissing($memA);
-        $this->assertModelMissing($memB);
+        $this->assertSoftDeleted($memA);
+        $this->assertSoftDeleted($memB);
     }
 
     private function migrationPath(): string
