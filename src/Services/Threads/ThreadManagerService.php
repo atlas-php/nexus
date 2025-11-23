@@ -13,11 +13,6 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use RuntimeException;
 use Throwable;
 
-use function is_string;
-use function mb_strtolower;
-use function str_contains;
-use function trim;
-
 /**
  * Class ThreadManagerService
  *
@@ -146,14 +141,13 @@ class ThreadManagerService
     }
 
     /**
-     * @return array{thread: AiThread, title: string|null, summary: string|null, long_summary: string|null, keywords: array<int, string>}
+     * @return array{thread: AiThread, title: string|null, summary: string|null, keywords: array<int, string>}
      */
     public function updateThread(
         ThreadState $state,
         int $threadId,
         ?string $title,
         ?string $summary,
-        ?string $longSummary,
         bool $generate
     ): array {
         $thread = $this->threadService->query()
@@ -174,17 +168,16 @@ class ThreadManagerService
             return $this->titleSummaryService->generateAndSave($targetState);
         }
 
-        if ($title === null && $summary === null && $longSummary === null) {
-            throw new RuntimeException('Provide a title, short summary, or long summary to update the thread.');
+        if ($title === null && $summary === null) {
+            throw new RuntimeException('Provide a title or summary to update the thread.');
         }
 
-        $updated = $this->titleSummaryService->apply($targetState, $title, $summary, $longSummary);
+        $updated = $this->titleSummaryService->apply($targetState, $title, $summary);
 
         return [
             'thread' => $updated,
             'title' => $updated->title,
             'summary' => $updated->summary,
-            'long_summary' => $this->longSummaryForThread($updated),
             'keywords' => $this->keywordsForThread($updated),
         ];
     }
@@ -197,20 +190,6 @@ class ThreadManagerService
     protected function messageTable(): string
     {
         return config('atlas-nexus.database.tables.ai_messages', 'ai_messages');
-    }
-
-    public function longSummaryForThread(AiThread $thread): ?string
-    {
-        $metadata = $thread->metadata ?? [];
-        $value = $metadata['long_summary'] ?? null;
-
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
     }
 
     /**

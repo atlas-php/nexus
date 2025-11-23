@@ -50,6 +50,8 @@ use Throwable;
  */
 class AssistantResponseService
 {
+    private const THREAD_MANAGER_KEY = 'thread-manager';
+
     /**
      * @var array<string, array<string, mixed>|int|float|string|null>
      */
@@ -176,6 +178,10 @@ class AssistantResponseService
         $thread = $assistantMessage->thread?->fresh();
 
         if ($thread === null) {
+            return;
+        }
+
+        if ($thread->assistant_key === self::THREAD_MANAGER_KEY) {
             return;
         }
 

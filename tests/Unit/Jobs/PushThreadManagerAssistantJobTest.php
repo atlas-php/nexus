@@ -64,7 +64,6 @@ class PushThreadManagerAssistantJobTest extends TestCase
                 'thread' => $thread,
                 'title' => 'Conversation',
                 'summary' => 'Quick summary.',
-                'long_summary' => 'Longer summary text.',
                 'keywords' => ['conversation'],
             ]);
 

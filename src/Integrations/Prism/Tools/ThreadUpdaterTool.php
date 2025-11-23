@@ -45,7 +45,7 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Update the current thread title, short summary, and long summary or request auto-generated summaries';
+        return 'Update the current thread title or summary, or request auto-generated summaries';
     }
 
     /**
@@ -57,8 +57,7 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
             new ToolParameter(new EnumSchema('action', 'Action to perform.', ['update_thread', 'generate_summary']), true),
             new ToolParameter(new StringSchema('thread_id', 'Thread identifier. Defaults to the active thread.', true), false),
             new ToolParameter(new StringSchema('title', 'New thread title (optional).', true), false),
-            new ToolParameter(new StringSchema('summary', 'New short summary (optional).', true), false),
-            new ToolParameter(new StringSchema('long_summary', 'New long summary (optional).', true), false),
+            new ToolParameter(new StringSchema('summary', 'New summary (optional).', true), false),
         ];
     }
 
@@ -87,7 +86,6 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
 
             $title = $this->trimValue($arguments['title'] ?? null);
             $summary = $this->trimValue($arguments['summary'] ?? null);
-            $longSummary = $this->trimValue($arguments['long_summary'] ?? null);
             $autoGenerate = $action === 'generate';
 
             $result = $this->threadManagerService->updateThread(
@@ -95,7 +93,6 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
                 $threadId,
                 $title,
                 $summary,
-                $longSummary,
                 $autoGenerate
             );
 
@@ -107,12 +104,10 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
                 'thread_id' => $result['thread']->id,
                 'title' => $result['title'],
                 'summary' => $result['summary'],
-                'long_summary' => $result['long_summary'],
                 'keywords' => $result['keywords'],
                 'result' => [
                     'title' => $result['title'],
                     'summary' => $result['summary'],
-                    'long_summary' => $result['long_summary'],
                     'keywords' => $result['keywords'],
                 ],
             ]);

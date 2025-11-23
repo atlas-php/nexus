@@ -1,0 +1,135 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Atlas\Nexus\Tests\Unit\Services;
+
+use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Models\AiMessage;
+use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Threads\ThreadTitleSummaryService;
+use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Support\Collection;
+use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Text\Response as TextResponse;
+use Prism\Prism\ValueObjects\Messages\AssistantMessage;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\ValueObjects\Meta;
+use Prism\Prism\ValueObjects\Usage;
+
+use function collect;
+
+/**
+ * Class ThreadTitleSummaryServiceTest
+ *
+ * Ensures thread manager summaries are generated and logged via dedicated assistant threads.
+ */
+class ThreadTitleSummaryServiceTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->loadPackageMigrations($this->migrationPath());
+        $this->runPendingCommand('migrate:fresh', [
+            '--path' => $this->migrationPath(),
+            '--realpath' => true,
+        ])->run();
+    }
+
+    public function test_it_generates_summary_and_logs_thread_manager_thread(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 42,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'user_id' => $thread->user_id,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'Hello, summarize my work today.',
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => 'Sure, here are the details.',
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        $payload = [
+            'title' => 'Work summary complete',
+            'summary' => 'Completed all assigned work and provided updates.',
+            'keywords' => ['work', 'updates'],
+        ];
+
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('Summarize this thread'),
+            new AssistantMessage('Summary generated.'),
+        ]);
+
+        $response = new TextResponse(
+            steps: new Collection,
+            text: "```json\n".json_encode($payload, JSON_PRETTY_PRINT)."\n```",
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(10, 12),
+            meta: new Meta('resp-summary', 'gpt-summary'),
+            messages: $messageObjects,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($thread);
+        $service = $this->app->make(ThreadTitleSummaryService::class);
+
+        $result = $service->generateAndSave($state);
+
+        $this->assertSame('Work summary complete', $result['title']);
+        $this->assertSame('Completed all assigned work and provided updates.', $result['summary']);
+        $this->assertSame(['work', 'updates'], $result['keywords']);
+
+        $summaryThread = AiThread::query()
+            ->where('assistant_key', 'thread-manager')
+            ->where('parent_thread_id', $thread->id)
+            ->first();
+
+        $this->assertNotNull($summaryThread);
+        $this->assertSame('Completed all assigned work and provided updates.', $summaryThread->summary);
+        $this->assertSame($thread->id, $summaryThread->parent_thread_id);
+
+        /** @var array<int, AiMessage> $messages */
+        $messages = AiMessage::query()
+            ->where('thread_id', $summaryThread->id)
+            ->orderBy('sequence')
+            ->get()
+            ->all();
+
+        $this->assertCount(2, $messages);
+        $this->assertSame(AiMessageRole::USER, $messages[0]->role);
+        $this->assertSame(AiMessageRole::ASSISTANT, $messages[1]->role);
+        $this->assertSame('resp-summary', $messages[1]->provider_response_id);
+        $this->assertSame($response->text, $messages[1]->metadata['thread_manager_payload'] ?? null);
+
+        $metadata = $summaryThread->metadata ?? [];
+        $this->assertSame($response->text, $metadata['thread_manager_payload'] ?? null);
+    }
+
+    private function migrationPath(): string
+    {
+        return __DIR__.'/../../../database/migrations';
+    }
+}

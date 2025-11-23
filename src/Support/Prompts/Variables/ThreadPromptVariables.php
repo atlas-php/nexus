@@ -36,7 +36,6 @@ class ThreadPromptVariables implements PromptVariableGroup
             'THREAD.ID' => (string) $thread->getKey(),
             'THREAD.TITLE' => $this->normalizeValue($thread->title),
             'THREAD.SUMMARY' => $this->normalizeValue($thread->summary),
-            'THREAD.LONG_SUMMARY' => $this->normalizeValue($this->longSummary($thread)),
             'THREAD.RECENT.IDS' => $this->recentThreadIds($thread),
             'DATETIME' => Carbon::now('UTC')->toIso8601String(),
         ];
@@ -73,19 +72,5 @@ class ThreadPromptVariables implements PromptVariableGroup
         }
 
         return implode(', ', $ids);
-    }
-
-    private function longSummary(AiThread $thread): ?string
-    {
-        $metadata = $thread->metadata ?? [];
-        $value = $metadata['long_summary'] ?? null;
-
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
     }
 }

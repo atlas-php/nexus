@@ -87,7 +87,6 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
                         'id' => $thread->id,
                         'title' => $thread->title,
                         'summary' => $thread->summary,
-                        'long_summary' => $this->threadManagerService->longSummaryForThread($thread),
                         'keywords' => $this->threadManagerService->keywordsForThread($thread),
                     ];
                 })

@@ -328,6 +328,60 @@ class RunAssistantResponseJobTest extends TestCase
         Bus::assertNotDispatched(PushThreadManagerAssistantJob::class);
     }
 
+    public function test_it_skips_dispatch_for_thread_manager_threads(): void
+    {
+        Bus::fake([PushThreadManagerAssistantJob::class]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'thread-manager',
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('Review summary'),
+            new AssistantMessage('Summary complete'),
+        ]);
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Thread manager reply.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(3, 3),
+            meta: new Meta('resp-tm', 'gpt-thread-manager'),
+            messages: $messageObjects,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $assistantMessage->refresh();
+        $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
+
+        Bus::assertNotDispatched(PushThreadManagerAssistantJob::class);
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';
