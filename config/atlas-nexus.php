@@ -17,6 +17,11 @@ return [
 
     'queue' => env('ATLAS_NEXUS_QUEUE'),
 
+    'thread_summary' => [
+        'minimum_messages' => (int) env('ATLAS_NEXUS_THREAD_SUMMARY_MIN_MESSAGES', 2),
+        'message_interval' => (int) env('ATLAS_NEXUS_THREAD_SUMMARY_MESSAGE_INTERVAL', 10),
+    ],
+
     'assistants' => [
         \Atlas\Nexus\Assistants\GeneralAssistant::class,
         \Atlas\Nexus\Assistants\HumanAssistant::class,

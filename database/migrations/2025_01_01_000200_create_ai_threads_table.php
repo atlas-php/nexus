@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('summary', 255)->nullable();
             $table->text('long_summary')->nullable();
             $table->timestamp('last_message_at')->nullable();
+            $table->unsignedBigInteger('last_summary_message_id')->nullable()->index();
             $table->json('metadata')->nullable();
             $table->softDeletes();
             $table->timestamps();

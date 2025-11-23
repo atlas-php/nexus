@@ -30,9 +30,10 @@ class ThreadTitleSummaryService
     /**
      * Generate and persist a title and summary based on the thread conversation.
      *
-     * @return array{thread: AiThread, title: string, summary: string, long_summary: string, keywords: array<int, string>}
+     * @param  bool  $preserveExistingTitle  When true, retains the existing title when available.
+     * @return array{thread: AiThread, title: string|null, summary: string|null, long_summary: string|null, keywords: array<int, string>}
      */
-    public function generateAndSave(ThreadState $state): array
+    public function generateAndSave(ThreadState $state, bool $preserveExistingTitle = false): array
     {
         $generated = $this->generate($state);
 
@@ -40,18 +41,25 @@ class ThreadTitleSummaryService
             'summary_keywords' => $generated['keywords'],
         ]);
 
-        $updated = $this->threadService->update($state->thread, [
-            'title' => $generated['title'],
+        $payload = [
             'summary' => $generated['summary'],
             'long_summary' => $generated['long_summary'],
             'metadata' => $metadata,
-        ]);
+        ];
+
+        $shouldUpdateTitle = ! $preserveExistingTitle || $state->thread->title === null;
+
+        if ($shouldUpdateTitle) {
+            $payload['title'] = $generated['title'];
+        }
+
+        $updated = $this->threadService->update($state->thread, $payload);
 
         return [
             'thread' => $updated,
-            'title' => $generated['title'],
-            'summary' => $generated['summary'],
-            'long_summary' => $generated['long_summary'],
+            'title' => $updated->title,
+            'summary' => $updated->summary ?? $generated['summary'],
+            'long_summary' => $updated->long_summary ?? $generated['long_summary'],
             'keywords' => $generated['keywords'],
         ];
     }

@@ -13,6 +13,7 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiMessageService;
@@ -155,6 +156,8 @@ class AssistantResponseService
                     'metadata' => $metadata,
                 ]);
             });
+
+            $this->dispatchThreadManagerAssistantJob($assistantMessage);
         } catch (Throwable $exception) {
             $failedReason = $exception instanceof PrismRateLimitedException
                 ? $this->formatRateLimitedFailure($exception, $state ?? null, $textRequest, $providerKey, $modelKey)
@@ -166,6 +169,56 @@ class AssistantResponseService
         } finally {
             $this->recordedToolOutputs = [];
         }
+    }
+
+    protected function dispatchThreadManagerAssistantJob(AiMessage $assistantMessage): void
+    {
+        $thread = $assistantMessage->thread?->fresh();
+
+        if ($thread === null) {
+            return;
+        }
+
+        $totalMessageCount = $this->messageService->query()
+            ->where('thread_id', $thread->getKey())
+            ->where('status', AiMessageStatus::COMPLETED->value)
+            ->count();
+
+        $minimumMessages = $this->threadSummaryConfig('minimum_messages', 2);
+        $messageInterval = $this->threadSummaryConfig('message_interval', 10);
+
+        if ($totalMessageCount < $minimumMessages) {
+            return;
+        }
+
+        if ($thread->last_summary_message_id === null) {
+            PushThreadManagerAssistantJob::dispatch($thread->getKey());
+
+            return;
+        }
+
+        $messagesSinceSummary = $this->messageService->query()
+            ->where('thread_id', $thread->getKey())
+            ->where('status', AiMessageStatus::COMPLETED->value)
+            ->where('id', '>', $thread->last_summary_message_id)
+            ->count();
+
+        if ($messagesSinceSummary >= $messageInterval) {
+            PushThreadManagerAssistantJob::dispatch($thread->getKey());
+        }
+    }
+
+    protected function threadSummaryConfig(string $key, int $default): int
+    {
+        $configuration = config('atlas-nexus.thread_summary', []);
+
+        if (! is_array($configuration)) {
+            return $default;
+        }
+
+        $value = (int) ($configuration[$key] ?? $default);
+
+        return $value > 0 ? $value : $default;
     }
 
     /**

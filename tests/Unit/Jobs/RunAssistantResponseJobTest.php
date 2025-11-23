@@ -6,10 +6,12 @@ namespace Atlas\Nexus\Tests\Unit\Jobs;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Support\Facades\Bus;
 use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response as TextResponse;
@@ -105,6 +107,225 @@ class RunAssistantResponseJobTest extends TestCase
         $assistantMessage->refresh();
         $this->assertSame(AiMessageStatus::FAILED, $assistantMessage->status);
         $this->assertSame('Simulated failure', $assistantMessage->failed_reason);
+    }
+
+    public function test_it_dispatches_thread_manager_job_after_minimum_message_count_met(): void
+    {
+        Bus::fake([PushThreadManagerAssistantJob::class]);
+        config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        /** @var array<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = [
+            new UserMessage('Hello again'),
+            new AssistantMessage('All set twice!'),
+        ];
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Second reply done.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(5, 5),
+            meta: new Meta('resp-456', 'gpt-test'),
+            messages: collect($messageObjects),
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $assistantMessage->refresh();
+        $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
+
+        Bus::assertDispatched(PushThreadManagerAssistantJob::class, function (PushThreadManagerAssistantJob $job) use ($thread): bool {
+            return $job->threadId === $thread->id;
+        });
+    }
+
+    public function test_it_dispatches_thread_manager_job_when_interval_reached_after_last_summary(): void
+    {
+        Bus::fake([PushThreadManagerAssistantJob::class]);
+
+        config()->set('atlas-nexus.thread_summary.message_interval', 3);
+        config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $firstAssistant */
+        $firstAssistant = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        $thread->update(['last_summary_message_id' => $firstAssistant->id]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 3,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 4,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 5,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        /** @var array<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = [
+            new UserMessage('Interval triggered'),
+            new AssistantMessage('Interval met.'),
+        ];
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Interval summary update.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(6, 6),
+            meta: new Meta('resp-789', 'gpt-test'),
+            messages: collect($messageObjects),
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $assistantMessage->refresh();
+        $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
+
+        Bus::assertDispatched(PushThreadManagerAssistantJob::class, function (PushThreadManagerAssistantJob $job) use ($thread): bool {
+            return $job->threadId === $thread->id;
+        });
+    }
+
+    public function test_it_does_not_dispatch_when_interval_not_met(): void
+    {
+        Bus::fake([PushThreadManagerAssistantJob::class]);
+
+        config()->set('atlas-nexus.thread_summary.message_interval', 4);
+        config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $firstAssistant */
+        $firstAssistant = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        $thread->update(['last_summary_message_id' => $firstAssistant->id]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 3,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 4,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        /** @var array<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = [
+            new UserMessage('Interval not met'),
+            new AssistantMessage('Waiting.'),
+        ];
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Not enough messages.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(4, 4),
+            meta: new Meta('resp-987', 'gpt-test'),
+            messages: collect($messageObjects),
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $assistantMessage->refresh();
+        $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
+
+        Bus::assertNotDispatched(PushThreadManagerAssistantJob::class);
     }
 
     private function migrationPath(): string
