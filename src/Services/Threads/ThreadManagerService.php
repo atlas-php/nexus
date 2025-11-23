@@ -14,6 +14,9 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use RuntimeException;
 use Throwable;
 
+use function mb_strtolower;
+use function str_contains;
+
 /**
  * Class ThreadManagerService
  *
@@ -39,6 +42,7 @@ class ThreadManagerService
     {
         $page = $this->normalizePage($options['page'] ?? null);
         $searchTerms = $this->normalizeSearchTerms($options['search'] ?? null);
+        $userNameSearch = $this->isUserNameSearch($searchTerms, $state);
         [$startDate, $endDate] = $this->normalizeDateRange($options['between_dates'] ?? null);
         $threadsTable = $this->threadTable();
         $messagesTable = $this->messageTable();
@@ -67,7 +71,7 @@ class ThreadManagerService
             $query->whereDate("{$threadsTable}.created_at", '<=', $endDate);
         }
 
-        if ($searchTerms !== []) {
+        if ($searchTerms !== [] && ! $userNameSearch) {
             $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchTerms): void {
                 foreach ($searchTerms as $term) {
                     $likeValue = '%'.$term.'%';
@@ -201,6 +205,61 @@ class ThreadManagerService
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    /**
+     * @param  array<int, string>  $searchTerms
+     */
+    protected function isUserNameSearch(array $searchTerms, ThreadState $state): bool
+    {
+        if ($searchTerms === []) {
+            return false;
+        }
+
+        $userName = $this->userName($state);
+
+        if ($userName === null) {
+            return false;
+        }
+
+        $normalizedUser = mb_strtolower($userName);
+
+        foreach ($searchTerms as $term) {
+            $normalizedTerm = mb_strtolower($term);
+
+            if ($normalizedTerm === '') {
+                continue;
+            }
+
+            if (str_contains($normalizedUser, $normalizedTerm) || str_contains($normalizedTerm, $normalizedUser)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function userName(ThreadState $state): ?string
+    {
+        try {
+            $user = $state->thread->user;
+        } catch (Throwable) {
+            return null;
+        }
+
+        if ($user === null) {
+            return null;
+        }
+
+        $name = $user->getAttribute('name');
+
+        if (! is_string($name)) {
+            return null;
+        }
+
+        $trimmed = trim($name);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     protected function normalizePage(mixed $page): int

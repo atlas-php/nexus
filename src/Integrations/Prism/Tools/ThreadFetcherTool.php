@@ -50,7 +50,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Search the user’s threads by title, summary, keywords, or message text. Use fetch_thread with a thread_id to open a conversation.';
+        return 'Search the user’s threads by title, summaries, and keywords. Use fetch_thread with a thread_id to open a conversation.';
     }
 
     /**
@@ -60,8 +60,8 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
     {
         return [
             new ToolParameter(new StringSchema('action', 'Action to perform: search_threads or fetch_thread.', true), true),
-            new ToolParameter(new NumberSchema('page', 'Page number when listing/searching threads.', true), false),
-            new ToolParameter(new ArraySchema('search', 'Search multiple terms across title, summary, keywords, and all message content.', new StringSchema('term', 'Search term', true), true), false),
+            new ToolParameter(new NumberSchema('page', 'Optional page number when listing/searching threads.', true), false),
+            new ToolParameter(new ArraySchema('search', 'Optional search multiple terms across title, summary and keywords', new StringSchema('term', 'Search term', true), true), false),
             new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
             new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch action.', true), false),
         ];
@@ -120,7 +120,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
         $message = 'Fetched matching threads.';
 
         if ($searchProvided && $threads === []) {
-            $message = 'No threads matched those keywords. Search only checks thread titles, summaries, keywords, and message content—it cannot find user names. Use fetch_thread with a thread_id to inspect a specific conversation.';
+            $message = 'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use fetch_thread with a thread_id to inspect a specific conversation.';
         }
 
         return $this->output($message, [

@@ -15,7 +15,10 @@ use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Tests\Fixtures\TestUser;
 use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Class ThreadFetcherToolTest
@@ -28,11 +31,22 @@ class ThreadFetcherToolTest extends TestCase
     {
         parent::setUp();
 
+        config()->set('auth.providers.users.model', TestUser::class);
+        config()->set('auth.model', TestUser::class);
+
         $this->loadPackageMigrations($this->migrationPath());
         $this->runPendingCommand('migrate:fresh', [
             '--path' => $this->migrationPath(),
             '--realpath' => true,
         ])->run();
+
+        Schema::dropIfExists('users');
+        Schema::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function test_it_lists_threads_for_user(): void
@@ -186,11 +200,11 @@ class ThreadFetcherToolTest extends TestCase
 
         $response = $tool->handle([
             'action' => 'search_threads',
-            'search' => ['Maggie Smith'],
+            'search' => ['Unknown Query'],
         ]);
 
         $this->assertSame(
-            'No threads matched those keywords. Search only checks thread titles, summaries, keywords, and message content—it cannot find user names. Use fetch_thread with a thread_id to inspect a specific conversation.',
+            'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use fetch_thread with a thread_id to inspect a specific conversation.',
             $response->message()
         );
         $this->assertSame([], $response->meta()['result']['threads']);
@@ -298,6 +312,43 @@ class ThreadFetcherToolTest extends TestCase
         $this->assertContains('Finance Ledger', $titles);
     }
 
+    public function test_search_by_user_name_returns_latest_threads(): void
+    {
+        $state = $this->createState();
+
+        $latest = AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'Latest Thread',
+            'summary' => 'Latest summary.',
+            'last_message_at' => now(),
+        ]);
+
+        $older = AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'Older Thread',
+            'summary' => 'Older summary.',
+            'last_message_at' => now()->subHours(2),
+        ]);
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $userName = TestUser::query()->find($state->thread->user_id)?->name ?? '';
+
+        $response = $tool->handle([
+            'action' => 'search_threads',
+            'search' => [$userName],
+        ]);
+
+        $threads = $response->meta()['result']['threads'];
+
+        $this->assertSame([$latest->id, $older->id], array_column($threads, 'id'));
+    }
+
     public function test_it_fetches_thread_with_messages(): void
     {
         $state = $this->createState();
@@ -368,10 +419,15 @@ class ThreadFetcherToolTest extends TestCase
             $assistant->save();
         }
 
+        $user = TestUser::query()->create([
+            'name' => 'Maggie Smith',
+            'email' => 'maggie@example.com',
+        ]);
+
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'user_id' => 1,
+            'user_id' => $user->id,
             'type' => AiThreadType::USER->value,
             'status' => AiThreadStatus::OPEN->value,
             'title' => 'Original Title',
