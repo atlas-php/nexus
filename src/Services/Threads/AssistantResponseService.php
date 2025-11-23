@@ -530,5 +530,4 @@ class AssistantResponseService
     {
         return (int) config('prism.max_steps', 8);
     }
-
 }
