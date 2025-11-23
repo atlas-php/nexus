@@ -26,6 +26,7 @@ return new class extends Migration
             $table->text('content');
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['owner_type', 'owner_id']);
             $table->index('kind');

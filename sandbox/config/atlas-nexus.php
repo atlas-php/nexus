@@ -38,17 +38,11 @@ return [
     'provider_tools' => [
         'web_search' => [
             'filters' => [
-                'allowed_domains' => [
-                    'inveloapp.com',
-                    'helpdesk.inveloapp.com',
-                    'blog.inveloapp.com',
-                ],
+                'allowed_domains' => null,
             ],
         ],
         'file_search' => [
-            'vector_store_ids' => [
-                'vs_691f2d4727dc8191b759981539c2751f',
-            ],
+            'vector_store_ids' => [],
         ],
         'code_interpreter' => [
             'container' => [
@@ -59,6 +53,7 @@ return [
     ],
 
     'seeders' => [
+        \Atlas\Nexus\Services\Seeders\DefaultAssistantSeeder::class,
         \Atlas\Nexus\Services\Seeders\WebSearchAssistantSeeder::class,
         \Atlas\Nexus\Services\Seeders\ThreadManagerAssistantSeeder::class,
     ],

@@ -68,19 +68,47 @@ class SandboxStartFreshCommand extends Command
 
     protected function refreshPackageAssets(): void
     {
+        $packageRoot = realpath(base_path('..'));
+
+        if ($packageRoot === false) {
+            $this->components->warn('Unable to locate package root; skipping asset refresh.');
+
+            return;
+        }
+
+        $this->copyFile(
+            $packageRoot.'/config/atlas-nexus.php',
+            base_path('config/atlas-nexus.php'),
+            'config/atlas-nexus.php'
+        );
+
         foreach ($this->aiMigrationFiles as $file) {
-            $path = base_path('database/migrations/'.$file);
+            $source = $packageRoot.'/database/migrations/'.$file;
+            $target = base_path('database/migrations/'.$file);
 
-            if (! $this->files->exists($path)) {
-                $this->components->warn("AI migration [{$file}] not found in sandbox, skipping delete.");
-
-                continue;
-            }
-
-            $this->files->delete($path);
-            $this->components->info("Deleted AI migration [{$file}] from sandbox.");
+            $this->copyFile($source, $target, "AI migration [{$file}]");
         }
     }
 
-    // No additional helpers required.
+    protected function copyFile(string $source, string $target, string $label): void
+    {
+        if (! $this->files->exists($source)) {
+            $this->components->warn("Skipping {$label}: source missing.");
+
+            return;
+        }
+
+        if ($this->files->exists($target)) {
+            $this->files->delete($target);
+        }
+
+        $directory = dirname($target);
+
+        if (! $this->files->isDirectory($directory)) {
+            $this->files->makeDirectory($directory, 0755, true);
+        }
+
+        $this->files->copy($source, $target);
+        $this->components->info("Synced {$label} from package root.");
+    }
 }
