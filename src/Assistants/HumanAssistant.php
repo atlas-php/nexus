@@ -47,7 +47,7 @@ class HumanAssistant extends AssistantDefinition
     {
         return [
             'memory',
-            'thread_search'
+            'thread_search',
         ];
     }
 
