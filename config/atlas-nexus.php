@@ -18,8 +18,10 @@ return [
     'queue' => env('ATLAS_NEXUS_QUEUE'),
 
     'assistants' => [
-        // \App\Nexus\Assistants\GeneralAssistant::class,
-        // \App\Nexus\Assistants\ThreadManagerAssistant::class,
+        \Atlas\Nexus\Assistants\GeneralAssistant::class,
+        \Atlas\Nexus\Assistants\HumanAssistant::class,
+        \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
+        // Additional consumer-defined assistants go here.
     ],
 
     'variables' => [

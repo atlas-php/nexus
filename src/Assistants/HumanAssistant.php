@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Nexus\Assistants;
+namespace Atlas\Nexus\Assistants;
 
 use Atlas\Nexus\Support\Assistants\AssistantDefinition;
 
 /**
  * Class HumanAssistant
  *
- * Defines the sandbox persona that replies as Sara for human-style testing.
+ * Ships the Sara persona assistant for human-like conversation testing without requiring consumers to craft one.
  */
 class HumanAssistant extends AssistantDefinition
 {

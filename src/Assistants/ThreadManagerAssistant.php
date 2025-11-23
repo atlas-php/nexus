@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Nexus\Assistants;
+namespace Atlas\Nexus\Assistants;
 
 use Atlas\Nexus\Support\Assistants\AssistantDefinition;
 
 /**
- * Provides summaries for threads in the sandbox app.
+ * Class ThreadManagerAssistant
+ *
+ * Generates thread titles and summaries to support the default Nexus workflow.
  */
 class ThreadManagerAssistant extends AssistantDefinition
 {

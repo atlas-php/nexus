@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Nexus\Assistants;
+namespace Atlas\Nexus\Assistants;
 
 use Atlas\Nexus\Support\Assistants\AssistantDefinition;
 
 /**
  * Class GeneralAssistant
  *
- * Defines the sandbox-friendly default conversational assistant.
+ * Provides the built-in conversational assistant that packages can rely on for general guidance.
+ * This definition mirrors the former sandbox assistant so consuming apps receive a ready-to-use option.
  */
 class GeneralAssistant extends AssistantDefinition
 {

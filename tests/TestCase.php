@@ -41,14 +41,21 @@ abstract class TestCase extends PackageTestCase
         SecondaryAssistantDefinition::resetConfig();
         ThreadManagerAssistantDefinition::resetConfig();
 
-        $assistants = [
-            PrimaryAssistantDefinition::class,
-            SecondaryAssistantDefinition::class,
-            ThreadManagerAssistantDefinition::class,
-        ];
+        if ($this->shouldUseAssistantFixtures()) {
+            $assistants = [
+                PrimaryAssistantDefinition::class,
+                SecondaryAssistantDefinition::class,
+                ThreadManagerAssistantDefinition::class,
+            ];
 
-        config()->set('atlas-nexus.assistants', $assistants);
+            config()->set('atlas-nexus.assistants', $assistants);
+        }
 
         $this->app->make(AssistantRegistry::class)->refresh();
+    }
+
+    protected function shouldUseAssistantFixtures(): bool
+    {
+        return true;
     }
 }
