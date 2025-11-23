@@ -43,20 +43,14 @@ class HumanAssistant extends AssistantDefinition
         return 2;
     }
 
-    /**
-     * @return array<int|string, string|array<string, mixed>>
-     */
     public function tools(): array
     {
-        return array_merge(parent::tools(), ['memory', 'thread_search', 'thread_fetcher', 'thread_updater']);
-    }
-
-    /**
-     * @return array<int|string, string|array<string, mixed>>
-     */
-    public function providerTools(): array
-    {
-        return array_merge(parent::providerTools(), ['web_search', 'file_search', 'code_interpreter']);
+        return [
+            'memory',
+            'thread_search',
+            'thread_fetcher',
+            'thread_updater',
+        ];
     }
 
     public function systemPrompt(): string

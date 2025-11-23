@@ -22,6 +22,35 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
 - Handlers may implement `ConfigurableTool` to receive assistant-owned configuration arrays. Return keyed entries from `AssistantDefinition::tools()` (e.g., `['calendar_lookup' => ['allowed_calendars' => ['sales']]]`) to pass these options to the handler before it is converted into a Prism tool.
 - `AssistantDefinition::providerTools()` mirrors this structure for provider-native tools so each assistant controls its own provider options (vector store ids, allowed domains, etc.) without touching global config.
+- Example configuration:
+
+```php
+public function tools(): array
+{
+    return [
+        'thread_search',
+        'calendar_lookup' => ['allowed_calendars' => ['sales', 'success']],
+    ];
+}
+
+public function providerTools(): array
+{
+    return [
+        'web_search' => [
+            'filters' => [
+                'allowed_domains' => [
+                    'docs.example.com',
+                    'support.example.com',
+                    'blog.example.com',
+                ],
+            ],
+        ],
+        'file_search' => [
+            'vector_store_ids' => ['vs_product_docs', 'vs_release_notes'],
+        ],
+    ];
+}
+```
 - Provider-native web tooling (e.g., `'web_search'`) is now configured exclusively through `providerTools()`; Nexus no longer ships a code-defined web search handler.
 
 ## Assistant Tool Keys

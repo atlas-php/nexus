@@ -31,6 +31,37 @@ Each definition class must implement:
 
 The base class normalizes arrays, deduplicates tool keys, and exposes helper setters (`promptIsActive`, `promptUserId`). Tool and provider tool declarations may be strings or associative arrays; any configuration arrays are preserved and supplied to the runtime services so every assistant can own its own tool options.
 
+### Tool Configuration Examples
+
+```php
+public function tools(): array
+{
+    return [
+        'memory',
+        'calendar_lookup' => ['allowed_calendars' => ['sales', 'success']],
+        ['key' => 'thread_fetcher', 'mode' => 'summary', 'include_messages' => true],
+    ];
+}
+
+public function providerTools(): array
+{
+    return [
+        'web_search' => [
+            'filters' => [
+                'allowed_domains' => [
+                    'inveloapp.com',
+                    'helpdesk.inveloapp.com',
+                    'blog.inveloapp.com',
+                ],
+            ],
+        ],
+        'file_search' => [
+            'vector_store_ids' => ['vs_main_docs', 'vs_support_kb'],
+        ],
+    ];
+}
+```
+
 ## Runtime Columns
 
 Because assistants live in code, the other tables simply store an `assistant_key` string:

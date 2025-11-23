@@ -41,23 +41,25 @@ class GeneralAssistant extends AssistantDefinition
 
     public function maxDefaultSteps(): ?int
     {
-        return 2;
+        return 3;
     }
 
-    /**
-     * @return array<int|string, string|array<string, mixed>>
-     */
     public function tools(): array
     {
-        return array_merge(parent::tools(), ['memory', 'thread_search', 'thread_fetcher', 'thread_updater']);
+        return [
+            'memory',
+            'thread_search',
+            'thread_fetcher',
+            'thread_updater',
+        ];
     }
 
-    /**
-     * @return array<int|string, string|array<string, mixed>>
-     */
     public function providerTools(): array
     {
-        return array_merge(parent::providerTools(), ['web_search', 'code_interpreter']);
+        return [
+            'web_search',
+            'code_interpreter',
+        ];
     }
 
     public function systemPrompt(): string
