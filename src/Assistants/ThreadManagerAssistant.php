@@ -35,7 +35,7 @@ class ThreadManagerAssistant extends AssistantDefinition
 
     public function maxOutputTokens(): ?int
     {
-        return 1048;
+        return 512;
     }
 
     public function maxDefaultSteps(): ?int
