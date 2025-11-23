@@ -99,12 +99,6 @@ class AssistantResponseService
                 $request->withSystemPrompt($state->systemPrompt);
             }
 
-            $memoryPrompt = $this->memoryPrompt($state);
-
-            if ($memoryPrompt !== null) {
-                $request->withSystemPrompt($memoryPrompt);
-            }
-
             if ($toolContext['tools'] !== []) {
                 $request->withTools($toolContext['tools']);
             }
@@ -537,20 +531,4 @@ class AssistantResponseService
         return (int) config('prism.max_steps', 8);
     }
 
-    protected function memoryPrompt(ThreadState $state): ?string
-    {
-        if ($state->memories->isEmpty()) {
-            return null;
-        }
-
-        $lines = $state->memories
-            ->map(fn ($memory): string => sprintf(
-                '- (%s) %s',
-                $memory->kind,
-                $memory->content
-            ))
-            ->all();
-
-        return "Contextual memories:\n".implode("\n", $lines);
-    }
 }

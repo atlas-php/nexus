@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services\Prompts;
 
+use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantPrompt;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
@@ -223,6 +225,67 @@ class PromptVariableServiceTest extends TestCase
             ->apply($prompt->system_prompt, $context);
 
         $this->assertSame('Recent threads: None', $rendered);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_memory_context_variable_is_available_when_memories_exist(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-01-01 12:00:00', 'UTC'));
+
+        $user = TestUser::query()->create([
+            'name' => 'Memory Owner',
+            'email' => 'memory-owner@example.com',
+        ]);
+
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-variable']);
+        $prompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'system_prompt' => 'Memories -> {MEMORY.CONTEXT}',
+        ]);
+
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => $user->id,
+        ]);
+
+        AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'thread_id' => $thread->id,
+            'owner_type' => AiMemoryOwnerType::USER->value,
+            'owner_id' => $thread->user_id,
+            'kind' => 'fact',
+            'content' => 'User lives in Toronto.',
+            'created_at' => now()->addMinute(),
+            'updated_at' => now()->addMinute(),
+        ]);
+
+        AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'thread_id' => $thread->id,
+            'owner_type' => AiMemoryOwnerType::USER->value,
+            'owner_id' => $thread->user_id,
+            'kind' => 'preference',
+            'content' => 'Enjoys concise summaries.',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+        $context = new PromptVariableContext($state, $prompt, $assistant);
+
+        $rendered = $this->app->make(PromptVariableService::class)
+            ->apply($prompt->system_prompt, $context);
+
+        $this->assertSame(
+            "Memories -> Contextual memories:\n- (fact) User lives in Toronto.\n- (preference) Enjoys concise summaries.",
+            $rendered
+        );
 
         Carbon::setTestNow();
     }

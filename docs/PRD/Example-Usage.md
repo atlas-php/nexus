@@ -44,4 +44,4 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 ## Manage Memories
 - `MemoryTool` (seeded) allows assistants to add/update/fetch/delete memories via tool calls.
 - `AiMemoryService::saveForThread` stores memory with `group_id` and owner/assistant scope.
-- `ThreadStateService` injects applicable memories into request context; assistant message metadata includes `memory_ids`.
+- `ThreadStateService` exposes applicable memories for prompts (use `{MEMORY.CONTEXT}` when desired); assistant message metadata includes `memory_ids`.

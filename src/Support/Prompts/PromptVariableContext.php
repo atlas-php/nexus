@@ -30,6 +30,14 @@ class PromptVariableContext
         $this->userLoaded = $user !== null;
     }
 
+    /**
+     * Access the aggregated thread state used when resolving prompt variables.
+     */
+    public function threadState(): ThreadState
+    {
+        return $this->threadState;
+    }
+
     public function thread(): AiThread
     {
         return $this->threadState->thread;
