@@ -11,6 +11,7 @@ use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Prism\Prism\Schema\ArraySchema;
+use Prism\Prism\Schema\BooleanSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
@@ -21,10 +22,14 @@ use function array_unique;
 use function array_values;
 use function collect;
 use function count;
+use function in_array;
 use function is_array;
+use function is_bool;
 use function is_int;
 use function is_numeric;
+use function is_string;
 use function sprintf;
+use function strtolower;
 use function trim;
 
 /**
@@ -77,6 +82,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
                 ),
                 true
             ),
+            new ToolParameter(new BooleanSchema('include_assistant', 'Include assistant messages in the output text.', true), false),
         ];
     }
 
@@ -91,6 +97,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
         try {
             $threadIds = $this->resolveThreadIds($arguments);
+            $includeAssistant = $this->normalizeBoolean($arguments['include_assistant'] ?? false);
             $threads = $this->threadManagerService->fetchThreads($this->state, $threadIds);
 
             $payloads = collect($threads)
@@ -102,7 +109,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
                 throw new RuntimeException('Thread not found for this assistant and user.');
             }
 
-            $message = $this->formatThreadSummaries($payloads);
+            $message = $this->formatThreadSummaries($payloads, $includeAssistant);
 
             if (count($payloads) === 1) {
                 $thread = $payloads[array_key_first($payloads)];
@@ -215,9 +222,9 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<int, array<string, mixed>>  $threads
      */
-    protected function formatThreadSummaries(array $threads): string
+    protected function formatThreadSummaries(array $threads, bool $includeAssistant): string
     {
-        $blocks = array_map(fn (array $thread): string => $this->formatThreadSummary($thread), $threads);
+        $blocks = array_map(fn (array $thread): string => $this->formatThreadSummary($thread, $includeAssistant), $threads);
 
         return implode("\n\n", array_filter($blocks));
     }
@@ -225,7 +232,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<string, mixed>  $thread
      */
-    protected function formatThreadSummary(array $thread): string
+    protected function formatThreadSummary(array $thread, bool $includeAssistant): string
     {
         $lines = [
             sprintf('Thread Id: %s', $thread['id']),
@@ -234,7 +241,12 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
         $messages = $thread['messages'] ?? [];
 
         foreach ($messages as $message) {
-            $role = $this->formatRole($message['role'] ?? 'assistant');
+            $rawRole = $message['role'] ?? 'assistant';
+            if (! $includeAssistant && $rawRole === 'assistant') {
+                continue;
+            }
+
+            $role = $this->formatRole($rawRole);
             $content = trim((string) ($message['content'] ?? ''));
             $lines[] = sprintf('%s: %s', $role, $content === '' ? '[no content]' : $content);
         }
@@ -255,5 +267,24 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
             'tool' => 'Tool',
             default => ucfirst((string) $role),
         };
+    }
+
+    protected function normalizeBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+
+            return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
     }
 }

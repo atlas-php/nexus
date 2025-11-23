@@ -88,9 +88,10 @@ class ThreadFetcherToolTest extends TestCase
             'thread_ids' => [$other->id],
         ]);
 
-        $this->assertStringContainsString('Thread Id: '.$other->id, $response->message());
-        $this->assertStringContainsString('User: Need context.', $response->message());
-        $this->assertStringContainsString('Assistant: Here is the requested context.', $response->message());
+        $message = $response->message();
+        $this->assertStringContainsString('Thread Id: '.$other->id, $message);
+        $this->assertStringContainsString('User: Need context.', $message);
+        $this->assertStringNotContainsString('Assistant: Here is the requested context.', $message);
         $payload = $response->meta()['result'];
         $this->assertSame([$other->id], $response->meta()['thread_ids']);
 
@@ -162,6 +163,25 @@ class ThreadFetcherToolTest extends TestCase
 
         $this->assertStringContainsString('Thread Id: '.$thread->id, $response->message());
         $this->assertSame([$thread->id], $response->meta()['thread_ids']);
+    }
+
+    public function test_it_can_include_assistant_messages_when_requested(): void
+    {
+        $state = $this->createState(withMessages: true);
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'thread_ids' => [$state->thread->id],
+            'include_assistant' => true,
+        ]);
+
+        $message = $response->message();
+
+        $this->assertStringContainsString('Thread Id: '.$state->thread->id, $message);
+        $this->assertStringContainsString('User: What tasks remain this week?', $message);
+        $this->assertStringContainsString('Assistant: You still need to complete the report and submit the budget draft.', $message);
     }
 
     public function test_it_requires_thread_identifier(): void
