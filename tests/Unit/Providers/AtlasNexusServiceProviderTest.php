@@ -31,7 +31,7 @@ class AtlasNexusServiceProviderTest extends TestCase
 
     public function test_default_configuration_is_available(): void
     {
-        $this->assertNull(config('atlas-nexus.responses.queue'));
+        $this->assertNull(config('atlas-nexus.queue'));
     }
 
     public function test_text_request_factory_binding_is_available(): void

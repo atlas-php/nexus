@@ -6,7 +6,6 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Support\Chat\ThreadState;
@@ -25,8 +24,7 @@ class ThreadTitleSummaryService
     public function __construct(
         private readonly TextRequestFactory $textRequestFactory,
         private readonly AiThreadService $threadService,
-        private readonly PromptVariableService $promptVariableService,
-        private readonly AssistantRegistry $assistantRegistry
+        private readonly PromptVariableService $promptVariableService
     ) {}
 
     /**
@@ -99,8 +97,7 @@ class ThreadTitleSummaryService
             throw new RuntimeException('Cannot generate title and summary without conversation messages.');
         }
 
-        $assistantKey = $this->assistantKey();
-        $assistant = $this->assistantRegistry->require($assistantKey);
+        $assistant = $state->assistant;
         $prompt = $assistant->systemPrompt();
 
         if ($prompt === '') {
@@ -218,21 +215,9 @@ class ThreadTitleSummaryService
     protected function model(?string $assistantModel): string
     {
         $model = $assistantModel
-            ?? config('atlas-nexus.tools.options.thread_updater.model')
             ?? config('prism.default_model')
             ?? 'gpt-4o-mini';
 
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
-    }
-
-    protected function assistantKey(): string
-    {
-        $key = config('atlas-nexus.assistants.defaults.thread_manager');
-
-        if (! is_string($key) || trim($key) === '') {
-            throw new RuntimeException('Thread manager assistant key is not configured.');
-        }
-
-        return $key;
     }
 }

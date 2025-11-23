@@ -6,7 +6,6 @@ Atlas Nexus centralizes AI assistants, prompts, threads, messages, tools, tool r
 - [System Overview](#system-overview)
 - [Core Data Tables](#core-data-tables)
 - [Job vs Inline Execution](#job-vs-inline-execution)
-- [Seeded Built-ins](#seeded-built-ins)
 - [Purge & Retention](#purge--retention)
 - [Multi-Tenancy Support](#multi-tenancy-support)
 - [Failure Semantics](#failure-semantics)
@@ -32,13 +31,11 @@ All tables support soft deletes unless noted otherwise. Default names are config
 Each table definition with fields is detailed in the linked PRDs below.
 
 ## Configuration
-- `atlas-nexus.tools.registry` — maps custom tool keys to handler classes.
-- `atlas-nexus.tools.options` — per-tool overrides (e.g., web search content limits, summary models).
-- `atlas-nexus.provider_tools` — provider-level tool definitions passed directly to Prism (e.g., `web_search` domain filters, `code_interpreter` container config); `file_search` is only registered when `vector_store_ids` contains at least one id.
-- `atlas-nexus.responses.queue` — optional queue name for assistant response jobs.
-- `atlas-nexus.assistants.definitions` — list of assistant definition classes.
-- `atlas-nexus.assistants.defaults` — assistant keys used by built-in services.
-- `atlas-nexus.seeders` — list of seeders executed by `atlas:nexus:seed` (empty by default).
+- `atlas-nexus.database.connection` — optional connection override for all Nexus tables.
+- `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, memories, assistant snapshots).
+- `atlas-nexus.queue` — optional queue name for assistant response jobs.
+- `atlas-nexus.assistants` — list of assistant definition classes.
+- `atlas-nexus.variables` — list of prompt variable providers resolved at runtime.
 
 ## Job vs Inline Execution
 - `ThreadMessageService::sendUserMessage` stages a pending assistant message and either dispatches `RunAssistantResponseJob` or runs inline based on the `$dispatchResponse` flag.
@@ -47,7 +44,6 @@ Each table definition with fields is detailed in the linked PRDs below.
 
 ## Assistant Definitions
 - Assistants are code-defined via `AssistantDefinition` classes. There is no `ai_assistants` table.
-- Built-in services (thread manager summaries, web summaries) rely on configured assistant keys in `atlas-nexus.assistants.defaults`.
 - Consumers control which assistants exist by registering their definition classes in configuration.
 
 ## Purge & Retention

@@ -9,7 +9,6 @@ use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\WebSearch\WebSummaryService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Prism\Prism\Schema\ArraySchema;
@@ -26,6 +25,12 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
 {
     public const KEY = 'web_search';
 
+    private const DEFAULT_CONTENT_LIMIT = 8000;
+
+    private const MIN_CONTENT_LIMIT = 500;
+
+    private const DEFAULT_PARSE_MODE = 'markdown';
+
     protected ?ThreadState $state = null;
 
     protected int $contentLimit;
@@ -35,22 +40,33 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected ?array $allowedDomains;
 
-    protected ?string $parseMode = 'markdown';
+    protected ?string $parseMode = self::DEFAULT_PARSE_MODE;
 
     protected ?AiToolRun $activeRun = null;
 
     public function __construct(
-        private readonly WebSummaryService $summaryService,
-        ConfigRepository $config
+        private readonly WebSummaryService $summaryService
     ) {
-        $limit = (int) $config->get('atlas-nexus.tools.options.web_search.content_limit', 8000);
-        $this->contentLimit = max(500, $limit);
-        $this->allowedDomains = $this->normalizeAllowedDomains(
-            $config->get('atlas-nexus.tools.options.web_search.allowed_domains')
-        );
-        $this->parseMode = $this->normalizeParseMode(
-            $config->get('atlas-nexus.tools.options.web_search.parse_mode', 'markdown')
-        );
+        $this->contentLimit = self::DEFAULT_CONTENT_LIMIT;
+        $this->allowedDomains = null;
+    }
+
+    /**
+     * @param  array<int, string>|string|null  $allowedDomains
+     */
+    public function configure(?int $contentLimit = null, array|string|null $allowedDomains = null, ?string $parseMode = null): void
+    {
+        if ($contentLimit !== null) {
+            $this->contentLimit = max(self::MIN_CONTENT_LIMIT, $contentLimit);
+        }
+
+        if ($allowedDomains !== null) {
+            $this->allowedDomains = $this->normalizeAllowedDomains($allowedDomains);
+        }
+
+        if ($parseMode !== null) {
+            $this->parseMode = $this->normalizeParseMode($parseMode);
+        }
     }
 
     public static function definition(): ToolDefinition

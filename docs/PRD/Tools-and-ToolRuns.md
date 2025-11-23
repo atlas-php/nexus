@@ -12,14 +12,13 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 ## Tools
 Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `web_search`), and is registered inside `ToolRegistry`.
 
-- Built-in tools are listed in `atlas-nexus.tools.registry` by default:
+- Built-in tools are registered automatically:
   - `memory` — add/update/fetch/delete thread-aware memories.
-  - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant; options live under `atlas-nexus.tools.options.web_search`.
-    - `allowed_domains` (array|null) restricts searches to configured domains; requests outside the list return `Error, this domain is not allowed to be searched`, and the tool description includes `Allowed domains: ...` for clarity.
+  - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant. Domain restrictions and content limits can be tuned programmatically by resolving `WebSearchTool` and calling `configure(...)`.
   - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name.
   - `thread_fetcher` — fetch one or many threads (IDs provided by the search tool or other signals) and return summaries, keywords, and ordered message transcripts.
-  - `thread_updater` — update thread title/summary or auto-generate them from conversation context; options live under `atlas-nexus.tools.options.thread_updater`.
-- Additional tools can be registered through config (`atlas-nexus.tools.registry`) mapping `key => handler_class` (string or `['handler' => FQCN]`).
+  - `thread_updater` — update thread title/summary or auto-generate them from conversation context.
+- Additional tools can be registered at runtime by resolving `ToolRegistry` from the container and calling `register(new ToolDefinition('custom', CustomTool::class))`.
 - Only tools with resolvable handler classes are exposed to Prism.
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
 

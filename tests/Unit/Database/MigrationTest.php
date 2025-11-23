@@ -105,9 +105,9 @@ class MigrationTest extends TestCase
 
     public function test_migrations_respect_configured_table_overrides(): void
     {
-        config()->set('atlas-nexus.tables.ai_threads', 'custom_ai_threads');
+        config()->set('atlas-nexus.database.tables.ai_threads', 'custom_ai_threads');
 
-        $this->assertSame('custom_ai_threads', config('atlas-nexus.tables.ai_threads'));
+        $this->assertSame('custom_ai_threads', config('atlas-nexus.database.tables.ai_threads'));
 
         $this->runPendingCommand('migrate:fresh', [
             '--path' => $this->migrationPath(),

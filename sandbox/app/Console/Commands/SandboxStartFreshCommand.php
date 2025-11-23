@@ -54,9 +54,6 @@ class SandboxStartFreshCommand extends Command
             $this->call('db:seed', ['--force' => true]);
         }
 
-        $this->components->info('Seeding Nexus default assistants/prompts via atlas:nexus:seed...');
-        $this->call('atlas:nexus:seed');
-
         if ($this->option('skip-setup')) {
             $this->components->warn('Skipping Nexus setup.');
         } else {

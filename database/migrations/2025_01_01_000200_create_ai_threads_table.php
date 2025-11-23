@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('atlas-nexus.tables.ai_threads', 'ai_threads');
+        $tableName = config('atlas-nexus.database.tables.ai_threads', 'ai_threads');
 
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
@@ -33,7 +33,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $this->schema()->dropIfExists(config('atlas-nexus.tables.ai_threads', 'ai_threads'));
+        $this->schema()->dropIfExists(config('atlas-nexus.database.tables.ai_threads', 'ai_threads'));
     }
 
     protected function schema(): Builder

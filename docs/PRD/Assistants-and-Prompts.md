@@ -6,14 +6,8 @@ Nexus no longer stores assistants or prompts in database tables. Instead, every 
 
 ```php
 'assistants' => [
-    'definitions' => [
-        \App\Nexus\Assistants\GeneralAssistant::class,
-        \App\Nexus\Assistants\ThreadManagerAssistant::class,
-    ],
-    'defaults' => [
-        'thread_manager' => 'thread-manager',
-        'web_summary' => 'web-summarizer',
-    ],
+    \App\Nexus\Assistants\GeneralAssistant::class,
+    \App\Nexus\Assistants\ThreadManagerAssistant::class,
 ],
 ```
 
@@ -43,7 +37,3 @@ Because assistants live in code, the other tables simply store an `assistant_key
 | `ai_tool_runs` | `assistant_key` |
 
 Thread creation is now a matter of setting `assistant_key` to one of the configured keys; the rest of the assistant metadata is resolved on demand through `AssistantRegistry`.
-
-## Defaults
-
-`atlas-nexus.assistants.defaults` declares which assistant key should be used by built-in services (thread manager summaries, web summarizer, etc.). Consumers are responsible for providing matching definitions in their application or sandbox.

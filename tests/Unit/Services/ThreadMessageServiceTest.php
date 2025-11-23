@@ -100,7 +100,7 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_dispatches_to_configured_queue_when_set(): void
     {
         Queue::fake();
-        config()->set('atlas-nexus.responses.queue', 'nexus-long-running');
+        config()->set('atlas-nexus.queue', 'nexus-long-running');
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([

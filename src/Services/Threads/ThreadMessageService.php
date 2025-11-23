@@ -131,7 +131,7 @@ class ThreadMessageService
 
     protected function responseQueue(): ?string
     {
-        $queue = $this->config->get('atlas-nexus.responses.queue');
+        $queue = $this->config->get('atlas-nexus.queue');
 
         return is_string($queue) && $queue !== '' ? $queue : null;
     }

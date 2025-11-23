@@ -16,7 +16,6 @@ use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -27,19 +26,14 @@ use RuntimeException;
  */
 class ThreadStateService
 {
-    protected bool $includeMemoryTool;
-
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
         private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
-        private readonly AssistantRegistry $assistantRegistry,
-        ConfigRepository $config
-    ) {
-        $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
-    }
+        private readonly AssistantRegistry $assistantRegistry
+    ) {}
 
     public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
@@ -59,10 +53,7 @@ class ThreadStateService
 
         $memories = $this->memoryService->listForThread($assistant, $thread);
 
-        $tools = $this->resolveTools(
-            $assistant,
-            $includeMemoryTool ?? $this->includeMemoryTool
-        );
+        $tools = $this->resolveTools($assistant, $includeMemoryTool ?? true);
         $providerTools = $this->resolveProviderTools($assistant);
 
         $state = new ThreadState(

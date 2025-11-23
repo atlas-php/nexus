@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('atlas-nexus.tables.ai_memories', 'ai_memories');
+        $tableName = config('atlas-nexus.database.tables.ai_memories', 'ai_memories');
 
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
@@ -35,7 +35,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $this->schema()->dropIfExists(config('atlas-nexus.tables.ai_memories', 'ai_memories'));
+        $this->schema()->dropIfExists(config('atlas-nexus.database.tables.ai_memories', 'ai_memories'));
     }
 
     protected function schema(): Builder

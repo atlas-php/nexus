@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('atlas-nexus.tables.ai_assistant_prompts', 'ai_assistant_prompts');
+        $tableName = config('atlas-nexus.database.tables.ai_assistant_prompts', 'ai_assistant_prompts');
 
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
@@ -30,7 +30,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $this->schema()->dropIfExists(config('atlas-nexus.tables.ai_assistant_prompts', 'ai_assistant_prompts'));
+        $this->schema()->dropIfExists(config('atlas-nexus.database.tables.ai_assistant_prompts', 'ai_assistant_prompts'));
     }
 
     protected function schema(): Builder

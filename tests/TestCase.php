@@ -43,8 +43,7 @@ abstract class TestCase extends PackageTestCase
         ThreadManagerAssistantDefinition::resetConfig();
         WebSummaryAssistantDefinition::resetConfig();
 
-        $assistants = config('atlas-nexus.assistants', []);
-        $assistants['definitions'] = [
+        $assistants = [
             PrimaryAssistantDefinition::class,
             SecondaryAssistantDefinition::class,
             ThreadManagerAssistantDefinition::class,
@@ -52,7 +51,6 @@ abstract class TestCase extends PackageTestCase
         ];
 
         config()->set('atlas-nexus.assistants', $assistants);
-        config()->set('atlas-nexus.assistants.definitions', $assistants['definitions']);
 
         $this->app->make(AssistantRegistry::class)->refresh();
     }

@@ -1,6 +1,6 @@
 # Atlas Nexus Installation
 
-This guide outlines the minimal steps to install Atlas Nexus and prepare its database schema and built-in seeds.
+This guide outlines the minimal steps to install Atlas Nexus and prepare its database schema.
 
 ## Table of Contents
 - [Install the Package](#install-the-package)
@@ -8,7 +8,6 @@ This guide outlines the minimal steps to install Atlas Nexus and prepare its dat
 - [Select a Database Connection](#select-a-database-connection)
 - [Publish Migrations](#publish-migrations)
 - [Run Migrations](#run-migrations)
-- [Run Seeds](#run-seeds)
 - [Purge Soft Deletes](#purge-soft-deletes)
 - [Usage Entry Points](#usage-entry-points)
 - [Also See](#also-see)
@@ -19,7 +18,7 @@ composer require atlas-php/nexus
 ```
 
 ## Publish Configuration
-Generate `config/atlas-nexus.php` to customize table names, tools, and future feature flags.
+Generate `config/atlas-nexus.php` to customize table names, queue selection, assistant definitions, and prompt variable providers.
 
 ```bash
 php artisan vendor:publish --tag=atlas-nexus-config
@@ -45,19 +44,6 @@ php artisan vendor:publish --tag=atlas-nexus-migrations
 ```bash
 php artisan migrate
 ```
-
-## Run Seeds
-Seed built-in Nexus resources (e.g., the Memory tool) after migrations:
-
-```bash
-php artisan atlas:nexus:seed
-```
-
-Default seeders:
-- `WebSearchAssistantSeeder` creates the built-in web summarizer assistant/prompt used by the `web_search` tool when `atlas-nexus.tools.web_search.enabled=true`.
-- `ThreadManagerAssistantSeeder` creates the built-in thread manager assistant/prompt used for title/summary generation when `atlas-nexus.tools.thread_manager.enabled=true`.
-
-You can add custom seeders by extending the `seeders` array in `config/atlas-nexus.php` or by calling the `NexusSeederService::extend()` method at runtime.
 
 ## Purge Soft Deletes
 Soft-deleted assistants, prompts, messages, and memories remain queryable via `withTrashed()` until they are purged. Schedule the purge command to permanently delete the rows:

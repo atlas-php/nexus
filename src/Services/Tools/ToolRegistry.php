@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Tools;
 
+use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool;
+use Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 /**
  * Class ToolRegistry
@@ -19,10 +23,9 @@ class ToolRegistry
      */
     private array $definitions = [];
 
-    public function __construct(
-        private readonly ConfigRepository $config
-    ) {
-        $this->registerConfigured();
+    public function __construct()
+    {
+        $this->registerBuiltInTools();
     }
 
     public function register(ToolDefinition $definition): void
@@ -75,39 +78,18 @@ class ToolRegistry
         return $this->definitions;
     }
 
-    private function registerConfigured(): void
+    private function registerBuiltInTools(): void
     {
-        $configuredTools = $this->config->get('atlas-nexus.tools.registry', []);
+        $definitions = [
+            MemoryTool::definition(),
+            WebSearchTool::definition(),
+            ThreadSearchTool::definition(),
+            ThreadFetcherTool::definition(),
+            ThreadUpdaterTool::definition(),
+        ];
 
-        if (! is_array($configuredTools)) {
-            return;
+        foreach ($definitions as $definition) {
+            $this->register($definition);
         }
-
-        foreach ($configuredTools as $key => $handler) {
-            if (! is_string($key) || $key === '') {
-                continue;
-            }
-
-            $handlerClass = $this->resolveHandlerClass($handler);
-
-            if ($handlerClass === null) {
-                continue;
-            }
-
-            $this->register(new ToolDefinition($key, $handlerClass));
-        }
-    }
-
-    private function resolveHandlerClass(mixed $handler): ?string
-    {
-        if (is_string($handler) && $handler !== '') {
-            return $handler;
-        }
-
-        if (is_array($handler) && is_string($handler['handler'] ?? null) && $handler['handler'] !== '') {
-            return $handler['handler'];
-        }
-
-        return null;
     }
 }

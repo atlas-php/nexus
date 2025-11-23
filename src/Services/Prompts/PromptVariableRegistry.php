@@ -65,7 +65,7 @@ class PromptVariableRegistry
 
     private function registerConfigured(): void
     {
-        $configured = $this->config->get('atlas-nexus.prompts.variables', []);
+        $configured = $this->config->get('atlas-nexus.variables', []);
 
         if (! is_array($configured)) {
             return;

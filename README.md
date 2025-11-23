@@ -15,7 +15,6 @@
 - [Tools & Tool Runs](#tools--tool-runs)
 - [Memories](#memories)
 - [Inline vs Queued Responses](#inline-vs-queued-responses)
-- [Seeding Built-ins](#seeding-built-ins)
 - [Purging Soft Deletes](#purging-soft-deletes)
 - [Sandbox](#sandbox)
 - [Also See](#also-see)
@@ -40,9 +39,8 @@ php artisan migrate
 Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
-- Assistants are defined via `atlas-nexus.assistants.definitions` where each class extends `AssistantDefinition`. These classes control the assistant key, name/description, system prompt, default model, temperature/top_p/max tokens, available tool keys, and provider tool passthrough.
+- Assistants are defined via `atlas-nexus.assistants` where each class extends `AssistantDefinition`. These classes control the assistant key, name/description, system prompt, default model, temperature/top_p/max tokens, available tool keys, and provider tool passthrough.
 - Runtime tables reference assistants via an `assistant_key` string so definitions stay code-driven and stateless.
-- Configure special assistants (thread manager, web summary, etc.) via `atlas-nexus.assistants.defaults`.
 
 See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)
 
@@ -50,7 +48,7 @@ See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)
 - Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside assistant definition prompts; values are resolved right before the model request.
 - Built-in thread placeholders include `{THREAD.ID}`, `{THREAD.TITLE}`, `{THREAD.SUMMARY}`, `{THREAD.LONG_SUMMARY}`, `{THREAD.RECENT.IDS}` (comma-separated up to 5 of the user’s most recent threads for the assistant excluding the active thread, or `None` when there are no others), and `{DATETIME}`.
 - Defaults pull from the thread's authenticatable user when the `users` table exists.
-- Add more via `atlas-nexus.prompts.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
+- Add more via `atlas-nexus.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
 - When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.
 
 ## Threads & Messages
@@ -61,8 +59,8 @@ See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)
 See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 
 ## Tools & Tool Runs
-- Tools are code-defined (`NexusTool` implementations) and registered by key via `ToolRegistry`.
-- Assistant tool keys and feature flags determine availability; missing handlers are skipped.
+- Tools are code-defined (`NexusTool` implementations) and registered by key via the `ToolRegistry` service. Resolve the registry from the container to call `register(new ToolDefinition('custom', CustomTool::class))` when adding custom tools.
+- Assistant tool keys determine availability; missing handlers are skipped.
 - Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, `group_id`, `assistant_key`, and `tool_key`.
 
 See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
@@ -74,17 +72,9 @@ See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 See: [PRD — Memories](./docs/PRD/Memories.md)
 
 ## Inline vs Queued Responses
-- `ThreadMessageService::sendUserMessage(..., $dispatchResponse = true)` dispatches `RunAssistantResponseJob` (optional queue `atlas-nexus.responses.queue`).
+- `ThreadMessageService::sendUserMessage(..., $dispatchResponse = true)` dispatches `RunAssistantResponseJob` (optional queue `atlas-nexus.queue`).
 - Set `$dispatchResponse=false` to run `AssistantResponseService` inline.
 - Both paths mark assistant messages as failed on exceptions; tool runs and memory ids are captured in metadata.
-
-## Seeding Built-ins
-- Run `php artisan atlas:nexus:seed` after migrations.
-- Default seeders:
-  - `WebSearchAssistantSeeder` (creates the built-in web summarizer assistant/prompt used by the `web_search` tool).
-  - `ThreadManagerAssistantSeeder` (creates the built-in thread manager assistant/prompt for title/summary generation).
-- Built-in tools: `memory` (persist/query memories), `web_search` (fetch and optionally summarize website content), `thread_search` (search existing threads by title, summaries, keywords, or content), `thread_fetcher` (fetch single or multiple thread transcripts), and `thread_updater` (update or auto-generate thread title/summary metadata).
-- Extend via `config/atlas-nexus.php` `seeders` array or `NexusSeederService::extend()` at runtime.
 
 ## Purging Soft Deletes
 - Soft-deleted assistants, prompts, messages, and memories remain in the database until purged.

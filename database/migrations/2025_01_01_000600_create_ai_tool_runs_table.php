@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('atlas-nexus.tables.ai_tool_runs', 'ai_tool_runs');
+        $tableName = config('atlas-nexus.database.tables.ai_tool_runs', 'ai_tool_runs');
 
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
@@ -34,7 +34,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        $this->schema()->dropIfExists(config('atlas-nexus.tables.ai_tool_runs', 'ai_tool_runs'));
+        $this->schema()->dropIfExists(config('atlas-nexus.database.tables.ai_tool_runs', 'ai_tool_runs'));
     }
 
     protected function schema(): Builder

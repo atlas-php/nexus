@@ -76,7 +76,7 @@ class AssistantRegistry
             return;
         }
 
-        $configured = $this->config->get('atlas-nexus.assistants.definitions', []);
+        $configured = $this->config->get('atlas-nexus.assistants', []);
 
         if (! is_array($configured)) {
             return;

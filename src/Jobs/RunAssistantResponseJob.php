@@ -57,7 +57,7 @@ class RunAssistantResponseJob implements ShouldQueue
 
     protected function resolveQueue(): ?string
     {
-        $queue = config('atlas-nexus.responses.queue');
+        $queue = config('atlas-nexus.queue');
 
         return is_string($queue) && $queue !== '' ? $queue : null;
     }

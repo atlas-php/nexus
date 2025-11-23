@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Tools;
 
 use Atlas\Nexus\Support\Tools\ProviderToolDefinition;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 /**
  * Class ProviderToolRegistry
@@ -19,10 +18,29 @@ class ProviderToolRegistry
      */
     private array $definitions = [];
 
-    public function __construct(
-        private readonly ConfigRepository $config
-    ) {
-        $this->registerConfigured();
+    public function __construct()
+    {
+        $this->registerDefaults();
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    public function register(string $key, array $options = []): void
+    {
+        $normalizedKey = trim($key);
+
+        if ($normalizedKey === '') {
+            return;
+        }
+
+        $normalizedOptions = $this->normalizeOptions($normalizedKey, $options);
+
+        if ($normalizedOptions === null) {
+            return;
+        }
+
+        $this->definitions[$normalizedKey] = new ProviderToolDefinition($normalizedKey, $normalizedOptions);
     }
 
     public function definition(string $key): ?ProviderToolDefinition
@@ -59,33 +77,6 @@ class ProviderToolRegistry
         }
 
         return $definitions;
-    }
-
-    private function registerConfigured(): void
-    {
-        $configured = $this->config->get('atlas-nexus.provider_tools', []);
-
-        if (! is_array($configured)) {
-            return;
-        }
-
-        foreach ($configured as $key => $options) {
-            if (! is_string($key) || $key === '') {
-                continue;
-            }
-
-            if (! is_array($options)) {
-                continue;
-            }
-
-            $normalizedOptions = $this->normalizeOptions($key, $options);
-
-            if ($normalizedOptions === null) {
-                continue;
-            }
-
-            $this->definitions[$key] = new ProviderToolDefinition($key, $normalizedOptions);
-        }
     }
 
     /**
@@ -171,5 +162,16 @@ class ProviderToolRegistry
         }
 
         return $options;
+    }
+
+    private function registerDefaults(): void
+    {
+        $this->register('web_search');
+        $this->register('code_interpreter', [
+            'container' => [
+                'type' => 'auto',
+                'memory_limit' => '4g',
+            ],
+        ]);
     }
 }

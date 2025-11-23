@@ -9,7 +9,6 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiToolRun;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Support\Chat\ThreadState;
@@ -24,7 +23,6 @@ use RuntimeException;
 class WebSummaryService
 {
     public function __construct(
-        private readonly AssistantRegistry $assistantRegistry,
         private readonly AiThreadService $threadService,
         private readonly ThreadMessageService $threadMessageService
     ) {}
@@ -39,8 +37,7 @@ class WebSummaryService
             throw new RuntimeException('No website content available to summarize.');
         }
 
-        $assistantKey = $this->assistantKey();
-        $assistant = $this->assistantRegistry->require($assistantKey);
+        $assistant = $state->assistant;
 
         $sourceUrls = array_values(array_filter(array_map(
             static fn (array $source): string => (string) $source['url'],
@@ -121,16 +118,5 @@ class WebSummaryService
         $first = $urls[0];
 
         return 'Web summary: '.Str::limit($first, 80, '...');
-    }
-
-    protected function assistantKey(): string
-    {
-        $key = config('atlas-nexus.assistants.defaults.web_summary');
-
-        if (! is_string($key) || trim($key) === '') {
-            throw new RuntimeException('Web summary assistant key is not configured.');
-        }
-
-        return $key;
     }
 }

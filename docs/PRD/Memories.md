@@ -57,5 +57,5 @@ Table: `ai_memories`
 
 ## Services & Tools
 - `AiMemoryService` — CRUD + scoped retrieval and deletion.
-- `MemoryTool` — Built-in tool to save, fetch, and delete memories; attached via seeding when enabled.
+- `MemoryTool` — Built-in tool to save, fetch, and delete memories; attach it to assistants by including `memory` in their `tools()` configuration.
 - `ThreadStateService` — Optionally injects Memory tool into available tool list when active.

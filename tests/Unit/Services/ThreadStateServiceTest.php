@@ -13,6 +13,8 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Tools\ToolRegistry;
+use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\TestCase;
@@ -23,10 +25,7 @@ class ThreadStateServiceTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('atlas-nexus.tools.registry', [
-            MemoryTool::KEY => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,
-            'calendar_lookup' => StubTool::class,
-        ]);
+        $this->app->make(ToolRegistry::class)->register(new ToolDefinition('calendar_lookup', StubTool::class));
 
         $this->loadPackageMigrations($this->migrationPath());
         $this->runPendingCommand('migrate:fresh', [

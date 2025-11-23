@@ -191,12 +191,12 @@ class ThreadManagerService
 
     protected function threadTable(): string
     {
-        return config('atlas-nexus.tables.ai_threads', 'ai_threads');
+        return config('atlas-nexus.database.tables.ai_threads', 'ai_threads');
     }
 
     protected function messageTable(): string
     {
-        return config('atlas-nexus.tables.ai_messages', 'ai_messages');
+        return config('atlas-nexus.database.tables.ai_messages', 'ai_messages');
     }
 
     /**
