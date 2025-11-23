@@ -16,7 +16,6 @@ use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\NexusPurgeService;
 use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
-use Atlas\Nexus\Services\Seeders\NexusSeederService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
@@ -67,7 +66,6 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(AssistantResponseService::class);
         $this->app->singleton(ThreadStateService::class);
         $this->app->singleton(ThreadMessageService::class);
-        $this->app->singleton(NexusSeederService::class);
         $this->app->singleton(NexusPurgeService::class);
     }
 
@@ -94,7 +92,6 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
             );
 
             $this->commands([
-                \Atlas\Nexus\Console\Commands\NexusSeedCommand::class,
                 \Atlas\Nexus\Console\Commands\NexusPurgeCommand::class,
             ]);
         }

@@ -21,6 +21,7 @@ return [
         \Atlas\Nexus\Assistants\GeneralAssistant::class,
         \Atlas\Nexus\Assistants\HumanAssistant::class,
         \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
+        // Additional consumer-defined assistants go here.
     ],
 
     'variables' => [
