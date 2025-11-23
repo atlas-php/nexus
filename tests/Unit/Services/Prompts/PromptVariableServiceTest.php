@@ -61,9 +61,10 @@ class PromptVariableServiceTest extends TestCase
             'system_prompt' => 'Hello {USER.NAME} ({USER.EMAIL})',
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => $user->id,
         ]);
 
@@ -99,9 +100,10 @@ class PromptVariableServiceTest extends TestCase
             'system_prompt' => 'Thread {THREAD.ID}: {USER.NAME} - {INLINE.FLAG}',
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => $user->id,
         ]);
 

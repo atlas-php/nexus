@@ -53,10 +53,10 @@ class ThreadMessageServiceTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 321,
         ]);
 
@@ -88,10 +88,10 @@ class ThreadMessageServiceTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 999,
         ]);
 
@@ -122,10 +122,10 @@ class ThreadMessageServiceTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 555,
         ]);
 
@@ -150,10 +150,10 @@ class ThreadMessageServiceTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 777,
         ]);
 
@@ -199,9 +199,9 @@ class ThreadMessageServiceTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 888,
         ]);
 

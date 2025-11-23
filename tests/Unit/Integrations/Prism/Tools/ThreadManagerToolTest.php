@@ -143,7 +143,6 @@ class ThreadManagerToolTest extends TestCase
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 1,
             'type' => AiThreadType::USER->value,
             'status' => AiThreadStatus::OPEN->value,

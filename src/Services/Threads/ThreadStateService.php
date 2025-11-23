@@ -15,23 +15,19 @@ use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Prompts\PromptSnapshot;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 /**
  * Class ThreadStateService
  *
- * Builds a snapshot of a thread's state, including prompt, eligible messages, memories, tool access, and rendered system prompt.
+ * Builds a representation of a thread's state, including prompt, eligible messages, memories, tool access, and rendered system prompt.
  */
 class ThreadStateService
 {
     protected bool $includeMemoryTool;
-
-    protected bool $freezeThread;
 
     public function __construct(
         private readonly AiMessageService $messageService,
@@ -42,12 +38,11 @@ class ThreadStateService
         ConfigRepository $config
     ) {
         $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
-        $this->freezeThread = (bool) $config->get('atlas-nexus.prompts.freeze_thread', true);
     }
 
     public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
-        $thread->loadMissing(['assistant', 'prompt', 'assistant.currentPrompt']);
+        $thread->loadMissing(['assistant', 'assistant.currentPrompt']);
 
         $assistant = $thread->assistant;
 
@@ -55,8 +50,7 @@ class ThreadStateService
             throw new RuntimeException('Thread is missing an associated assistant.');
         }
 
-        $snapshot = $this->snapshotFromThread($thread);
-        $prompt = $this->resolvePrompt($thread, $assistant, $snapshot);
+        $prompt = $this->resolvePrompt($assistant);
         $messages = $this->messageService->query()
             ->where('thread_id', $thread->id)
             ->where('status', AiMessageStatus::COMPLETED->value)
@@ -78,29 +72,10 @@ class ThreadStateService
             $messages,
             $memories,
             $tools,
-            $snapshot,
+            null,
             null,
             $providerTools
         );
-
-        if ($snapshot === null) {
-            $snapshot = $this->buildPromptSnapshot($state);
-
-            if ($this->freezeThread && $snapshot !== null) {
-                $prompt = $snapshot->toPromptModel();
-                $state = new ThreadState(
-                    $thread,
-                    $assistant,
-                    $prompt,
-                    $messages,
-                    $memories,
-                    $tools,
-                    $snapshot,
-                    null,
-                    $providerTools
-                );
-            }
-        }
 
         $systemPrompt = $this->resolveSystemPrompt($state);
 
@@ -111,28 +86,16 @@ class ThreadStateService
             $messages,
             $memories,
             $tools,
-            $snapshot,
+            null,
             $systemPrompt,
             $providerTools
         );
     }
 
     protected function resolvePrompt(
-        AiThread $thread,
-        AiAssistant $assistant,
-        ?PromptSnapshot $snapshot
+        AiAssistant $assistant
     ): ?AiPrompt {
-        if ($this->freezeThread && $snapshot !== null) {
-            return $snapshot->toPromptModel();
-        }
-
-        $prompt = $thread->prompt;
-
-        if ($prompt !== null && $prompt->assistant_id !== $assistant->id) {
-            $prompt = null;
-        }
-
-        return $prompt ?? $assistant->currentPrompt;
+        return $assistant->currentPrompt;
     }
 
     /**
@@ -170,73 +133,8 @@ class ThreadStateService
         return collect($this->providerToolRegistry->forKeys($keys));
     }
 
-    protected function snapshotFromThread(AiThread $thread): ?PromptSnapshot
-    {
-        if (! $this->freezeThread) {
-            return null;
-        }
-
-        if (! $this->hasSnapshotColumn($thread)) {
-            return null;
-        }
-
-        return PromptSnapshot::fromArray($thread->prompt_snapshot);
-    }
-
-    protected function buildPromptSnapshot(ThreadState $state): ?PromptSnapshot
-    {
-        if (! $this->freezeThread || $state->prompt === null) {
-            return null;
-        }
-
-        if (! $this->hasSnapshotColumn($state->thread)) {
-            return null;
-        }
-
-        $promptId = $state->prompt->getAttribute('id');
-
-        if (! is_numeric($promptId)) {
-            return null;
-        }
-
-        $context = new PromptVariableContext($state, $state->prompt, $state->assistant);
-        $render = $this->promptVariableService->renderWithVariables(
-            $state->prompt->system_prompt,
-            $context
-        );
-
-        $snapshot = new PromptSnapshot(
-            (int) $promptId,
-            $state->prompt->attributesToArray(),
-            $render['variables'],
-            $render['rendered_prompt']
-        );
-
-        $this->persistPromptSnapshot($state->thread, $snapshot);
-
-        return $snapshot;
-    }
-
-    protected function persistPromptSnapshot(AiThread $thread, PromptSnapshot $snapshot): void
-    {
-        if (! $thread->exists) {
-            return;
-        }
-
-        if (! $this->hasSnapshotColumn($thread)) {
-            return;
-        }
-
-        $thread->forceFill(['prompt_snapshot' => $snapshot->toArray()]);
-        $thread->save();
-    }
-
     protected function resolveSystemPrompt(ThreadState $state): ?string
     {
-        if ($this->freezeThread && $state->promptSnapshot !== null) {
-            return $state->promptSnapshot->renderedSystemPrompt;
-        }
-
         if ($state->prompt === null) {
             return null;
         }
@@ -248,15 +146,5 @@ class ThreadStateService
         );
 
         return $render['rendered_prompt'];
-    }
-
-    protected function hasSnapshotColumn(AiThread $thread): bool
-    {
-        $connection = $thread->getConnectionName()
-            ?? config('atlas-nexus.database.connection')
-            ?? config('database.default');
-
-        return Schema::connection($connection)
-            ->hasColumn($thread->getTable(), 'prompt_snapshot');
     }
 }

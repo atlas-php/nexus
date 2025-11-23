@@ -20,6 +20,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  *
  * @property int $id
  * @property int $assistant_id
+ * @property int|null $assistant_prompt_id
  * @property int|null $user_id
  * @property int $version
  * @property int|null $original_prompt_id
@@ -45,6 +46,7 @@ class AiPrompt extends AtlasModel
      */
     protected $casts = [
         'assistant_id' => 'int',
+        'assistant_prompt_id' => 'int',
         'user_id' => 'int',
         'version' => 'int',
         'original_prompt_id' => 'int',
@@ -83,17 +85,6 @@ class AiPrompt extends AtlasModel
 
         /** @var BelongsTo<AuthenticatableUser, self> $relation */
         $relation = $this->belongsTo($modelClass, 'user_id');
-
-        return $relation;
-    }
-
-    /**
-     * @return HasMany<AiThread, self>
-     */
-    public function threads(): HasMany
-    {
-        /** @var HasMany<AiThread, self> $relation */
-        $relation = $this->hasMany(AiThread::class, 'prompt_id');
 
         return $relation;
     }

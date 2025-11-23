@@ -50,9 +50,7 @@ class WebSummaryService
 
         $assistant->loadMissing('currentPrompt');
 
-        $promptId = $assistant->current_prompt_id ?? $assistant->currentPrompt?->id;
-
-        if ($promptId === null) {
+        if ($assistant->currentPrompt === null) {
             throw new RuntimeException('Web summary assistant is missing an active prompt.');
         }
 
@@ -70,7 +68,6 @@ class WebSummaryService
             'parent_tool_run_id' => $parentRun?->id,
             'title' => $this->summaryTitle($sourceUrls),
             'status' => AiThreadStatus::OPEN->value,
-            'prompt_id' => $promptId,
             'metadata' => [
                 'source_thread_id' => $state->thread->id,
                 'source_urls' => $sourceUrls,

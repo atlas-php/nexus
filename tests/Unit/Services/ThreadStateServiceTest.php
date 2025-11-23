@@ -56,9 +56,10 @@ class ThreadStateServiceTest extends TestCase
             'system_prompt' => 'Stay helpful.',
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
         ]);
 
         AiMessage::factory()->create([
@@ -137,9 +138,10 @@ class ThreadStateServiceTest extends TestCase
             'system_prompt' => 'Foreign prompt',
         ]);
 
+        $assistant->update(['current_prompt_id' => $ownedPrompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $foreignPrompt->id,
         ]);
 
         $freshThread = $thread->fresh();
@@ -147,66 +149,12 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
-        $this->assertNotNull($state->prompt);
         $this->assertSame($ownedPrompt->id, $state->prompt->id);
         $this->assertNotSame($foreignPrompt->id, $state->prompt->id);
     }
 
-    public function test_it_stores_and_reuses_prompt_snapshot_when_freeze_enabled(): void
+    public function test_it_renders_prompt_with_latest_values(): void
     {
-        config()->set('atlas-nexus.prompts.freeze_thread', true);
-        config()->set('auth.providers.users.model', TestUser::class);
-        config()->set('auth.model', TestUser::class);
-
-        Schema::create('users', function (Blueprint $table): void {
-            $table->id();
-            $table->string('name')->nullable();
-            $table->string('email')->nullable();
-            $table->timestamps();
-        });
-
-        $user = TestUser::query()->create([
-            'name' => 'Ada Lovelace',
-            'email' => 'ada@example.com',
-        ]);
-
-        $assistant = AiAssistant::factory()->create(['slug' => 'frozen-assistant']);
-        $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-            'system_prompt' => 'Hello {USER.NAME}',
-        ]);
-
-        $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
-            'user_id' => $user->id,
-        ]);
-
-        $freshThread = $thread->fresh();
-        $this->assertInstanceOf(AiThread::class, $freshThread);
-
-        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
-
-        $this->assertNotNull($state->promptSnapshot);
-        $this->assertSame('Hello Ada Lovelace', $state->systemPrompt);
-        $this->assertSame('Hello Ada Lovelace', $state->promptSnapshot->renderedSystemPrompt);
-
-        $prompt->update(['system_prompt' => 'Hi {USER.NAME}']);
-
-        $refreshed = $thread->fresh();
-        $this->assertInstanceOf(AiThread::class, $refreshed);
-        $this->assertNotNull($refreshed->prompt_snapshot);
-
-        $updatedState = $this->app->make(ThreadStateService::class)->forThread($refreshed);
-
-        $this->assertSame('Hello Ada Lovelace', $updatedState->systemPrompt);
-        $this->assertNotNull($refreshed->prompt_snapshot);
-        $this->assertSame('Hello Ada Lovelace', $refreshed->prompt_snapshot['rendered_system_prompt'] ?? null);
-    }
-
-    public function test_it_rerenders_prompt_when_freeze_is_disabled(): void
-    {
-        config()->set('atlas-nexus.prompts.freeze_thread', false);
         config()->set('auth.providers.users.model', TestUser::class);
         config()->set('auth.model', TestUser::class);
 
@@ -228,9 +176,10 @@ class ThreadStateServiceTest extends TestCase
             'system_prompt' => 'Hello {USER.NAME}',
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => $user->id,
         ]);
 
@@ -239,17 +188,12 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
-        $this->assertNull($state->promptSnapshot);
         $this->assertSame('Hello Grace Hopper', $state->systemPrompt);
 
         $user->update(['name' => 'Grace M. Hopper']);
         $prompt->update(['system_prompt' => 'Welcome back {USER.NAME}']);
 
-        $refreshed = $thread->fresh();
-        $this->assertInstanceOf(AiThread::class, $refreshed);
-        $this->assertNull($refreshed->prompt_snapshot);
-
-        $liveState = $this->app->make(ThreadStateService::class)->forThread($refreshed);
+        $liveState = $this->app->make(ThreadStateService::class)->forThread($thread->fresh());
 
         $this->assertSame('Welcome back Grace M. Hopper', $liveState->systemPrompt);
     }

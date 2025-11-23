@@ -87,10 +87,11 @@ class AiModelServiceTest extends TestCase
         ]);
         $prompt = $promptService->create($promptData);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         /** @var array<string, mixed> $threadData */
         $threadData = AiThread::factory()->raw([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'last_message_at' => Carbon::now(),
             'status' => AiThreadStatus::OPEN->value,
         ]);
@@ -126,7 +127,6 @@ class AiModelServiceTest extends TestCase
         $memory = $memoryService->create($memoryData);
 
         $this->assertTrue($thread->status === AiThreadStatus::OPEN);
-        $this->assertSame($prompt->id, $thread->prompt_id);
         $this->assertSame($thread->id, $message->thread_id);
         $this->assertSame($assistant->id, $memory->assistant_id);
         $this->assertSame($message->id, $memory->source_message_id);

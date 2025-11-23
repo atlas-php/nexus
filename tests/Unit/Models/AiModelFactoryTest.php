@@ -50,12 +50,13 @@ class AiModelFactoryTest extends TestCase
             'is_active' => true,
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
             'user_id' => 42,
             'type' => AiThreadType::USER->value,
-            'prompt_id' => $prompt->id,
             'last_message_at' => Carbon::now()->subMinutes(5),
             'metadata' => ['channel' => 'web'],
             'status' => AiThreadStatus::OPEN->value,
@@ -106,8 +107,7 @@ class AiModelFactoryTest extends TestCase
         $this->assertSame(42, $thread->user_id);
         $this->assertNotNull($thread->assistant);
         $this->assertTrue($thread->assistant->is($assistant));
-        $this->assertNotNull($thread->prompt);
-        $this->assertTrue($thread->prompt->is($prompt));
+        $this->assertSame($prompt->id, $assistant->current_prompt_id);
         $this->assertInstanceOf(Carbon::class, $thread->last_message_at);
         $this->assertSame(['channel' => 'web'], $thread->metadata);
         $this->assertTrue($thread->status === AiThreadStatus::OPEN);

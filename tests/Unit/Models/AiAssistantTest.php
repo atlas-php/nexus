@@ -80,7 +80,6 @@ class AiAssistantTest extends TestCase
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
         ]);
 
         $assistant->update(['tools' => ['memory', 'search']]);

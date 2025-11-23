@@ -67,9 +67,9 @@ class RunAssistantResponseJobTest extends TestCase
             'assistant_id' => $assistant->id,
             'system_prompt' => 'Assist politely.',
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 1,
         ]);
 
@@ -155,9 +155,9 @@ class RunAssistantResponseJobTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 1,
         ]);
 
@@ -198,9 +198,9 @@ class RunAssistantResponseJobTest extends TestCase
         $prompt = AiPrompt::factory()->create([
             'assistant_id' => $assistant->id,
         ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 77,
         ]);
 

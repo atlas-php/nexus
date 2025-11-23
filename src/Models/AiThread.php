@@ -28,8 +28,6 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property int|null $parent_tool_run_id
  * @property string|null $title
  * @property AiThreadStatus $status
- * @property int|null $prompt_id
- * @property array<string, mixed>|null $prompt_snapshot
  * @property string|null $summary
  * @property \Illuminate\Support\Carbon|null $last_message_at
  * @property array<string, mixed>|null $metadata
@@ -54,8 +52,6 @@ class AiThread extends AtlasModel
         'group_id' => 'int',
         'parent_thread_id' => 'int',
         'parent_tool_run_id' => 'int',
-        'prompt_id' => 'int',
-        'prompt_snapshot' => 'array',
         'type' => AiThreadType::class,
         'status' => AiThreadStatus::class,
         'last_message_at' => 'datetime',
@@ -93,17 +89,6 @@ class AiThread extends AtlasModel
 
         /** @var BelongsTo<AuthenticatableUser, self> $relation */
         $relation = $this->belongsTo($modelClass, 'user_id');
-
-        return $relation;
-    }
-
-    /**
-     * @return BelongsTo<AiPrompt, self>
-     */
-    public function prompt(): BelongsTo
-    {
-        /** @var BelongsTo<AiPrompt, self> $relation */
-        $relation = $this->belongsTo(AiPrompt::class, 'prompt_id');
 
         return $relation;
     }

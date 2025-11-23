@@ -72,9 +72,10 @@ class AbstractToolTest extends TestCase
             'assistant_id' => $assistant->id,
         ]);
 
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,
-            'prompt_id' => $prompt->id,
             'user_id' => 1,
             'type' => AiThreadType::USER->value,
             'status' => AiThreadStatus::OPEN->value,
