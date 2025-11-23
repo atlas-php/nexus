@@ -48,6 +48,7 @@ Table: `ai_assistant_prompts`
 - Default providers resolve from the thread's authenticatable user when the `users` table is available.
 - Additional providers can be registered via `atlas-nexus.prompts.variables`; each receives a `PromptVariableContext` containing the thread, assistant, prompt, and user. Use `PromptVariableGroup` to map multiple keys within one class.
 - Inline overrides may also be merged by calling `PromptVariableService::apply($prompt, $context, ['TEAM.NAME' => 'Atlas'])`.
+- Built-in thread placeholders expose `{THREAD.ID}`, `{THREAD.TITLE}`, `{THREAD.SUMMARY}`, `{THREAD.LONG_SUMMARY}`, `{THREAD.RECENT.IDS}` (comma-separated IDs for up to five of the user’s newest threads for that assistant excluding the active thread, falling back to the string `None` when no other threads exist), and `{DATETIME}` in UTC.
 
 ## Assistant ↔ Prompt Behavior
 - `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt` and ignores prompts that belong to other assistants.

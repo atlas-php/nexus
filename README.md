@@ -50,6 +50,7 @@ See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
 
 ## Prompt Variables
 - Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside `ai_assistant_prompts.system_prompt`; values are resolved right before the model request.
+- Built-in thread placeholders include `{THREAD.ID}`, `{THREAD.TITLE}`, `{THREAD.SUMMARY}`, `{THREAD.LONG_SUMMARY}`, `{THREAD.RECENT.IDS}` (comma-separated up to 5 of the user’s most recent threads for the assistant excluding the active thread, or `None` when there are no others), and `{DATETIME}`.
 - Defaults pull from the thread's authenticatable user when the `users` table exists.
 - Add more via `atlas-nexus.prompts.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
 - When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.

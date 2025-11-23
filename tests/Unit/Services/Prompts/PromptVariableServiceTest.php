@@ -137,7 +137,7 @@ class PromptVariableServiceTest extends TestCase
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-variables']);
         $prompt = AiAssistantPrompt::factory()->create([
             'assistant_id' => $assistant->id,
-            'system_prompt' => 'Thread {THREAD.ID}: {THREAD.TITLE} | {THREAD.SUMMARY} / {THREAD.LONG_SUMMARY} @ {DATETIME}',
+            'system_prompt' => 'Thread {THREAD.ID}: {THREAD.TITLE} | {THREAD.SUMMARY} / {THREAD.LONG_SUMMARY} @ {DATETIME} Recents {THREAD.RECENT.IDS}',
         ]);
 
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -148,6 +148,69 @@ class PromptVariableServiceTest extends TestCase
             'title' => 'Quarterly Planning Sync',
             'summary' => 'Plan quarterly roadmap',
             'long_summary' => 'Plan quarterly roadmap with product and engineering alignment',
+            'last_message_at' => Carbon::now(),
+        ]);
+
+        $recentThreads = collect();
+
+        foreach (range(1, 6) as $minutes) {
+            $recentThreads->push(
+                AiThread::factory()->create([
+                    'assistant_id' => $assistant->id,
+                    'user_id' => $user->id,
+                    'last_message_at' => Carbon::now()->subMinutes($minutes),
+                ])
+            );
+        }
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+        $context = new PromptVariableContext($state, $prompt, $assistant);
+
+        $rendered = $this->app->make(PromptVariableService::class)
+            ->apply($prompt->system_prompt, $context);
+
+        $expectedRecentIds = $recentThreads
+            ->sortByDesc(function (AiThread $model): int {
+                $timestamp = $model->last_message_at ?? $model->updated_at ?? $model->created_at;
+
+                return $timestamp?->getTimestamp() ?? 0;
+            })
+            ->take(5)
+            ->pluck('id')
+            ->implode(', ');
+
+        $this->assertSame(
+            'Thread '.$thread->id.': Quarterly Planning Sync | Plan quarterly roadmap / Plan quarterly roadmap with product and engineering alignment @ 2024-05-01T12:34:56+00:00 Recents '.$expectedRecentIds,
+            $rendered
+        );
+
+        Carbon::setTestNow();
+    }
+
+    public function test_recent_thread_ids_returns_none_when_empty(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-05-01 12:34:56', 'UTC'));
+
+        $user = TestUser::query()->create([
+            'name' => 'Thread Owner',
+            'email' => 'thread-owner@example.com',
+        ]);
+
+        $assistant = AiAssistant::factory()->create(['slug' => 'thread-variables-none']);
+        $prompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'system_prompt' => 'Recent threads: {THREAD.RECENT.IDS}',
+        ]);
+
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => $user->id,
+            'title' => 'Only Thread',
         ]);
 
         $freshThread = $thread->fresh();
@@ -159,10 +222,7 @@ class PromptVariableServiceTest extends TestCase
         $rendered = $this->app->make(PromptVariableService::class)
             ->apply($prompt->system_prompt, $context);
 
-        $this->assertSame(
-            'Thread '.$thread->id.': Quarterly Planning Sync | Plan quarterly roadmap / Plan quarterly roadmap with product and engineering alignment @ 2024-05-01T12:34:56+00:00',
-            $rendered
-        );
+        $this->assertSame('Recent threads: None', $rendered);
 
         Carbon::setTestNow();
     }
