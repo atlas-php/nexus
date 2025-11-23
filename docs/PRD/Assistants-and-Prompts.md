@@ -21,8 +21,8 @@ Each definition class must implement:
 | `defaultModel()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
 | `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
-| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['web_search' => ['allowed_domains' => ['atlasphp.com']]]` to pass options to the tool handler. |
-| `providerTools()` | Provider-native tool declarations with assistant-owned options. Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |
+| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |
+| `providerTools()` | Provider-native tool declarations with assistant-owned options (e.g., `['web_search' => ['filters' => ['allowed_domains' => ['atlasphp.com']]]]`). Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |
 | `metadata()` | Arbitrary assistant metadata exposed to consumers. |
 
 The base class normalizes arrays, deduplicates tool keys, and exposes helper setters (`promptIsActive`, `promptUserId`). Tool and provider tool declarations may be strings or associative arrays; any configuration arrays are preserved and supplied to the runtime services so every assistant can own its own tool options.

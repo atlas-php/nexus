@@ -10,19 +10,19 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 - [Services](#services)
 
 ## Tools
-Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `web_search`), and is registered inside `ToolRegistry`.
+Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `thread_fetcher`), and is registered inside `ToolRegistry`.
 
 - Built-in tools are registered automatically:
   - `memory` — add/update/fetch/delete thread-aware memories.
-  - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant. Domain restrictions and content limits can be tuned programmatically by resolving `WebSearchTool` and calling `configure(...)`.
   - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name.
   - `thread_fetcher` — fetch one or many threads (IDs provided by the search tool or other signals) and return summaries, keywords, and ordered message transcripts.
   - `thread_updater` — update thread title/summary or auto-generate them from conversation context.
 - Additional tools can be registered at runtime by resolving `ToolRegistry` from the container and calling `register(new ToolDefinition('custom', CustomTool::class))`.
 - Only tools with resolvable handler classes are exposed to Prism.
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
-- Handlers may implement `ConfigurableTool` to receive assistant-owned configuration arrays. Return keyed entries from `AssistantDefinition::tools()` (e.g., `['web_search' => ['allowed_domains' => ['atlasphp.com']]]`) to pass these options to the handler before it is converted into a Prism tool.
+- Handlers may implement `ConfigurableTool` to receive assistant-owned configuration arrays. Return keyed entries from `AssistantDefinition::tools()` (e.g., `['calendar_lookup' => ['allowed_calendars' => ['sales']]]`) to pass these options to the handler before it is converted into a Prism tool.
 - `AssistantDefinition::providerTools()` mirrors this structure for provider-native tools so each assistant controls its own provider options (vector store ids, allowed domains, etc.) without touching global config.
+- Provider-native web tooling (e.g., `'web_search'`) is now configured exclusively through `providerTools()`; Nexus no longer ships a code-defined web search handler.
 
 ## Assistant Tool Keys
 Assistant definition classes control which tool keys are available by overriding `tools()`. Thread state filters these keys against the registered tool set; built-in tools are registered automatically when enabled.

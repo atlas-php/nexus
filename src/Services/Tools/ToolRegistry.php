@@ -8,7 +8,6 @@ use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool;
-use Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 
 /**
@@ -82,7 +81,6 @@ class ToolRegistry
     {
         $definitions = [
             MemoryTool::definition(),
-            WebSearchTool::definition(),
             ThreadSearchTool::definition(),
             ThreadFetcherTool::definition(),
             ThreadUpdaterTool::definition(),

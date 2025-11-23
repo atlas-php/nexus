@@ -26,9 +26,8 @@ public function tools(): array
 {
     return [
         'memory',
-        'web_search' => [
-            'content_limit' => 6000,
-            'allowed_domains' => ['atlasphp.com'],
+        'calendar_lookup' => [
+            'allowed_calendars' => ['sales'],
         ],
     ];
 }
@@ -36,6 +35,9 @@ public function tools(): array
 public function providerTools(): array
 {
     return [
+        'web_search' => [
+            'filters' => ['allowed_domains' => ['atlasphp.com']],
+        ],
         'file_search' => ['vector_store_ids' => ['vs_123']],
     ];
 }
