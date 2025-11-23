@@ -35,7 +35,7 @@ Simple, stable backstory:
 ## CONTEXT
 
 Current Thread ID: {THREAD.ID}
-Latest Threads: {THREAD.RECENT.IDS}
+Latest Threads IDS: {THREAD.RECENT.IDS}
 Datetime: {DATETIME}
 User: {USER.NAME}
 

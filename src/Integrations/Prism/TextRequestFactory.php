@@ -14,10 +14,16 @@ use Prism\Prism\Facades\Prism;
  */
 class TextRequestFactory
 {
+    private const TIMEOUT_SECONDS = 120;
+
     public function make(?ChatThreadLog $chatThreadLog = null): TextRequest
     {
+        $pendingRequest = Prism::text()->withClientOptions([
+            'timeout' => self::TIMEOUT_SECONDS,
+        ]);
+
         return new TextRequest(
-            Prism::text(),
+            $pendingRequest,
             $chatThreadLog ?? new ChatThreadLog
         );
     }
