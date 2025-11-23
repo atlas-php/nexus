@@ -13,7 +13,7 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 
 ## Create an Assistant & Prompt
 1. Create an assistant row with defaults (`slug`, `default_model`, optional `temperature/top_p/max_output_tokens`).
-2. Create a prompt version with `assistant_id`, `version`, `system_prompt`.
+2. Create a prompt version via `AiPromptService::create` with `version`, `system_prompt` (the service will seed `original_prompt_id` for lineage tracking).
 3. Set `current_prompt_id` on the assistant to the active prompt.
 
 ## Register Tools

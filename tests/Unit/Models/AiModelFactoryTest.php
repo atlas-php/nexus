@@ -46,7 +46,6 @@ class AiModelFactoryTest extends TestCase
 
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
             'is_active' => true,
         ]);
@@ -98,13 +97,11 @@ class AiModelFactoryTest extends TestCase
             'metadata' => ['context' => 'demo'],
         ]);
 
-        $this->assertSame($assistant->id, $prompt->assistant_id);
         $this->assertTrue($prompt->is_active);
+        $this->assertSame($prompt->id, $prompt->original_prompt_id);
 
         $this->assertSame(['tier' => 'enterprise'], $assistant->metadata);
 
-        $this->assertNotNull($prompt->assistant);
-        $this->assertTrue($prompt->assistant->is($assistant));
         $this->assertSame($assistant->id, $thread->assistant_id);
         $this->assertSame(42, $thread->user_id);
         $this->assertNotNull($thread->assistant);

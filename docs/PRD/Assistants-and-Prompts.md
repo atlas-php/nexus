@@ -36,8 +36,8 @@ Table: `ai_prompts`
 |---------------------|-------------------------------------------------------------|
 | `id`                | Primary key                                                 |
 | `user_id`           | Optional author/tracker                                     |
-| `assistant_id`      | Assistant owner (no FK)                                     |
-| `version`           | Int version (enforce uniqueness per assistant in code)      |
+| `version`           | Int version (auto-incremented per lineage)                  |
+| `original_prompt_id`| Self-reference to the first prompt in the lineage           |
 | `label`             | Optional label                                              |
 | `system_prompt`     | Text content                                                |
 | `is_active`         | Boolean                                                     |
@@ -51,7 +51,8 @@ Table: `ai_prompts`
 
 ## Assistant ↔ Prompt Behavior
 - `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt`.
-- Multiple prompts per assistant are allowed; versions must be unique per assistant in code.
+- Prompts are global records. Assistants point to their active prompt via `current_prompt_id`.
+- `original_prompt_id` links all versions of a prompt lineage; the initial prompt references its own id. Use `AiPromptService::edit($prompt, $data, $createNewVersion = true)` to branch a new version (the next integer version is calculated automatically).
 - Prompt selection may be overridden per thread via `prompt_id`.
 
 ## Assistant ↔ Tool Mapping
@@ -64,5 +65,5 @@ Rules:
 
 ## Service Responsibilities
 - `AiAssistantService` — CRUD + tool key sync helpers.
-- `AiPromptService` — CRUD + versioning constraints enforced in code.
+- `AiPromptService` — CRUD plus lineage-aware editing (inline updates or auto-versioned clones via `edit()`).
 - `NexusSeederService` executes configured seeders (e.g., WebSearchAssistantSeeder, ThreadManagerAssistantSeeder) to provision built-in assistants/prompts.

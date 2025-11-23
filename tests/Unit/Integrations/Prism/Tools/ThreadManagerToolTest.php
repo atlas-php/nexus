@@ -127,17 +127,15 @@ class ThreadManagerToolTest extends TestCase
                 'slug' => 'thread-manager',
             ]);
 
-        /** @var AiPrompt $prompt */
-        $prompt = AiPrompt::query()
-            ->where('assistant_id', $assistant->id)
-            ->where('version', 1)
-            ->first()
-            ?? AiPrompt::factory()->create([
-                'assistant_id' => $assistant->id,
+        /** @var AiPrompt|null $prompt */
+        $prompt = $assistant->current_prompt_id
+            ? AiPrompt::query()->find($assistant->current_prompt_id)
+            : null;
+
+        if ($prompt === null) {
+            $prompt = AiPrompt::factory()->create([
                 'version' => 1,
             ]);
-
-        if ($assistant->current_prompt_id === null) {
             $assistant->current_prompt_id = $prompt->id;
             $assistant->save();
         }

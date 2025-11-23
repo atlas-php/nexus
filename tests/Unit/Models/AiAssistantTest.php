@@ -73,7 +73,6 @@ class AiAssistantTest extends TestCase
         $assistant = AiAssistant::factory()->create();
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
@@ -87,7 +86,6 @@ class AiAssistantTest extends TestCase
         $assistant->update(['tools' => ['memory', 'search']]);
         $assistant->refresh();
 
-        $this->assertTrue($assistant->prompts()->whereKey($prompt->id)->exists());
         $this->assertTrue($assistant->threads()->whereKey($thread->id)->exists());
         $this->assertTrue($assistant->currentPrompt?->is($prompt));
         $this->assertSame(['memory', 'search'], $assistant->tools);

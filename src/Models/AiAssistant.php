@@ -70,17 +70,6 @@ class AiAssistant extends AtlasModel
     }
 
     /**
-     * @return HasMany<AiPrompt, self>
-     */
-    public function prompts(): HasMany
-    {
-        /** @var HasMany<AiPrompt, self> $relation */
-        $relation = $this->hasMany(AiPrompt::class, 'assistant_id');
-
-        return $relation;
-    }
-
-    /**
      * @return HasMany<AiThread, self>
      */
     public function threads(): HasMany

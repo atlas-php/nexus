@@ -248,7 +248,6 @@ class WebSearchToolTest extends TestCase
         ]);
 
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
 

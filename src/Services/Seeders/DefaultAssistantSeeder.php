@@ -41,24 +41,24 @@ class DefaultAssistantSeeder implements NexusSeeder
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
 
-        $prompt = $this->promptService->query()
-            ->where('assistant_id', $assistant->id)
-            ->where('version', DefaultAssistantDefaults::PROMPT_VERSION)
-            ->first();
+        $prompt = $assistant->current_prompt_id
+            ? $this->promptService->find($assistant->current_prompt_id)
+            : null;
 
-        $prompt = $prompt === null
-            ? $this->promptService->create([
-                'assistant_id' => $assistant->id,
+        if ($prompt === null) {
+            $prompt = $this->promptService->create([
                 'version' => DefaultAssistantDefaults::PROMPT_VERSION,
                 'label' => DefaultAssistantDefaults::PROMPT_LABEL,
                 'system_prompt' => DefaultAssistantDefaults::SYSTEM_PROMPT,
                 'is_active' => true,
-            ])
-            : $this->promptService->update($prompt, [
+            ]);
+        } else {
+            $prompt = $this->promptService->edit($prompt, [
                 'label' => DefaultAssistantDefaults::PROMPT_LABEL,
                 'system_prompt' => DefaultAssistantDefaults::SYSTEM_PROMPT,
                 'is_active' => true,
             ]);
+        }
 
         if ($assistant->current_prompt_id !== $prompt->id) {
             $this->assistantService->update($assistant, [

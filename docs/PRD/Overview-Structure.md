@@ -24,13 +24,13 @@
 
 ### `ai_prompts`
 
-Versioned system prompts for each assistant.
+Versioned system prompts stored globally; assistants point to the active prompt.
 
 ```
 - id                  bigint PK
 - user_id             bigint nullable   -- no FK
-- assistant_id        bigint            -- no FK
 - version             int               -- 1,2,3...
+- original_prompt_id  bigint nullable   -- first prompt in the lineage
 - label               string nullable
 - system_prompt       text
 - is_active           boolean default 1
@@ -38,8 +38,7 @@ Versioned system prompts for each assistant.
 - updated_at
 - deleted_at
 
--- You enforce uniqueness in code, not via FK:
--- UNIQUE (assistant_id, version)
+-- Version uniqueness is enforced per lineage in code.
 ```
 
 ### `ai_threads`

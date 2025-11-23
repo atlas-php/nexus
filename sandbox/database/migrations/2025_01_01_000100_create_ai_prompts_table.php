@@ -16,15 +16,13 @@ return new class extends Migration
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id')->nullable()->index();
-            $table->unsignedBigInteger('assistant_id')->index();
             $table->unsignedInteger('version');
+            $table->unsignedBigInteger('original_prompt_id')->nullable()->index();
             $table->string('label')->nullable();
             $table->text('system_prompt');
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();
-
-            $table->unique(['assistant_id', 'version']);
         });
     }
 

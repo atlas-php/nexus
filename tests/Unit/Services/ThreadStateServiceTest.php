@@ -52,7 +52,6 @@ class ThreadStateServiceTest extends TestCase
             'tools' => ['calendar_lookup'],
         ]);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
             'system_prompt' => 'Stay helpful.',
         ]);
@@ -139,7 +138,6 @@ class ThreadStateServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'frozen-assistant']);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
             'system_prompt' => 'Hello {USER.NAME}',
         ]);
@@ -192,7 +190,6 @@ class ThreadStateServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'live-assistant']);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
             'system_prompt' => 'Hello {USER.NAME}',
         ]);

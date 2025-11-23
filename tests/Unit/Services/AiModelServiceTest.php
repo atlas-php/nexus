@@ -83,7 +83,6 @@ class AiModelServiceTest extends TestCase
 
         /** @var array<string, mixed> $promptData */
         $promptData = AiPrompt::factory()->raw([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
         $prompt = $promptService->create($promptData);

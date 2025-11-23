@@ -45,24 +45,24 @@ class WebSearchAssistantSeeder implements NexusSeeder
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
 
-        $prompt = $this->promptService->query()
-            ->where('assistant_id', $assistant->id)
-            ->where('version', WebSummaryDefaults::PROMPT_VERSION)
-            ->first();
+        $prompt = $assistant->current_prompt_id
+            ? $this->promptService->find($assistant->current_prompt_id)
+            : null;
 
-        $prompt = $prompt === null
-            ? $this->promptService->create([
-                'assistant_id' => $assistant->id,
+        if ($prompt === null) {
+            $prompt = $this->promptService->create([
                 'version' => WebSummaryDefaults::PROMPT_VERSION,
                 'label' => WebSummaryDefaults::PROMPT_LABEL,
                 'system_prompt' => WebSummaryDefaults::SYSTEM_PROMPT,
                 'is_active' => true,
-            ])
-            : $this->promptService->update($prompt, [
+            ]);
+        } else {
+            $prompt = $this->promptService->edit($prompt, [
                 'label' => WebSummaryDefaults::PROMPT_LABEL,
                 'system_prompt' => WebSummaryDefaults::SYSTEM_PROMPT,
                 'is_active' => true,
             ]);
+        }
 
         if ($assistant->current_prompt_id !== $prompt->id) {
             $this->assistantService->update($assistant, [

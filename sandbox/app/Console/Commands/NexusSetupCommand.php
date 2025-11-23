@@ -74,15 +74,19 @@ class NexusSetupCommand extends Command
             ]);
         }
 
-        $prompt = $this->promptService->query()
-            ->where('assistant_id', $assistant->id)
-            ->where('version', 1)
-            ->first();
+        $prompt = $assistant->current_prompt_id
+            ? $this->promptService->find($assistant->current_prompt_id)
+            : null;
 
         if ($prompt === null) {
             $prompt = $this->promptService->create([
-                'assistant_id' => $assistant->id,
                 'version' => 1,
+                'label' => 'Sandbox Prompt',
+                'system_prompt' => $systemPrompt,
+                'is_active' => true,
+            ]);
+        } else {
+            $prompt = $this->promptService->edit($prompt, [
                 'label' => 'Sandbox Prompt',
                 'system_prompt' => $systemPrompt,
                 'is_active' => true,

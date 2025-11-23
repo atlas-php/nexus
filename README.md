@@ -41,7 +41,7 @@ php artisan atlas:nexus:seed
 Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
-- Assistants live in `ai_assistants`; prompts in `ai_prompts` (versioned per assistant).
+- Assistants live in `ai_assistants`; prompts in `ai_prompts` (global records with lineage tracked via `original_prompt_id`).
 - Set `current_prompt_id` to pick the active prompt; threads can override via `prompt_id`.
 - Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
 

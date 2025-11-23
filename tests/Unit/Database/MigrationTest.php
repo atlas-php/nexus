@@ -52,8 +52,8 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ai_prompts', [
             'id',
             'user_id',
-            'assistant_id',
             'version',
+            'original_prompt_id',
             'label',
             'system_prompt',
             'is_active',
@@ -97,6 +97,7 @@ class MigrationTest extends TestCase
             'metadata',
             'created_at',
             'updated_at',
+            'deleted_at',
         ]));
 
         $this->assertTrue(Schema::hasColumns('ai_tool_runs', [
@@ -129,6 +130,7 @@ class MigrationTest extends TestCase
             'metadata',
             'created_at',
             'updated_at',
+            'deleted_at',
         ]));
     }
 

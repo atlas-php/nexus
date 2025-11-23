@@ -64,7 +64,6 @@ class RunAssistantResponseJobTest extends TestCase
             'tools' => ['calendar_lookup'],
         ]);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
             'system_prompt' => 'Assist politely.',
         ]);
@@ -154,7 +153,6 @@ class RunAssistantResponseJobTest extends TestCase
     {
         $assistant = AiAssistant::factory()->create(['slug' => 'job-failure']);
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
         $thread = AiThread::factory()->create([
@@ -198,7 +196,6 @@ class RunAssistantResponseJobTest extends TestCase
         ]);
         $this->app->make(NexusSeederService::class)->run();
         $prompt = AiPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
             'version' => 1,
         ]);
         $thread = AiThread::factory()->create([

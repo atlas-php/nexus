@@ -20,8 +20,8 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  *
  * @property int $id
  * @property int|null $user_id
- * @property int $assistant_id
  * @property int $version
+ * @property int|null $original_prompt_id
  * @property string|null $label
  * @property string $system_prompt
  * @property bool $is_active
@@ -45,8 +45,8 @@ class AiPrompt extends AtlasModel
      */
     protected $casts = [
         'user_id' => 'int',
-        'assistant_id' => 'int',
         'version' => 'int',
+        'original_prompt_id' => 'int',
         'is_active' => 'bool',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -56,17 +56,6 @@ class AiPrompt extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_prompts';
-    }
-
-    /**
-     * @return BelongsTo<AiAssistant, self>
-     */
-    public function assistant(): BelongsTo
-    {
-        /** @var BelongsTo<AiAssistant, self> $relation */
-        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
-
-        return $relation;
     }
 
     /**
@@ -97,8 +86,39 @@ class AiPrompt extends AtlasModel
         return $relation;
     }
 
+    /**
+     * @return BelongsTo<self, self>
+     */
+    public function originalPrompt(): BelongsTo
+    {
+        /** @var BelongsTo<self, self> $relation */
+        $relation = $this->belongsTo(self::class, 'original_prompt_id');
+
+        return $relation;
+    }
+
+    /**
+     * @return HasMany<self, self>
+     */
+    public function versions(): HasMany
+    {
+        /** @var HasMany<self, self> $relation */
+        $relation = $this->hasMany(self::class, 'original_prompt_id');
+
+        return $relation;
+    }
+
     protected static function newFactory(): AiPromptFactory
     {
         return AiPromptFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (self $prompt): void {
+            if ($prompt->original_prompt_id === null) {
+                $prompt->forceFill(['original_prompt_id' => $prompt->id])->save();
+            }
+        });
     }
 }

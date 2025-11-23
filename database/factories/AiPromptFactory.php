@@ -23,8 +23,8 @@ class AiPromptFactory extends Factory
     {
         return [
             'user_id' => $this->faker->optional()->numberBetween(1, 5_000),
-            'assistant_id' => $this->faker->numberBetween(1, 1_000),
             'version' => $this->faker->unique()->numberBetween(1, 2_147_483_647),
+            'original_prompt_id' => null,
             'label' => $this->faker->optional()->sentence(3),
             'system_prompt' => $this->faker->paragraphs(2, true),
             'is_active' => $this->faker->boolean(90),
