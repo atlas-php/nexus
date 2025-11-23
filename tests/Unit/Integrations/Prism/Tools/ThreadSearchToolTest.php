@@ -127,7 +127,10 @@ class ThreadSearchToolTest extends TestCase
 
         $response = $tool->handle([]);
 
-        $this->assertSame('Fetched matching threads.', $response->message());
+        $message = $response->message();
+        $this->assertStringContainsString('Thread Id: '.$titleThread->id, $message);
+        $this->assertStringContainsString('Title: Quarterly Budget Review', $message);
+        $this->assertStringContainsString('Summary: Financial planning summary.', $message);
         $threads = $response->meta()['result']['threads'];
 
         $this->assertCount(6, $threads);
@@ -152,6 +155,7 @@ class ThreadSearchToolTest extends TestCase
         $this->assertSame('Follow Up Thread', $filtered[0]['title']);
         $this->assertArrayHasKey('id', $filtered[0]);
         $this->assertArrayHasKey('summary', $filtered[0]);
+        $this->assertStringContainsString('Title: Follow Up Thread', $response->message());
 
         $response = $tool->handle(['search' => ['quarterly budget']]);
         $filtered = $response->meta()['result']['threads'];
@@ -199,10 +203,7 @@ class ThreadSearchToolTest extends TestCase
             'search' => ['Unknown Query'],
         ]);
 
-        $this->assertSame(
-            'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use Fetch Thread Content with the thread_ids parameter to inspect a specific conversation.',
-            $response->message()
-        );
+        $this->assertSame('No threads matched those keywords.', $response->message());
         $this->assertSame([], $response->meta()['result']['threads']);
     }
 

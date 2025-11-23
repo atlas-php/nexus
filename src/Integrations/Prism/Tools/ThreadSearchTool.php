@@ -15,6 +15,7 @@ use RuntimeException;
 use Throwable;
 
 use function collect;
+use function implode;
 use function is_array;
 use function is_string;
 use function trim;
@@ -93,11 +94,9 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
                 ->values()
                 ->all();
 
-            $message = 'Fetched matching threads.';
-
-            if ($searchProvided && $threads === []) {
-                $message = 'No threads matched those keywords.';
-            }
+            $message = $threads === []
+                ? 'No threads matched those keywords.'
+                : $this->formatThreadSummaries($threads);
 
             return $this->output($message, [
                 'result' => [
@@ -132,4 +131,45 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
 
         return false;
     }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $threads
+     */
+    protected function formatThreadSummaries(array $threads): string
+    {
+        $blocks = [];
+
+        foreach ($threads as $thread) {
+            $lines = [
+                'Thread Id: '.$thread['id'],
+            ];
+
+            $title = $this->stringValue($thread['title'] ?? null);
+            $summary = $this->stringValue($thread['summary'] ?? null);
+
+            if ($title !== null) {
+                $lines[] = 'Title: '.$title;
+            }
+
+            if ($summary !== null) {
+                $lines[] = 'Summary: '.$summary;
+            }
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return implode("\n\n", $blocks);
+    }
+
+    protected function stringValue(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
 }
