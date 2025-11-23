@@ -171,5 +171,4 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
 
         return $trimmed === '' ? null : $trimmed;
     }
-
 }
