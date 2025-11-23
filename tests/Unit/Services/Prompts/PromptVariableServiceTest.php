@@ -11,11 +11,13 @@ use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
+use Atlas\Nexus\Support\Prompts\Variables\ThreadPromptVariables;
 use Atlas\Nexus\Support\Prompts\Variables\UserPromptVariables;
 use Atlas\Nexus\Tests\Fixtures\CustomPromptVariable;
 use Atlas\Nexus\Tests\Fixtures\TestUser;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -83,6 +85,7 @@ class PromptVariableServiceTest extends TestCase
     public function test_it_merges_custom_provider_and_inline_variables(): void
     {
         config()->set('atlas-nexus.prompts.variables', [
+            ThreadPromptVariables::class,
             UserPromptVariables::class,
             CustomPromptVariable::class,
         ]);
@@ -120,6 +123,48 @@ class PromptVariableServiceTest extends TestCase
             'Thread '.$thread->id.': Grace Hopper - enabled',
             $rendered
         );
+    }
+
+    public function test_it_resolves_thread_variables_and_datetime(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-05-01 12:34:56', 'UTC'));
+
+        $user = TestUser::query()->create([
+            'name' => 'Thread Owner',
+            'email' => 'thread-owner@example.com',
+        ]);
+
+        $assistant = AiAssistant::factory()->create(['slug' => 'thread-variables']);
+        $prompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+            'system_prompt' => 'Thread {THREAD.ID}: {THREAD.TITLE} | {THREAD.SUMMARY} / {THREAD.LONG_SUMMARY} @ {DATETIME}',
+        ]);
+
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => $user->id,
+            'title' => 'Quarterly Planning Sync',
+            'summary' => 'Plan quarterly roadmap',
+            'long_summary' => 'Plan quarterly roadmap with product and engineering alignment',
+        ]);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
+        $context = new PromptVariableContext($state, $prompt, $assistant);
+
+        $rendered = $this->app->make(PromptVariableService::class)
+            ->apply($prompt->system_prompt, $context);
+
+        $this->assertSame(
+            'Thread '.$thread->id.': Quarterly Planning Sync | Plan quarterly roadmap / Plan quarterly roadmap with product and engineering alignment @ 2024-05-01T12:34:56+00:00',
+            $rendered
+        );
+
+        Carbon::setTestNow();
     }
 
     private function migrationPath(): string

@@ -10,6 +10,7 @@ return [
     'prompts' => [
         'freeze_thread' => true,
         'variables' => [
+            \Atlas\Nexus\Support\Prompts\Variables\ThreadPromptVariables::class,
             \Atlas\Nexus\Support\Prompts\Variables\UserPromptVariables::class,
             // \App\Nexus\Prompts\Variables\CustomPromptVariable::class,
         ],
