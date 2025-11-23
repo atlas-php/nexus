@@ -26,7 +26,7 @@ class ThreadPromptVariables implements PromptVariableGroup
     ) {}
 
     /**
-     * @return array<string, string|null>
+     * @return array<string, string>
      */
     public function variables(PromptVariableContext $context): array
     {
@@ -41,14 +41,14 @@ class ThreadPromptVariables implements PromptVariableGroup
         ];
     }
 
-    private function normalizeValue(mixed $value): ?string
+    private function normalizeValue(mixed $value): string
     {
         if (! is_string($value)) {
-            return null;
+            return 'None';
         }
 
         if (trim($value) === '') {
-            return null;
+            return 'None';
         }
 
         return $value;
