@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Filesystem\Filesystem;
 
 /**
@@ -32,8 +33,10 @@ class SandboxStartFreshCommand extends Command
 
     protected $description = 'Clean AI migration files, migrate fresh, seed, and run Nexus setup in one step.';
 
-    public function __construct(private readonly Filesystem $files)
-    {
+    public function __construct(
+        private readonly Filesystem $files,
+        private readonly ConfigRepository $config
+    ) {
         parent::__construct();
     }
 
@@ -64,6 +67,25 @@ class SandboxStartFreshCommand extends Command
         $this->components->info('Sandbox environment refreshed and ready.');
 
         return self::SUCCESS;
+        $this->reloadAtlasNexusConfig();
+    }
+
+    protected function reloadAtlasNexusConfig(): void
+    {
+        $configPath = base_path('config/atlas-nexus.php');
+
+        if (! $this->files->exists($configPath)) {
+            return;
+        }
+
+        $values = $this->files->getRequire($configPath);
+
+        if (! is_array($values)) {
+            return;
+        }
+
+        $this->config->set('atlas-nexus', $values);
+        $this->components->info('Reloaded atlas-nexus configuration.');
     }
 
     protected function refreshPackageAssets(): void

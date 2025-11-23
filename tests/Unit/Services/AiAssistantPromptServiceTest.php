@@ -42,7 +42,7 @@ class AiAssistantPromptServiceTest extends TestCase
 
         $this->assertSame(1, $prompt->version);
         $this->assertSame($assistant->id, $prompt->assistant_id);
-        $this->assertSame($prompt->id, $prompt->original_prompt_id);
+        $this->assertNull($prompt->original_prompt_id);
     }
 
     public function test_edit_always_generates_new_version(): void
@@ -71,7 +71,8 @@ class AiAssistantPromptServiceTest extends TestCase
         ]);
 
         $this->assertSame(3, $anotherVersion->version);
-        $this->assertSame($prompt->original_prompt_id, $anotherVersion->original_prompt_id);
+        $this->assertSame($prompt->id, $anotherVersion->original_prompt_id);
+        $this->assertNull($prompt->original_prompt_id);
     }
 
     private function migrationPath(): string

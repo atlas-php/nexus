@@ -99,7 +99,7 @@ class AiModelFactoryTest extends TestCase
         ]);
 
         $this->assertTrue($prompt->is_active);
-        $this->assertSame($prompt->id, $prompt->original_prompt_id);
+        $this->assertNull($prompt->original_prompt_id);
 
         $this->assertSame(['tier' => 'enterprise'], $assistant->metadata);
 

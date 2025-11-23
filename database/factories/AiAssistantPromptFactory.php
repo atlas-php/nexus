@@ -24,7 +24,6 @@ class AiAssistantPromptFactory extends Factory
     {
         return [
             'assistant_id' => AiAssistant::factory(),
-            'assistant_prompt_id' => null,
             'user_id' => $this->faker->optional()->numberBetween(1, 5_000),
             'version' => 1,
             'original_prompt_id' => null,

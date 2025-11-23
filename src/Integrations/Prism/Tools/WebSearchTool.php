@@ -416,7 +416,7 @@ class WebSearchTool extends AbstractTool implements ThreadStateAwareTool
             $configured
         )));
 
-        return $domains;
+        return $domains === [] ? null : $domains;
     }
 
     protected function allowedDomainsDescription(): string

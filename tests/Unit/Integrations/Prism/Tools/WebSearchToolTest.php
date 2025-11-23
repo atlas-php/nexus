@@ -205,6 +205,28 @@ class WebSearchToolTest extends TestCase
         $this->assertSame('Hello World', $result['content']);
     }
 
+    public function test_it_allows_all_domains_when_configuration_empty(): void
+    {
+        config()->set('atlas-nexus.tools.options.web_search.allowed_domains', []);
+
+        Http::fake([
+            'https://example.com' => Http::response('<html><body><p>Allowed by default.</p></body></html>', 200),
+        ]);
+
+        $tool = $this->app->make(WebSearchTool::class);
+
+        $this->assertSame(
+            'Retrieve website content for context and optionally summarize it. Allowed domains: any domain.',
+            $tool->description()
+        );
+
+        $tool->setThreadState($this->createState());
+
+        $response = $tool->handle(['url' => 'https://example.com']);
+
+        $this->assertStringContainsString('Fetched 1 website', $response->message());
+    }
+
     public function test_it_respects_null_parse_mode(): void
     {
         config()->set('atlas-nexus.tools.options.web_search.parse_mode', null);

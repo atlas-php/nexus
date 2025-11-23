@@ -94,10 +94,23 @@ class ProviderToolRegistry
      */
     private function normalizeOptions(string $key, array $options): ?array
     {
-        if ($key !== 'file_search') {
-            return $options;
+        if ($key === 'file_search') {
+            return $this->normalizeFileSearchOptions($options);
         }
 
+        if ($key === 'web_search') {
+            return $this->normalizeWebSearchOptions($options);
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>|null
+     */
+    private function normalizeFileSearchOptions(array $options): ?array
+    {
         $vectorStoreIds = $options['vector_store_ids'] ?? null;
 
         if (! is_array($vectorStoreIds)) {
@@ -114,6 +127,48 @@ class ProviderToolRegistry
         }
 
         $options['vector_store_ids'] = $normalizedIds;
+
+        return $options;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>|null
+     */
+    private function normalizeWebSearchOptions(array $options): ?array
+    {
+        $filters = $options['filters'] ?? null;
+
+        if (! is_array($filters)) {
+            $filters = [];
+        }
+
+        $domains = $filters['allowed_domains'] ?? null;
+
+        if (is_string($domains)) {
+            $domains = explode(',', $domains);
+        }
+
+        if (is_array($domains)) {
+            $normalized = array_values(array_filter(array_map(
+                static fn ($domain): string => trim((string) $domain),
+                $domains
+            )));
+
+            if ($normalized === []) {
+                unset($filters['allowed_domains']);
+            } else {
+                $filters['allowed_domains'] = $normalized;
+            }
+        } else {
+            unset($filters['allowed_domains']);
+        }
+
+        if ($filters === []) {
+            unset($options['filters']);
+        } else {
+            $options['filters'] = $filters;
+        }
 
         return $options;
     }

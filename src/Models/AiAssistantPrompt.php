@@ -20,7 +20,6 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  *
  * @property int $id
  * @property int $assistant_id
- * @property int|null $assistant_prompt_id
  * @property int|null $user_id
  * @property int $version
  * @property int|null $original_prompt_id
@@ -46,7 +45,6 @@ class AiAssistantPrompt extends AtlasModel
      */
     protected $casts = [
         'assistant_id' => 'int',
-        'assistant_prompt_id' => 'int',
         'user_id' => 'int',
         'version' => 'int',
         'original_prompt_id' => 'int',
@@ -120,14 +118,5 @@ class AiAssistantPrompt extends AtlasModel
     protected static function newFactory(): AiAssistantPromptFactory
     {
         return AiAssistantPromptFactory::new();
-    }
-
-    protected static function booted(): void
-    {
-        static::created(function (self $prompt): void {
-            if ($prompt->original_prompt_id === null) {
-                $prompt->forceFill(['original_prompt_id' => $prompt->id])->save();
-            }
-        });
     }
 }

@@ -52,7 +52,6 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ai_assistant_prompts', [
             'id',
             'assistant_id',
-            'assistant_prompt_id',
             'user_id',
             'version',
             'original_prompt_id',

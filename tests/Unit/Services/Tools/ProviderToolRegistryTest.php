@@ -80,4 +80,35 @@ class ProviderToolRegistryTest extends TestCase
             $definition->options()
         );
     }
+
+    public function test_web_search_filters_are_trimmed_and_accept_strings(): void
+    {
+        config()->set('atlas-nexus.provider_tools', [
+            'web_search' => ['filters' => ['allowed_domains' => ' example.com , atlasphp.com ,']],
+        ]);
+
+        $registry = $this->app->make(ProviderToolRegistry::class);
+
+        $definition = $registry->definition('web_search');
+
+        $this->assertInstanceOf(ProviderToolDefinition::class, $definition);
+        $this->assertSame(
+            ['filters' => ['allowed_domains' => ['example.com', 'atlasphp.com']]],
+            $definition->options()
+        );
+    }
+
+    public function test_web_search_filters_removed_when_empty(): void
+    {
+        config()->set('atlas-nexus.provider_tools', [
+            'web_search' => ['filters' => ['allowed_domains' => []]],
+        ]);
+
+        $registry = $this->app->make(ProviderToolRegistry::class);
+
+        $definition = $registry->definition('web_search');
+
+        $this->assertInstanceOf(ProviderToolDefinition::class, $definition);
+        $this->assertSame([], $definition->options());
+    }
 }

@@ -16,7 +16,6 @@ return new class extends Migration
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('assistant_id')->index();
-            $table->unsignedBigInteger('assistant_prompt_id')->nullable()->index();
             $table->unsignedBigInteger('user_id')->nullable()->index();
             $table->unsignedInteger('version');
             $table->unsignedBigInteger('original_prompt_id')->nullable()->index();

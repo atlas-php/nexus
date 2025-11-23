@@ -57,10 +57,6 @@ class AiAssistantPromptService extends ModelService
         }
         $originalId = $prompt->original_prompt_id ?? $prompt->id;
 
-        if ($prompt->original_prompt_id === null) {
-            $prompt->forceFill(['original_prompt_id' => $prompt->id])->save();
-        }
-
         $payload = array_merge([
             'assistant_id' => $assistantId,
             'version' => $this->nextVersionForAssistant($assistantId),
