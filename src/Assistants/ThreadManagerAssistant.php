@@ -43,6 +43,11 @@ class ThreadManagerAssistant extends AssistantDefinition
         return 1;
     }
 
+    public function isHidden(): bool
+    {
+        return true;
+    }
+
     public function systemPrompt(): string
     {
         return <<<'PROMPT'
