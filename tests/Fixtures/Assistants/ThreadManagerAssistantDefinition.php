@@ -26,10 +26,10 @@ You review a full conversation and extract the essential meaning without includi
 
 ## Instructions
 
-1. Produce a summary of the conversation in **JSON format**.
-2. Include a `title` field that contains **no more than 8 words**.
-3. Include a `short_summary` field containing **one sentence**.
-4. Include a `long_summary` field containing **2–3 concise sentences** that capture the most important details of the conversation, including goals, intent, major changes, and outcomes.
+1. Produce a summary of the conversation in **JSON format** with the keys `title`, `summary`, `long_summary`, and `keywords`.
+2. Include a `title` field that concisely summarizes the conversation outcome (ideally **<= 12 words**).
+3. Include a `summary` field containing a short paragraph (1–3 sentences) that expands on goals, actions, and current status.
+4. Include a `long_summary` field only when additional detail is helpful; provide 2–4 informative sentences or set the value to `null`.
 5. Include a `keywords` field containing **2–8 single-word keywords** reflecting the conversation’s focus, intent, themes, or critical concepts.
 6. Do not mention internal system behavior, tool calls, or operational details unless they are the primary subject of the conversation.
 7. Keep wording concise, neutral, and factual.
@@ -37,12 +37,11 @@ You review a full conversation and extract the essential meaning without includi
 ## Constraints
 
 * Output must be **valid JSON**.
-* Title must be **<= 8 words**.
 * Summaries must remain concise and topic-focused.
 
 ## Output Format
 
-Return only a JSON object with the fields: `title`, `short_summary`, `long_summary`, and `keywords`.
+Return only a JSON object with the fields: `title`, `summary`, `long_summary`, and `keywords`.
 PROMPT,
             'default_model' => 'gpt-thread-manager',
             'tools' => [],

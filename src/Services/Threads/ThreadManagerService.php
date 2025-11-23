@@ -13,8 +13,10 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use RuntimeException;
 use Throwable;
 
+use function is_string;
 use function mb_strtolower;
 use function str_contains;
+use function trim;
 
 /**
  * Class ThreadManagerService
@@ -49,7 +51,6 @@ class ThreadManagerService
                 "{$threadsTable}.id",
                 "{$threadsTable}.title",
                 "{$threadsTable}.summary",
-                "{$threadsTable}.long_summary",
                 "{$threadsTable}.metadata",
                 "{$threadsTable}.last_message_at",
                 "{$threadsTable}.created_at",
@@ -69,7 +70,6 @@ class ThreadManagerService
                         $clause
                             ->where("{$threadsTable}.title", 'like', $likeValue)
                             ->orWhere("{$threadsTable}.summary", 'like', $likeValue)
-                            ->orWhere("{$threadsTable}.long_summary", 'like', $likeValue)
                             ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.summary_keywords'), '') LIKE ?", [$likeValue])
                             ->orWhereExists(function (QueryBuilder $messageQuery) use ($messagesTable, $threadsTable, $likeValue): void {
                                 $messageQuery->selectRaw('1')
@@ -184,7 +184,7 @@ class ThreadManagerService
             'thread' => $updated,
             'title' => $updated->title,
             'summary' => $updated->summary,
-            'long_summary' => $updated->long_summary,
+            'long_summary' => $this->longSummaryForThread($updated),
             'keywords' => $this->keywordsForThread($updated),
         ];
     }
@@ -197,6 +197,20 @@ class ThreadManagerService
     protected function messageTable(): string
     {
         return config('atlas-nexus.database.tables.ai_messages', 'ai_messages');
+    }
+
+    public function longSummaryForThread(AiThread $thread): ?string
+    {
+        $metadata = $thread->metadata ?? [];
+        $value = $metadata['long_summary'] ?? null;
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 
     /**

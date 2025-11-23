@@ -11,7 +11,6 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Class AiThreadService
@@ -66,12 +65,7 @@ class AiThreadService extends ModelService
     {
         if (array_key_exists('summary', $data) && is_string($data['summary'])) {
             $summary = trim($data['summary']);
-            $data['summary'] = $summary === '' ? null : Str::limit($summary, 255, '');
-        }
-
-        if (array_key_exists('long_summary', $data) && is_string($data['long_summary'])) {
-            $longSummary = trim($data['long_summary']);
-            $data['long_summary'] = $longSummary === '' ? null : $longSummary;
+            $data['summary'] = $summary === '' ? null : $summary;
         }
 
         return $data;

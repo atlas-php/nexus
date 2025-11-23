@@ -35,8 +35,7 @@ class AiThreadFactory extends Factory
             'parent_tool_run_id' => $this->faker->optional()->numberBetween(1, 500),
             'title' => $this->faker->optional()->sentence(6),
             'status' => $this->faker->randomElement(AiThreadStatus::cases())->value,
-            'summary' => $shortSummary !== null ? Str::limit($shortSummary, 255, '') : null,
-            'long_summary' => $this->faker->optional()->paragraphs(2, true),
+            'summary' => $shortSummary !== null ? Str::limit($shortSummary, 2000, '') : null,
             'last_message_at' => $this->faker->optional()->dateTimeBetween('-2 weeks'),
             'last_summary_message_id' => null,
             'metadata' => $this->faker->optional()->randomElement([

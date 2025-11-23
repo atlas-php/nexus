@@ -40,10 +40,10 @@ class ThreadTitleSummaryService
         $metadata = array_merge($state->thread->metadata ?? [], [
             'summary_keywords' => $generated['keywords'],
         ]);
+        $metadata = $this->applyLongSummaryMetadata($metadata, $generated['long_summary']);
 
         $payload = [
             'summary' => $generated['summary'],
-            'long_summary' => $generated['long_summary'],
             'metadata' => $metadata,
         ];
 
@@ -55,11 +55,13 @@ class ThreadTitleSummaryService
 
         $updated = $this->threadService->update($state->thread, $payload);
 
+        $updatedMetadata = $updated->metadata ?? $metadata;
+
         return [
             'thread' => $updated,
             'title' => $updated->title,
             'summary' => $updated->summary ?? $generated['summary'],
-            'long_summary' => $updated->long_summary ?? $generated['long_summary'],
+            'long_summary' => $this->longSummaryFromMetadata($updatedMetadata) ?? $generated['long_summary'],
             'keywords' => $generated['keywords'],
         ];
     }
@@ -87,15 +89,18 @@ class ThreadTitleSummaryService
             $payload['summary'] = $normalizedSummary;
         }
 
-        if ($normalizedLongSummary !== null) {
-            $payload['long_summary'] = $normalizedLongSummary;
+        $metadata = $state->thread->metadata ?? [];
+        $metadata = $this->applyLongSummaryMetadata($metadata, $normalizedLongSummary);
+
+        if ($metadata !== ($state->thread->metadata ?? [])) {
+            $payload['metadata'] = $metadata;
         }
 
         return $this->threadService->update($state->thread, $payload);
     }
 
     /**
-     * @return array{title: string, summary: string, long_summary: string, keywords: array<int, string>}
+     * @return array{title: string, summary: string, long_summary: string|null, keywords: array<int, string>}
      */
     protected function generate(ThreadState $state): array
     {
@@ -141,14 +146,14 @@ class ThreadTitleSummaryService
         $longSummary = $this->trimValue($decoded['long_summary'] ?? null);
         $keywords = $this->normalizeKeywords($decoded['keywords'] ?? null);
 
-        if ($title === null || $shortSummary === null || $longSummary === null) {
-            throw new RuntimeException('Generated title or summaries are missing.');
+        if ($title === null || $shortSummary === null) {
+            throw new RuntimeException('Generated title or summary is missing.');
         }
 
         return [
             'title' => Str::limit($title, 120, '...'),
-            'summary' => Str::limit($shortSummary, 255, ''),
-            'long_summary' => Str::limit($longSummary, 5000, '...'),
+            'summary' => Str::limit($shortSummary, 5000, ''),
+            'long_summary' => $longSummary !== null ? Str::limit($longSummary, 5000, '...') : null,
             'keywords' => $keywords,
         ];
     }
@@ -227,5 +232,36 @@ class ThreadTitleSummaryService
             ?? 'gpt-4o-mini';
 
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     * @return array<string, mixed>
+     */
+    protected function applyLongSummaryMetadata(array $metadata, ?string $longSummary): array
+    {
+        if ($longSummary !== null) {
+            $metadata['long_summary'] = $longSummary;
+        } else {
+            unset($metadata['long_summary']);
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    protected function longSummaryFromMetadata(array $metadata): ?string
+    {
+        $value = $metadata['long_summary'] ?? null;
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }
