@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 return [
+    'assistants' => [
+        // Register assistant definition classes to seed or sync Nexus assistants.
+        // \App\Nexus\Assistants\GeneralAssistant::class,
+    ],
+
     'responses' => [
         'queue' => env('ATLAS_NEXUS_RESPONSES_QUEUE'),
     ],

@@ -9,6 +9,7 @@ use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
@@ -57,7 +58,8 @@ class AssistantResponseService
         private readonly AiMessageService $messageService,
         private readonly AiToolRunService $toolRunService,
         private readonly TextRequestFactory $textRequestFactory,
-        private readonly ToolRunLogger $toolRunLogger
+        private readonly ToolRunLogger $toolRunLogger,
+        private readonly OpenAiRateLimitClient $openAiRateLimitClient,
     ) {}
 
     public function handle(int $assistantMessageId): void
@@ -575,6 +577,14 @@ class AssistantResponseService
             ? 'limits=unavailable'
             : 'limits=['.implode(', ', $limitDetails).']';
 
+        if ($this->shouldFetchOpenAiLimits($provider)) {
+            $accountLimits = $this->openAiRateLimitClient->fetchLimits();
+
+            if ($accountLimits !== null) {
+                $details[] = 'openai_account_limits='.$accountLimits->describe();
+            }
+        }
+
         if ($state !== null) {
             $details[] = sprintf(
                 'context={assistant=%s, thread_id=%s, messages=%d, tools=%d, memories=%d}',
@@ -595,5 +605,14 @@ class AssistantResponseService
         }
 
         return implode('; ', $details);
+    }
+
+    protected function shouldFetchOpenAiLimits(?string $provider): bool
+    {
+        if ($provider === null) {
+            return false;
+        }
+
+        return strtolower($provider) === 'openai';
     }
 }

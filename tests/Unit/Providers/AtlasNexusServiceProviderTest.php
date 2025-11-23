@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Providers;
 
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
@@ -46,5 +47,13 @@ class AtlasNexusServiceProviderTest extends TestCase
         $this->assertInstanceOf(ThreadMessageService::class, $this->app->make(ThreadMessageService::class));
         $this->assertInstanceOf(AssistantResponseService::class, $this->app->make(AssistantResponseService::class));
         $this->assertInstanceOf(ToolRunLogger::class, $this->app->make(ToolRunLogger::class));
+    }
+
+    public function test_openai_rate_limit_client_is_bound(): void
+    {
+        $resolved = $this->app->make(OpenAiRateLimitClient::class);
+
+        $this->assertInstanceOf(OpenAiRateLimitClient::class, $resolved);
+        $this->assertSame($resolved, $this->app->make(OpenAiRateLimitClient::class));
     }
 }

@@ -9,6 +9,9 @@ use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimit;
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitSnapshot;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiAssistant;
@@ -18,6 +21,7 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
+use Atlas\Nexus\Tests\Fixtures\FakeOpenAiRateLimitClient;
 use Atlas\Nexus\Tests\Fixtures\RateLimitedTextRequestFactory;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
@@ -321,6 +325,12 @@ class RunAssistantResponseJobTest extends TestCase
             'content' => '',
         ]);
 
+        $fakeClient = new FakeOpenAiRateLimitClient($this->app['config']);
+        $fakeClient->setSnapshot(new OpenAiRateLimitSnapshot([
+            new OpenAiRateLimit('requests_per_minute', 6000, 6000, 0, null, '1m', 'global', 'exhausted'),
+        ], []));
+        App::instance(OpenAiRateLimitClient::class, $fakeClient);
+
         App::instance(\Atlas\Nexus\Integrations\Prism\TextRequestFactory::class, new RateLimitedTextRequestFactory);
 
         $this->expectException(PrismRateLimitedException::class);
@@ -335,6 +345,7 @@ class RunAssistantResponseJobTest extends TestCase
             $this->assertStringContainsString('model=gpt-4o-mini', $assistantMessage->failed_reason);
             $this->assertStringContainsString('limits=[requests_per_minute', $assistantMessage->failed_reason);
             $this->assertStringContainsString('context={assistant='.$assistant->slug, $assistantMessage->failed_reason);
+            $this->assertStringContainsString('openai_account_limits=[requests_per_minute', $assistantMessage->failed_reason);
         }
     }
 

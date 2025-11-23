@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 return [
+    'assistants' => [
+        \App\Nexus\Assistants\GeneralAssistant::class,
+        \App\Nexus\Assistants\HumanAssistant::class,
+    ],
+
     'responses' => [
         'queue' => env('ATLAS_NEXUS_RESPONSES_QUEUE'),
     ],

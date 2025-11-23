@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Providers;
 
 use Atlas\Core\Providers\PackageServiceProvider;
+use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
 use Atlas\Nexus\Services\Models\AiAssistantPromptService;
@@ -45,6 +46,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         );
 
         $this->app->singleton(TextRequestFactory::class, static fn (): TextRequestFactory => new TextRequestFactory);
+        $this->app->singleton(OpenAiRateLimitClient::class);
 
         $this->app->singleton(NexusManager::class, static fn ($app): NexusManager => new NexusManager(
             $app->make(TextRequestFactory::class),
