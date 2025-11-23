@@ -182,7 +182,13 @@ class AssistantResponseService
         }
 
         if ($thread->assistant_key === self::THREAD_MANAGER_KEY) {
-            return;
+            $parent = $thread->parentThread()->first();
+
+            if (! $parent instanceof \Atlas\Nexus\Models\AiThread) {
+                return;
+            }
+
+            $thread = $parent->fresh() ?? $parent;
         }
 
         $totalMessageCount = $this->messageService->query()
