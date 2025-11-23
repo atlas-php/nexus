@@ -47,7 +47,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - Consumers control which assistants exist by registering their definition classes in configuration.
 
 ## Purge & Retention
-- Trashed messages and memories retain their data until explicitly purged.
+- Trashed threads, messages, tool runs, and memories retain their data until explicitly purged.
 - `Atlas\Nexus\Services\NexusPurgeService::purge()` permanently deletes trashed rows in chunked batches.
 - `php artisan atlas:nexus:purge --chunk=500` exposes the purge flow via CLI for scheduled maintenance.
 

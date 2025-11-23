@@ -77,7 +77,7 @@ See: [PRD — Memories](./docs/PRD/Memories.md)
 - Both paths mark assistant messages as failed on exceptions; tool runs and memory ids are captured in metadata.
 
 ## Purging Soft Deletes
-- Soft-deleted assistants, prompts, messages, and memories remain in the database until purged.
+- Soft-deleted threads, messages, tool runs, and memories remain in the database until purged.
 - Run `php artisan atlas:nexus:purge` to permanently delete trashed rows; ideal for scheduled retention workflows.
 - Pass `--chunk=500` (or any positive number) to tune how many rows are processed per chunk. The command delegates to `NexusPurgeService` so cascading deletes (like tool runs tied to messages) stay consistent.
 

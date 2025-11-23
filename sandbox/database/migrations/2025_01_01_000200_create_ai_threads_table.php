@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('long_summary')->nullable();
             $table->timestamp('last_message_at')->nullable();
             $table->json('metadata')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

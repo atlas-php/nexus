@@ -10,6 +10,7 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class AiToolRun
@@ -42,6 +43,7 @@ class AiToolRun extends AtlasModel
 
     /** @use HasFactory<AiToolRunFactory> */
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * @var array<string, string>

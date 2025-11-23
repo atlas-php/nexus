@@ -46,7 +46,7 @@ php artisan migrate
 ```
 
 ## Purge Soft Deletes
-Soft-deleted assistants, prompts, messages, and memories remain queryable via `withTrashed()` until they are purged. Schedule the purge command to permanently delete the rows:
+Soft-deleted threads, messages, tool runs, and memories remain queryable via `withTrashed()` until they are purged. Schedule the purge command to permanently delete the rows:
 
 ```bash
 php artisan atlas:nexus:purge --chunk=250

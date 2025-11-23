@@ -11,6 +11,7 @@ use Atlas\Nexus\Enums\AiThreadType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 
 /**
@@ -43,6 +44,7 @@ class AiThread extends AtlasModel
 
     /** @use HasFactory<AiThreadFactory> */
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * @var array<string, string>

@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Console\Commands;
 
 use Atlas\Nexus\Services\NexusPurgeService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 /**
  * Class NexusPurgeCommand
@@ -40,7 +41,7 @@ class NexusPurgeCommand extends Command
         $this->components->info(sprintf('Purged %d soft-deleted Nexus records.', $total));
 
         foreach ($results as $label => $count) {
-            $this->components->twoColumnDetail(ucfirst($label), (string) $count);
+            $this->components->twoColumnDetail(Str::headline($label), (string) $count);
         }
 
         return self::SUCCESS;

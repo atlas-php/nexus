@@ -42,6 +42,7 @@ class MigrationTest extends TestCase
             'summary',
             'last_message_at',
             'metadata',
+            'deleted_at',
             'created_at',
             'updated_at',
         ]));
@@ -82,6 +83,7 @@ class MigrationTest extends TestCase
             'error_message',
             'started_at',
             'finished_at',
+            'deleted_at',
             'created_at',
             'updated_at',
         ]));
