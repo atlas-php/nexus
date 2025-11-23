@@ -562,10 +562,6 @@ class AssistantResponseService
         $limitDetails = [];
 
         foreach ($exception->rateLimits as $limit) {
-            if (! $limit instanceof ProviderRateLimit) {
-                continue;
-            }
-
             $limitDetails[] = sprintf(
                 '%s(limit=%s, remaining=%s, resets_at=%s)',
                 $limit->name,
