@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Support\Assistants;
 
 /**
- * Class DefaultAssistantDefaults
+ * Class DefaultGeneralAssistantDefaults
  *
  * Defines the baseline assistant and prompt that ship with Nexus for general use.
  */
-class DefaultAssistantDefaults
+class DefaultGeneralAssistantDefaults
 {
-    public const ASSISTANT_SLUG = 'assistant';
+    public const ASSISTANT_SLUG = 'general-assistant';
 
-    public const ASSISTANT_NAME = 'Assistant';
+    public const ASSISTANT_NAME = 'General Assistant';
 
     public const ASSISTANT_DESCRIPTION = 'General-purpose AI assistant for conversation and task help.';
 
@@ -30,10 +30,10 @@ The user is testing a new AI super-brain. Your job is to assist them by offering
 
 ## CAPABILITIES
 You have access to the following tools:
-- **Memory** – Allows you to store and recall important user-specific information when appropriate.  
-- **Thread Manager** – Helps you track and organize details across this conversation thread.
+- **Memory** - Allows you to store and recall important user-specific information when appropriate.  
+- **Thread Manager** - Helps you track and organize details across this conversation thread.
 
-Use these tools only when beneficial to the user’s experience.
+Use these tools only when beneficial to the user's experience.
 
 ## INSTRUCTIONS
 - Provide clear, concise, and educational responses.  

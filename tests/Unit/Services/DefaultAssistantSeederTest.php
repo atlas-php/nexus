@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Unit\Services;
 
 use Atlas\Nexus\Services\Seeders\DefaultAssistantSeeder;
-use Atlas\Nexus\Support\Assistants\DefaultAssistantDefaults;
+use Atlas\Nexus\Support\Assistants\DefaultGeneralAssistantDefaults;
+use Atlas\Nexus\Support\Assistants\DefaultHumanAssistantDefaults;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
@@ -26,23 +27,34 @@ class DefaultAssistantSeederTest extends TestCase
         ])->run();
     }
 
-    public function test_it_seeds_default_assistant_and_prompt(): void
+    public function test_it_seeds_default_assistants_and_prompts(): void
     {
         $seeder = $this->app->make(DefaultAssistantSeeder::class);
 
         $seeder->seed();
         $seeder->seed();
 
-        $assistant = \Atlas\Nexus\Models\AiAssistant::query()
+        $general = \Atlas\Nexus\Models\AiAssistant::query()
             ->with('currentPrompt')
-            ->where('slug', DefaultAssistantDefaults::ASSISTANT_SLUG)
+            ->where('slug', DefaultGeneralAssistantDefaults::ASSISTANT_SLUG)
             ->first();
 
-        $this->assertNotNull($assistant);
-        $this->assertFalse($assistant->is_hidden);
-        $this->assertNotNull($assistant->currentPrompt);
-        $this->assertSame(DefaultAssistantDefaults::SYSTEM_PROMPT, $assistant->currentPrompt->system_prompt);
-        $this->assertSame($assistant->id, $assistant->currentPrompt->assistant_id);
+        $human = \Atlas\Nexus\Models\AiAssistant::query()
+            ->with('currentPrompt')
+            ->where('slug', DefaultHumanAssistantDefaults::ASSISTANT_SLUG)
+            ->first();
+
+        $this->assertNotNull($general);
+        $this->assertFalse($general->is_hidden);
+        $this->assertNotNull($general->currentPrompt);
+        $this->assertSame(DefaultGeneralAssistantDefaults::SYSTEM_PROMPT, $general->currentPrompt->system_prompt);
+        $this->assertSame($general->id, $general->currentPrompt->assistant_id);
+
+        $this->assertNotNull($human);
+        $this->assertFalse($human->is_hidden);
+        $this->assertNotNull($human->currentPrompt);
+        $this->assertSame(DefaultHumanAssistantDefaults::SYSTEM_PROMPT, $human->currentPrompt->system_prompt);
+        $this->assertSame($human->id, $human->currentPrompt->assistant_id);
     }
 
     private function migrationPath(): string

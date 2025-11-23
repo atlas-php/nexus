@@ -10,10 +10,9 @@ use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Support\Assistants\DefaultGeneralAssistantDefaults;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
  * Seeds a sandbox-ready Nexus assistant, prompt, user, and thread for quick CLI testing.
@@ -24,10 +23,8 @@ class NexusSetupCommand extends Command
      * @var string
      */
     protected $signature = 'nexus:setup
-        {--assistant=sandbox-assistant : Assistant slug to create or reuse}
         {--name=John : Name for the fake user}
-        {--email=john@company.com : Email for the fake user}
-        {--model=gpt-4.1 : Default model for the assistant}';
+        {--email=john@company.com : Email for the fake user}';
 
     /**
      * @var string
@@ -36,8 +33,7 @@ class NexusSetupCommand extends Command
 
     public function __construct(
         private readonly AiAssistantService $assistantService,
-        private readonly AiAssistantPromptService $promptService,
-        private readonly AiThreadService $threadService
+        private readonly AiAssistantPromptService $promptService
     ) {
         parent::__construct();
     }
@@ -46,10 +42,8 @@ class NexusSetupCommand extends Command
     {
         $email = (string) $this->option('email');
         $name = (string) $this->option('name');
-        $assistantSlug = Str::slug((string) $this->option('assistant'));
-        $systemPrompt = "##ROLE:\nYou are a helpful assistant.\n##CONTEXT:\nThe user is {USER.NAME}";
-
-        $model = (string) $this->option('model');
+        $assistantSlug = DefaultGeneralAssistantDefaults::ASSISTANT_SLUG;
+        $systemPrompt = DefaultGeneralAssistantDefaults::SYSTEM_PROMPT;
 
         $user = User::query()->firstOrCreate(
             ['email' => $email],
@@ -64,15 +58,9 @@ class NexusSetupCommand extends Command
             ->first();
 
         if ($assistant === null) {
-            $assistant = $this->assistantService->create([
-                'slug' => $assistantSlug,
-                'name' => Str::title(str_replace('-', ' ', $assistantSlug)),
-                'description' => 'Sandbox assistant for local Nexus chat tests.',
-                'default_model' => $model,
-                'provider_tools' => ['web_search', 'file_search', 'code_interpreter'],
-                'tools' => ['memory', 'thread_manager'],
-                'is_active' => true,
-            ]);
+            $this->components->error('Default Nexus assistant not found. Run atlas:nexus:seed first.');
+
+            return self::FAILURE;
         }
 
         $assistant->refresh()->load('currentPrompt');
@@ -98,30 +86,11 @@ class NexusSetupCommand extends Command
             $assistant->refresh();
         }
 
-        $thread = $this->threadService->query()
-            ->where('assistant_id', $assistant->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($thread === null) {
-            $thread = $this->threadService->create([
-                'assistant_id' => $assistant->id,
-                'assistant_prompt_id' => $assistant->current_prompt_id,
-                'user_id' => $user->id,
-                'type' => AiThreadType::USER->value,
-                'status' => AiThreadStatus::OPEN->value,
-                'title' => 'Sandbox Chat',
-                'summary' => null,
-                'metadata' => [],
-            ]);
-        }
-
         $this->components->info('Sandbox Nexus setup complete.');
         $this->line(sprintf('User: %s (%s)', $user->name, $user->email));
         $this->line(sprintf('Assistant: %s (slug: %s)', $assistant->name, $assistant->slug));
         $this->line(sprintf('Prompt version: %s', $prompt->version));
-        $this->line(sprintf('Thread ID: %s', $thread->id));
-        $this->line('Use: php artisan nexus:chat --assistant='.$assistant->slug.' --thread='.$thread->id.' --user='.$user->id);
+        $this->line('Create a thread manually or via the UI before running nexus:chat.');
 
         return self::SUCCESS;
     }

@@ -9,7 +9,8 @@ use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
-use Atlas\Nexus\Support\Assistants\DefaultAssistantDefaults;
+use Atlas\Nexus\Support\Assistants\DefaultGeneralAssistantDefaults;
+use Atlas\Nexus\Support\Assistants\DefaultHumanAssistantDefaults;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 /**
@@ -27,31 +28,19 @@ class DefaultAssistantSeeder implements NexusSeeder
 
     public function seed(): void
     {
-        $assistant = $this->assistantService->query()
-            ->where('slug', DefaultAssistantDefaults::ASSISTANT_SLUG)
-            ->first();
+        $this->seedAssistant(
+            DefaultGeneralAssistantDefaults::ASSISTANT_SLUG,
+            DefaultGeneralAssistantDefaults::ASSISTANT_NAME,
+            DefaultGeneralAssistantDefaults::ASSISTANT_DESCRIPTION,
+            DefaultGeneralAssistantDefaults::SYSTEM_PROMPT
+        );
 
-        $assistant = $assistant === null
-            ? $this->assistantService->create([
-                'slug' => DefaultAssistantDefaults::ASSISTANT_SLUG,
-                'name' => DefaultAssistantDefaults::ASSISTANT_NAME,
-                'description' => DefaultAssistantDefaults::ASSISTANT_DESCRIPTION,
-                'default_model' => $this->defaultModel(),
-                'is_active' => true,
-                'is_hidden' => false,
-                'tools' => [],
-            ])
-            : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
-
-        $assistant->refresh()->load('currentPrompt');
-
-        $prompt = $this->ensurePromptVersion($assistant, DefaultAssistantDefaults::SYSTEM_PROMPT);
-
-        if ($assistant->current_prompt_id !== $prompt->id) {
-            $this->assistantService->update($assistant, [
-                'current_prompt_id' => $prompt->id,
-            ]);
-        }
+        $this->seedAssistant(
+            DefaultHumanAssistantDefaults::ASSISTANT_SLUG,
+            DefaultHumanAssistantDefaults::ASSISTANT_NAME,
+            DefaultHumanAssistantDefaults::ASSISTANT_DESCRIPTION,
+            DefaultHumanAssistantDefaults::SYSTEM_PROMPT
+        );
     }
 
     protected function defaultModel(): string
@@ -64,11 +53,11 @@ class DefaultAssistantSeeder implements NexusSeeder
     /**
      * @return array<string, mixed>
      */
-    protected function assistantUpdates(AiAssistant $assistant): array
+    protected function assistantUpdates(AiAssistant $assistant, string $name, string $description): array
     {
         $updates = [
-            'name' => DefaultAssistantDefaults::ASSISTANT_NAME,
-            'description' => DefaultAssistantDefaults::ASSISTANT_DESCRIPTION,
+            'name' => $name,
+            'description' => $description,
             'is_active' => true,
             'is_hidden' => false,
         ];
@@ -105,5 +94,37 @@ class DefaultAssistantSeeder implements NexusSeeder
     protected function promptRequiresUpdate(AiAssistantPrompt $prompt, string $systemPrompt): bool
     {
         return trim($prompt->system_prompt) !== trim($systemPrompt) || ! $prompt->is_active;
+    }
+    private function seedAssistant(
+        string $slug,
+        string $name,
+        string $description,
+        string $systemPrompt
+    ): void {
+        $assistant = $this->assistantService->query()
+            ->where('slug', $slug)
+            ->first();
+
+        $assistant = $assistant === null
+            ? $this->assistantService->create([
+                'slug' => $slug,
+                'name' => $name,
+                'description' => $description,
+                'default_model' => $this->defaultModel(),
+                'is_active' => true,
+                'is_hidden' => false,
+                'tools' => [],
+            ])
+            : $this->assistantService->update($assistant, $this->assistantUpdates($assistant, $name, $description));
+
+        $assistant->refresh()->load('currentPrompt');
+
+        $prompt = $this->ensurePromptVersion($assistant, $systemPrompt);
+
+        if ($assistant->current_prompt_id !== $prompt->id) {
+            $this->assistantService->update($assistant, [
+                'current_prompt_id' => $prompt->id,
+            ]);
+        }
     }
 }
