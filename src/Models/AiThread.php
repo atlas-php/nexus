@@ -44,6 +44,7 @@ class AiThread extends AtlasModel
 
     /** @use HasFactory<AiThreadFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**

@@ -43,6 +43,7 @@ class AiToolRun extends AtlasModel
 
     /** @use HasFactory<AiToolRunFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**
