@@ -32,7 +32,7 @@ class AiAssistantFactory extends Factory
             'temperature' => $temperature,
             'top_p' => $topP,
             'max_output_tokens' => $this->faker->optional()->numberBetween(1, 4096),
-            'current_prompt_id' => $this->faker->optional()->numberBetween(1, 5_000),
+            'current_prompt_id' => null,
             'is_active' => $this->faker->boolean(90),
             'is_hidden' => false,
             'provider_tools' => ['web_search'],

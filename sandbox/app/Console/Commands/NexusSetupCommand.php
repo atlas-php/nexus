@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Models\User;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
+use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Services\Models\AiThreadService;
@@ -74,20 +75,17 @@ class NexusSetupCommand extends Command
             ]);
         }
 
-        $prompt = $assistant->current_prompt_id
-            ? $this->promptService->find($assistant->current_prompt_id)
-            : null;
+        $assistant->refresh()->load('currentPrompt');
+        $prompt = $assistant->currentPrompt;
 
         if ($prompt === null) {
             $prompt = $this->promptService->create([
-                'version' => 1,
-                'label' => 'Sandbox Prompt',
+                'assistant_id' => $assistant->id,
                 'system_prompt' => $systemPrompt,
                 'is_active' => true,
             ]);
-        } else {
+        } elseif ($this->promptNeedsUpdate($prompt, $systemPrompt)) {
             $prompt = $this->promptService->edit($prompt, [
-                'label' => 'Sandbox Prompt',
                 'system_prompt' => $systemPrompt,
                 'is_active' => true,
             ]);
@@ -126,5 +124,14 @@ class NexusSetupCommand extends Command
         $this->line('Use: php artisan nexus:chat --assistant='.$assistant->slug.' --thread='.$thread->id.' --user='.$user->id);
 
         return self::SUCCESS;
+    }
+
+    protected function promptNeedsUpdate(?AiPrompt $prompt, string $systemPrompt): bool
+    {
+        if ($prompt === null) {
+            return true;
+        }
+
+        return trim((string) $prompt->system_prompt) !== trim($systemPrompt) || ! $prompt->is_active;
     }
 }

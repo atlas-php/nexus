@@ -17,10 +17,6 @@ class WebSummaryDefaults
 
     public const ASSISTANT_DESCRIPTION = 'Summarizes fetched website content for quick context.';
 
-    public const PROMPT_VERSION = 1;
-
-    public const PROMPT_LABEL = 'Website Summarizer';
-
     public const SYSTEM_PROMPT = <<<'PROMPT'
 You are a concise web content summarizer.
 - Return 4-6 bullet points that capture the most important facts, claims, numbers, and entities.

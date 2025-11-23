@@ -16,13 +16,13 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * Class AiPrompt
  *
  * Stores versioned system prompts for assistants with optional user scoping.
- * PRD Reference: Atlas Nexus Overview — ai_prompts schema.
+ * PRD Reference: Atlas Nexus Overview — ai_assistant_prompts schema.
  *
  * @property int $id
+ * @property int $assistant_id
  * @property int|null $user_id
  * @property int $version
  * @property int|null $original_prompt_id
- * @property string|null $label
  * @property string $system_prompt
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -33,7 +33,7 @@ class AiPrompt extends AtlasModel
 {
     protected string $configPrefix = 'atlas-nexus';
 
-    protected string $tableKey = 'ai_prompts';
+    protected string $tableKey = 'ai_assistant_prompts';
 
     /** @use HasFactory<AiPromptFactory> */
     use HasFactory;
@@ -44,6 +44,7 @@ class AiPrompt extends AtlasModel
      * @var array<string, string>
      */
     protected $casts = [
+        'assistant_id' => 'int',
         'user_id' => 'int',
         'version' => 'int',
         'original_prompt_id' => 'int',
@@ -55,7 +56,18 @@ class AiPrompt extends AtlasModel
 
     protected function defaultTableName(): string
     {
-        return 'ai_prompts';
+        return 'ai_assistant_prompts';
+    }
+
+    /**
+     * @return BelongsTo<AiAssistant, self>
+     */
+    public function assistant(): BelongsTo
+    {
+        /** @var BelongsTo<AiAssistant, self> $relation */
+        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
+
+        return $relation;
     }
 
     /**
@@ -104,6 +116,12 @@ class AiPrompt extends AtlasModel
     {
         /** @var HasMany<self, self> $relation */
         $relation = $this->hasMany(self::class, 'original_prompt_id');
+
+        $assistantId = (int) $this->assistant_id;
+
+        if ($assistantId > 0) {
+            $relation->where('assistant_id', $assistantId);
+        }
 
         return $relation;
     }

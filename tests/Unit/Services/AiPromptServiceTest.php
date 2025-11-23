@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
+use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Tests\TestCase;
@@ -26,49 +27,51 @@ class AiPromptServiceTest extends TestCase
         ])->run();
     }
 
-    public function test_edit_updates_prompt_inline(): void
+    public function test_create_assigns_first_version_and_lineage(): void
     {
         $service = $this->app->make(AiPromptService::class);
+        /** @var AiAssistant $assistant */
+        $assistant = AiAssistant::factory()->create();
 
         /** @var AiPrompt $prompt */
         $prompt = $service->create([
-            'version' => 1,
-            'label' => 'Base Prompt',
+            'assistant_id' => $assistant->id,
             'system_prompt' => 'Hello world',
             'is_active' => true,
         ]);
 
-        $updated = $service->edit($prompt, ['system_prompt' => 'Updated prompt text']);
-
-        $this->assertSame($prompt->id, $updated->id);
-        $this->assertSame('Updated prompt text', $updated->system_prompt);
-        $this->assertSame($prompt->id, $updated->original_prompt_id);
+        $this->assertSame(1, $prompt->version);
+        $this->assertSame($assistant->id, $prompt->assistant_id);
+        $this->assertSame($prompt->id, $prompt->original_prompt_id);
     }
 
-    public function test_edit_can_create_new_version(): void
+    public function test_edit_always_generates_new_version(): void
     {
         $service = $this->app->make(AiPromptService::class);
+        /** @var AiAssistant $assistant */
+        $assistant = AiAssistant::factory()->create();
 
-        /** @var AiPrompt $prompt */
         $prompt = $service->create([
-            'version' => 1,
-            'label' => 'Base Prompt',
+            'assistant_id' => $assistant->id,
             'system_prompt' => 'Initial',
             'is_active' => true,
         ]);
 
         $newVersion = $service->edit($prompt, [
-            'label' => 'Base Prompt v2',
             'system_prompt' => 'Second iteration',
-        ], true);
+        ]);
 
         $this->assertNotSame($prompt->id, $newVersion->id);
         $this->assertSame(2, $newVersion->version);
         $this->assertSame('Second iteration', $newVersion->system_prompt);
-        $this->assertSame('Base Prompt v2', $newVersion->label);
         $this->assertSame($prompt->id, $newVersion->original_prompt_id);
-        $this->assertSame('Base Prompt', $prompt->refresh()->label);
-        $this->assertSame($prompt->id, $prompt->original_prompt_id);
+
+        $anotherVersion = $service->edit($newVersion, [
+            'system_prompt' => 'Third iteration',
+        ]);
+
+        $this->assertSame(3, $anotherVersion->version);
+        $this->assertSame($prompt->original_prompt_id, $anotherVersion->original_prompt_id);
     }
 
     private function migrationPath(): string

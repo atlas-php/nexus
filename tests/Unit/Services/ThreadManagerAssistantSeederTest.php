@@ -40,7 +40,8 @@ class ThreadManagerAssistantSeederTest extends TestCase
 
         $this->assertNotNull($assistant);
         $this->assertNotNull($assistant->currentPrompt);
-        $this->assertSame(ThreadManagerDefaults::PROMPT_LABEL, $assistant->currentPrompt->label);
+        $this->assertSame(ThreadManagerDefaults::SYSTEM_PROMPT, $assistant->currentPrompt->system_prompt);
+        $this->assertSame($assistant->id, $assistant->currentPrompt->assistant_id);
         $this->assertTrue($assistant->is_hidden);
     }
 

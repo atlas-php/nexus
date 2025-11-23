@@ -41,7 +41,8 @@ class DefaultAssistantSeederTest extends TestCase
         $this->assertNotNull($assistant);
         $this->assertFalse($assistant->is_hidden);
         $this->assertNotNull($assistant->currentPrompt);
-        $this->assertSame(DefaultAssistantDefaults::PROMPT_LABEL, $assistant->currentPrompt->label);
+        $this->assertSame(DefaultAssistantDefaults::SYSTEM_PROMPT, $assistant->currentPrompt->system_prompt);
+        $this->assertSame($assistant->id, $assistant->currentPrompt->assistant_id);
     }
 
     private function migrationPath(): string

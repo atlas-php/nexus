@@ -13,8 +13,8 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 
 ## Create an Assistant & Prompt
 1. Create an assistant row with defaults (`slug`, `default_model`, optional `temperature/top_p/max_output_tokens`).
-2. Create a prompt version via `AiPromptService::create` with `version`, `system_prompt` (the service will seed `original_prompt_id` for lineage tracking).
-3. Set `current_prompt_id` on the assistant to the active prompt.
+2. Create a prompt version via `AiPromptService::create` with `assistant_id` and `system_prompt` (the service auto-assigns the next version and seeds `original_prompt_id` for lineage tracking).
+3. Set `current_prompt_id` on the assistant to the active prompt. Subsequent edits must call `AiPromptService::edit($prompt, $data)`, which always clones a new row instead of updating in place.
 
 ## Register Tools
 1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`).

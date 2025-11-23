@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Database\Factories;
 
+use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiPrompt;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * Class AiPromptFactory
  *
  * Produces versioned prompt records for assistants with optional user ownership.
- * PRD Reference: Atlas Nexus Overview — ai_prompts schema.
+ * PRD Reference: Atlas Nexus Overview — ai_assistant_prompts schema.
  *
  * @extends Factory<AiPrompt>
  */
@@ -22,10 +23,10 @@ class AiPromptFactory extends Factory
     public function definition(): array
     {
         return [
+            'assistant_id' => AiAssistant::factory(),
             'user_id' => $this->faker->optional()->numberBetween(1, 5_000),
-            'version' => $this->faker->unique()->numberBetween(1, 2_147_483_647),
+            'version' => 1,
             'original_prompt_id' => null,
-            'label' => $this->faker->optional()->sentence(3),
             'system_prompt' => $this->faker->paragraphs(2, true),
             'is_active' => $this->faker->boolean(90),
         ];

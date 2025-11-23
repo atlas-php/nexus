@@ -51,7 +51,7 @@ class ThreadMessageServiceTest extends TestCase
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-message']);
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -86,7 +86,7 @@ class ThreadMessageServiceTest extends TestCase
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-blocking']);
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -120,7 +120,7 @@ class ThreadMessageServiceTest extends TestCase
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-queue']);
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -148,7 +148,7 @@ class ThreadMessageServiceTest extends TestCase
         ]);
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -197,7 +197,7 @@ class ThreadMessageServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'thread-inline-failure']);
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         $thread = AiThread::factory()->create([
             'assistant_id' => $assistant->id,

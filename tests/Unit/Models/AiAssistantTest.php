@@ -73,7 +73,7 @@ class AiAssistantTest extends TestCase
         $assistant = AiAssistant::factory()->create();
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
         ]);
         $assistant->update(['current_prompt_id' => $prompt->id]);
 

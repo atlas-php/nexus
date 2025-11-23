@@ -25,7 +25,7 @@ All tables support soft deletes unless noted otherwise. Default names are config
 | Table             | Purpose                                                     |
 |-------------------|-------------------------------------------------------------|
 | `ai_assistants`   | Assistant definitions, defaults, and active prompt linkage  |
-| `ai_prompts`      | Versioned system prompts (assistants point to active version)|
+| `ai_assistant_prompts` | Assistant-owned prompt versions (version history per assistant) |
 | `ai_threads`      | Conversation containers (user/tool threads)                 |
 | `ai_messages`     | User and assistant messages in a thread                     |
 | `ai_tool_runs`    | Execution logs for tool calls                               |

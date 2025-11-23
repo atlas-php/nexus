@@ -46,7 +46,7 @@ class AiModelFactoryTest extends TestCase
 
         /** @var AiPrompt $prompt */
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
             'is_active' => true,
         ]);
 

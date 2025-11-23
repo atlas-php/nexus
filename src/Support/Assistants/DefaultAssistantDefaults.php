@@ -17,10 +17,6 @@ class DefaultAssistantDefaults
 
     public const ASSISTANT_DESCRIPTION = 'General-purpose AI assistant for conversation and task help.';
 
-    public const PROMPT_VERSION = 1;
-
-    public const PROMPT_LABEL = 'Assistant';
-
     public const SYSTEM_PROMPT = <<<'PROMPT'
 You are a helpful AI assistant.
 - Answer clearly and concisely.

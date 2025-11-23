@@ -49,12 +49,12 @@ class MigrationTest extends TestCase
             'deleted_at',
         ]));
 
-        $this->assertTrue(Schema::hasColumns('ai_prompts', [
+        $this->assertTrue(Schema::hasColumns('ai_assistant_prompts', [
             'id',
+            'assistant_id',
             'user_id',
             'version',
             'original_prompt_id',
-            'label',
             'system_prompt',
             'is_active',
             'created_at',

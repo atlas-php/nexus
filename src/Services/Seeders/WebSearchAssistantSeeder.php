@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Seeders;
 
 use Atlas\Nexus\Contracts\NexusSeeder;
+use Atlas\Nexus\Models\AiAssistant;
+use Atlas\Nexus\Models\AiPrompt;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiPromptService;
 use Atlas\Nexus\Support\Web\WebSummaryDefaults;
@@ -45,24 +47,9 @@ class WebSearchAssistantSeeder implements NexusSeeder
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant));
 
-        $prompt = $assistant->current_prompt_id
-            ? $this->promptService->find($assistant->current_prompt_id)
-            : null;
+        $assistant->refresh()->load('currentPrompt');
 
-        if ($prompt === null) {
-            $prompt = $this->promptService->create([
-                'version' => WebSummaryDefaults::PROMPT_VERSION,
-                'label' => WebSummaryDefaults::PROMPT_LABEL,
-                'system_prompt' => WebSummaryDefaults::SYSTEM_PROMPT,
-                'is_active' => true,
-            ]);
-        } else {
-            $prompt = $this->promptService->edit($prompt, [
-                'label' => WebSummaryDefaults::PROMPT_LABEL,
-                'system_prompt' => WebSummaryDefaults::SYSTEM_PROMPT,
-                'is_active' => true,
-            ]);
-        }
+        $prompt = $this->ensurePromptVersion($assistant, WebSummaryDefaults::SYSTEM_PROMPT);
 
         if ($assistant->current_prompt_id !== $prompt->id) {
             $this->assistantService->update($assistant, [
@@ -83,7 +70,7 @@ class WebSearchAssistantSeeder implements NexusSeeder
     /**
      * @return array<string, mixed>
      */
-    protected function assistantUpdates(\Atlas\Nexus\Models\AiAssistant $assistant): array
+    protected function assistantUpdates(AiAssistant $assistant): array
     {
         $updates = [
             'name' => WebSummaryDefaults::ASSISTANT_NAME,
@@ -97,5 +84,32 @@ class WebSearchAssistantSeeder implements NexusSeeder
         }
 
         return $updates;
+    }
+
+    protected function ensurePromptVersion(AiAssistant $assistant, string $systemPrompt): AiPrompt
+    {
+        $prompt = $assistant->currentPrompt;
+
+        if ($prompt === null) {
+            return $this->promptService->create([
+                'assistant_id' => $assistant->id,
+                'system_prompt' => $systemPrompt,
+                'is_active' => true,
+            ]);
+        }
+
+        if ($this->promptRequiresUpdate($prompt, $systemPrompt)) {
+            return $this->promptService->edit($prompt, [
+                'system_prompt' => $systemPrompt,
+                'is_active' => true,
+            ]);
+        }
+
+        return $prompt;
+    }
+
+    protected function promptRequiresUpdate(AiPrompt $prompt, string $systemPrompt): bool
+    {
+        return trim($prompt->system_prompt) !== trim($systemPrompt) || ! $prompt->is_active;
     }
 }

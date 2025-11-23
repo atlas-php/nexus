@@ -22,23 +22,21 @@
 - deleted_at
 ```
 
-### `ai_prompts`
+### `ai_assistant_prompts`
 
-Versioned system prompts stored globally; assistants point to the active prompt.
+Versioned system prompts owned by a single assistant; assistants point to their active prompt via `current_prompt_id`.
 
 ```
 - id                  bigint PK
+- assistant_id        bigint            -- no FK
 - user_id             bigint nullable   -- no FK
-- version             int               -- 1,2,3...
+- version             int               -- auto-increment per assistant
 - original_prompt_id  bigint nullable   -- first prompt in the lineage
-- label               string nullable
 - system_prompt       text
 - is_active           boolean default 1
 - created_at
 - updated_at
 - deleted_at
-
--- Version uniqueness is enforced per lineage in code.
 ```
 
 ### `ai_threads`

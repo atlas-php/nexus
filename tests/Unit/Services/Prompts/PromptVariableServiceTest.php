@@ -57,7 +57,7 @@ class PromptVariableServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'prompt-variables']);
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
             'system_prompt' => 'Hello {USER.NAME} ({USER.EMAIL})',
         ]);
 
@@ -95,7 +95,7 @@ class PromptVariableServiceTest extends TestCase
 
         $assistant = AiAssistant::factory()->create(['slug' => 'prompt-variables-custom']);
         $prompt = AiPrompt::factory()->create([
-            'version' => 1,
+            'assistant_id' => $assistant->id,
             'system_prompt' => 'Thread {THREAD.ID}: {USER.NAME} - {INLINE.FLAG}',
         ]);
 

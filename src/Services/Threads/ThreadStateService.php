@@ -126,7 +126,13 @@ class ThreadStateService
             return $snapshot->toPromptModel();
         }
 
-        return $thread->prompt ?? $assistant->currentPrompt;
+        $prompt = $thread->prompt;
+
+        if ($prompt !== null && $prompt->assistant_id !== $assistant->id) {
+            $prompt = null;
+        }
+
+        return $prompt ?? $assistant->currentPrompt;
     }
 
     /**

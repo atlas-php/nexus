@@ -30,15 +30,15 @@ Table: `ai_assistants`
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                     |
 
 ## Prompts
-Table: `ai_prompts`
+Table: `ai_assistant_prompts`
 
 | Field               | Description                                                 |
 |---------------------|-------------------------------------------------------------|
 | `id`                | Primary key                                                 |
+| `assistant_id`      | Owning assistant id                                         |
 | `user_id`           | Optional author/tracker                                     |
-| `version`           | Int version (auto-incremented per lineage)                  |
+| `version`           | Int version (auto-incremented per assistant)                |
 | `original_prompt_id`| Self-reference to the first prompt in the lineage           |
-| `label`             | Optional label                                              |
 | `system_prompt`     | Text content                                                |
 | `is_active`         | Boolean                                                     |
 | `created_at/updated_at/deleted_at` | Timestamps + soft deletes                    |
@@ -50,10 +50,10 @@ Table: `ai_prompts`
 - Inline overrides may also be merged by calling `PromptVariableService::apply($prompt, $context, ['TEAM.NAME' => 'Atlas'])`.
 
 ## Assistant ↔ Prompt Behavior
-- `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt`.
-- Prompts are global records. Assistants point to their active prompt via `current_prompt_id`.
-- `original_prompt_id` links all versions of a prompt lineage; the initial prompt references its own id. Use `AiPromptService::edit($prompt, $data, $createNewVersion = true)` to branch a new version (the next integer version is calculated automatically).
-- Prompt selection may be overridden per thread via `prompt_id`.
+- `current_prompt_id` on assistants points to the active prompt; thread state resolves prompt as `thread.prompt ?? assistant.currentPrompt` and ignores prompts that belong to other assistants.
+- Prompts are *not* global — each row belongs to a single assistant via `assistant_id`, and a prompt cannot be shared between assistants.
+- `original_prompt_id` links all versions for an assistant; the initial prompt references its own id. `AiPromptService::create` automatically assigns version `1` for a new assistant, and `AiPromptService::edit($prompt, $data)` always clones a new version (no inline updates).
+- Prompt selection may be overridden per thread via `prompt_id`, but consumer code must reference a prompt that belongs to the same assistant.
 
 ## Assistant ↔ Tool Mapping
 Assistant tool availability is configured via the `ai_assistants.tools` JSON array of tool keys (e.g., `["memory","web_search"]`).
@@ -65,5 +65,5 @@ Rules:
 
 ## Service Responsibilities
 - `AiAssistantService` — CRUD + tool key sync helpers.
-- `AiPromptService` — CRUD plus lineage-aware editing (inline updates or auto-versioned clones via `edit()`).
+- `AiPromptService` — CRUD plus lineage-aware editing; `create()` requires an `assistant_id` and `edit()` always creates a new version for that assistant.
 - `NexusSeederService` executes configured seeders (e.g., WebSearchAssistantSeeder, ThreadManagerAssistantSeeder) to provision built-in assistants/prompts.

@@ -134,7 +134,7 @@ class ThreadManagerToolTest extends TestCase
 
         if ($prompt === null) {
             $prompt = AiPrompt::factory()->create([
-                'version' => 1,
+                'assistant_id' => $assistant->id,
             ]);
             $assistant->current_prompt_id = $prompt->id;
             $assistant->save();

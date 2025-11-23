@@ -41,14 +41,15 @@ php artisan atlas:nexus:seed
 Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
-- Assistants live in `ai_assistants`; prompts in `ai_prompts` (global records with lineage tracked via `original_prompt_id`).
+- Assistants live in `ai_assistants`; assistant-specific prompt versions live in `ai_assistant_prompts` (lineage scoped to each assistant via `original_prompt_id`).
+- Each prompt row belongs to a single assistant; calling `AiPromptService::edit()` always creates a new version rather than mutating the row.
 - Set `current_prompt_id` to pick the active prompt; threads can override via `prompt_id`.
 - Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
 
 See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
 
 ## Prompt Variables
-- Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside `ai_prompts.system_prompt`; values are resolved right before the model request.
+- Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside `ai_assistant_prompts.system_prompt`; values are resolved right before the model request.
 - Defaults pull from the thread's authenticatable user when the `users` table exists.
 - Add more via `atlas-nexus.prompts.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
 - When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.

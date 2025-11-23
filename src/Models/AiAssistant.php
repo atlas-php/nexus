@@ -81,12 +81,29 @@ class AiAssistant extends AtlasModel
     }
 
     /**
+     * @return HasMany<AiPrompt, self>
+     */
+    public function prompts(): HasMany
+    {
+        /** @var HasMany<AiPrompt, self> $relation */
+        $relation = $this->hasMany(AiPrompt::class, 'assistant_id');
+
+        return $relation;
+    }
+
+    /**
      * @return BelongsTo<AiPrompt, self>
      */
     public function currentPrompt(): BelongsTo
     {
         /** @var BelongsTo<AiPrompt, self> $relation */
         $relation = $this->belongsTo(AiPrompt::class, 'current_prompt_id');
+
+        $assistantId = $this->getKey();
+
+        if (is_numeric($assistantId)) {
+            $relation->where('assistant_id', (int) $assistantId);
+        }
 
         return $relation;
     }
