@@ -71,7 +71,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
             new ToolParameter(new StringSchema('content', 'Memory content to store', true), false),
             new ToolParameter(new ArraySchema(
                 'memory_ids',
-                'Memory ID(s) for fetching, updating, or deleting one or many',
+                'Memory ID(s) for only fetching, updating, or deleting one or many',
                 new NumberSchema('id', 'Memory id')
             ), false),
         ];
