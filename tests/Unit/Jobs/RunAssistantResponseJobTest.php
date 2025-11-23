@@ -215,7 +215,7 @@ class RunAssistantResponseJobTest extends TestCase
                 new ToolCall('call-1', 'thread_fetcher', ['thread_ids' => [555]]),
             ],
             toolResults: [
-                new ToolResult('call-1', 'thread_fetcher', ['thread_ids' => [555]], 'Fetched matching threads.', 'result-555'),
+                new ToolResult('call-1', 'thread_fetcher', ['thread_ids' => [555]], "Thread Id: 555\nTitle: Example Thread", 'result-555'),
             ],
             usage: new Usage(5, 10),
             meta: new Meta('res-tool', 'gpt-4o-mini'),

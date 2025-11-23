@@ -88,7 +88,9 @@ class ThreadFetcherToolTest extends TestCase
             'thread_ids' => [$other->id],
         ]);
 
-        $this->assertSame('Fetched thread context.', $response->message());
+        $this->assertStringContainsString('Thread Id: '.$other->id, $response->message());
+        $this->assertStringContainsString('User: Need context.', $response->message());
+        $this->assertStringContainsString('Assistant: Here is the requested context.', $response->message());
         $payload = $response->meta()['result'];
         $this->assertSame([$other->id], $response->meta()['thread_ids']);
 
@@ -127,7 +129,9 @@ class ThreadFetcherToolTest extends TestCase
             'thread_ids' => [$second->id, $first->id],
         ]);
 
-        $this->assertSame('Fetched 2 threads.', $response->message());
+        $message = $response->message();
+        $this->assertStringContainsString('Thread Id: '.$second->id, $message);
+        $this->assertStringContainsString('Thread Id: '.$first->id, $message);
         $meta = $response->meta();
 
         $this->assertSame([$second->id, $first->id], $meta['thread_ids']);
@@ -156,7 +160,7 @@ class ThreadFetcherToolTest extends TestCase
             'thread_ids' => [(string) $thread->id],
         ]);
 
-        $this->assertSame('Fetched thread context.', $response->message());
+        $this->assertStringContainsString('Thread Id: '.$thread->id, $response->message());
         $this->assertSame([$thread->id], $response->meta()['thread_ids']);
     }
 

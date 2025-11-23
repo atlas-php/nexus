@@ -25,6 +25,7 @@ use function is_array;
 use function is_int;
 use function is_numeric;
 use function sprintf;
+use function trim;
 
 /**
  * Class ThreadFetcherTool
@@ -58,7 +59,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Fetch one or more threads by id to view the conversations';
+        return 'Fetch one or more threads by id to view the user\'s conversations';
     }
 
     /**
@@ -101,16 +102,18 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
                 throw new RuntimeException('Thread not found for this assistant and user.');
             }
 
+            $message = $this->formatThreadSummaries($payloads);
+
             if (count($payloads) === 1) {
                 $thread = $payloads[array_key_first($payloads)];
 
-                return $this->output('Fetched thread context.', [
+                return $this->output($message, [
                     'thread_ids' => [$thread['id']],
                     'result' => $thread,
                 ]);
             }
 
-            return $this->output(sprintf('Fetched %d threads.', count($payloads)), [
+            return $this->output($message, [
                 'thread_ids' => array_column($payloads, 'id'),
                 'result' => [
                     'threads' => $payloads,
@@ -207,5 +210,50 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $threads
+     */
+    protected function formatThreadSummaries(array $threads): string
+    {
+        $blocks = array_map(fn (array $thread): string => $this->formatThreadSummary($thread), $threads);
+
+        return implode("\n\n", array_filter($blocks));
+    }
+
+    /**
+     * @param  array<string, mixed>  $thread
+     */
+    protected function formatThreadSummary(array $thread): string
+    {
+        $lines = [
+            sprintf('Thread Id: %s', $thread['id']),
+        ];
+
+        $messages = $thread['messages'] ?? [];
+
+        foreach ($messages as $message) {
+            $role = $this->formatRole($message['role'] ?? 'assistant');
+            $content = trim((string) ($message['content'] ?? ''));
+            $lines[] = sprintf('%s: %s', $role, $content === '' ? '[no content]' : $content);
+        }
+
+        if (count($lines) === 1 && isset($thread['title'])) {
+            $lines[] = 'Title: '.(string) $thread['title'];
+        }
+
+        return implode("\n", $lines);
+    }
+
+    protected function formatRole(?string $role): string
+    {
+        return match ($role) {
+            'user' => 'User',
+            'assistant' => 'Assistant',
+            'system' => 'System',
+            'tool' => 'Tool',
+            default => ucfirst((string) $role),
+        };
     }
 }

@@ -125,6 +125,7 @@ class ThreadManagerService
                     $query->orderBy('sequence');
                 },
             ])
+            ->orderBy('id')
             ->get()
             ->keyBy('id');
 
