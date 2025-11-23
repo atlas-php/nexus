@@ -9,6 +9,7 @@ use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
+use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
@@ -21,6 +22,7 @@ use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Prism\Prism\Contracts\Message;
+use Prism\Prism\Exceptions\PrismRateLimitedException;
 use Prism\Prism\Text\Response;
 use Prism\Prism\Text\Step;
 use Prism\Prism\Tool;
@@ -29,12 +31,12 @@ use Prism\Prism\ValueObjects\Messages\SystemMessage;
 use Prism\Prism\ValueObjects\Messages\ToolResultMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\Meta;
-use Prism\Prism\ValueObjects\ProviderRateLimit;
 use Prism\Prism\ValueObjects\ProviderTool;
 use Prism\Prism\ValueObjects\ProviderToolCall;
 use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
 use Prism\Prism\ValueObjects\Usage;
+use Prism\Prism\ValueObjects\ProviderRateLimit;
 use RuntimeException;
 use Throwable;
 
@@ -61,6 +63,9 @@ class AssistantResponseService
     public function handle(int $assistantMessageId): void
     {
         $this->recordedToolOutputs = [];
+        $textRequest = null;
+        $providerKey = null;
+        $modelKey = null;
 
         /** @var AiMessage $assistantMessage */
         $assistantMessage = $this->messageService->findOrFail($assistantMessageId);
@@ -77,9 +82,11 @@ class AssistantResponseService
             $toolContext = $this->prepareTools($state, $assistantMessage->id);
             $chatLog = new ChatThreadLog;
             $textRequest = $this->textRequestFactory->make($chatLog);
+            $providerKey = $this->resolveProvider();
+            $modelKey = $this->resolveModel($state);
 
             $request = $textRequest
-                ->using($this->resolveProvider(), $this->resolveModel($state))
+                ->using($providerKey, $modelKey)
                 ->withMessages($this->convertMessages($state))
                 ->withMaxSteps($this->maxSteps());
 
@@ -140,7 +147,11 @@ class AssistantResponseService
                 ]);
             });
         } catch (Throwable $exception) {
-            $this->messageService->markStatus($assistantMessage, AiMessageStatus::FAILED, $exception->getMessage());
+            $failedReason = $exception instanceof PrismRateLimitedException
+                ? $this->formatRateLimitedFailure($exception, $state ?? null, $textRequest, $providerKey, $modelKey)
+                : $exception->getMessage();
+
+            $this->messageService->markStatus($assistantMessage, AiMessageStatus::FAILED, $failedReason);
 
             throw $exception;
         } finally {
@@ -529,5 +540,64 @@ class AssistantResponseService
     protected function maxSteps(): int
     {
         return (int) config('prism.max_steps', 8);
+    }
+
+    protected function formatRateLimitedFailure(
+        PrismRateLimitedException $exception,
+        ?ThreadState $state,
+        ?TextRequest $textRequest,
+        ?string $provider,
+        ?string $model
+    ): string {
+        $details = [
+            'provider rate limit hit',
+            'provider='.($provider ?? 'unknown'),
+            'model='.($model ?? 'unknown'),
+        ];
+
+        if ($exception->retryAfter !== null) {
+            $details[] = 'retry_after='.$exception->retryAfter.'s';
+        }
+
+        $limitDetails = [];
+
+        foreach ($exception->rateLimits as $limit) {
+            if (! $limit instanceof ProviderRateLimit) {
+                continue;
+            }
+
+            $limitDetails[] = sprintf(
+                '%s(limit=%s, remaining=%s, resets_at=%s)',
+                $limit->name,
+                $limit->limit ?? 'unknown',
+                $limit->remaining ?? 'unknown',
+                $limit->resetsAt?->toIso8601String() ?? 'unknown'
+            );
+        }
+
+        $details[] = $limitDetails === []
+            ? 'limits=unavailable'
+            : 'limits=['.implode(', ', $limitDetails).']';
+
+        if ($state !== null) {
+            $details[] = sprintf(
+                'context={assistant=%s, thread_id=%s, messages=%d, tools=%d, memories=%d}',
+                $state->assistant->slug ?? ('#'.$state->assistant->getKey()),
+                (string) $state->thread->getKey(),
+                $state->messages->count(),
+                $state->tools->count(),
+                $state->memories->count()
+            );
+        }
+
+        if ($textRequest !== null) {
+            $details[] = sprintf(
+                'request={system_prompts=%d, provider_tools=%d}',
+                count($textRequest->toRequest()->systemPrompts()),
+                count($textRequest->toRequest()->providerTools())
+            );
+        }
+
+        return implode('; ', $details);
     }
 }

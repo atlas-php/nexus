@@ -50,7 +50,8 @@ class RunAssistantResponseJob implements ShouldQueue
         $message = $messageService->find($this->assistantMessageId);
 
         if ($message !== null) {
-            $messageService->markStatus($message, AiMessageStatus::FAILED, $exception->getMessage());
+            $failedReason = $message->failed_reason ?? $exception->getMessage();
+            $messageService->markStatus($message, AiMessageStatus::FAILED, $failedReason);
         }
     }
 

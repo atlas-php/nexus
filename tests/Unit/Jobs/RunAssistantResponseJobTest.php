@@ -18,11 +18,13 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Seeders\NexusSeederService;
+use Atlas\Nexus\Tests\Fixtures\RateLimitedTextRequestFactory;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Facades\App;
 use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\Exceptions\PrismRateLimitedException;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response as TextResponse;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
@@ -285,6 +287,54 @@ class RunAssistantResponseJobTest extends TestCase
             $assistantMessage->refresh();
             $this->assertTrue($assistantMessage->status === AiMessageStatus::FAILED);
             $this->assertSame('Simulated Prism failure', $assistantMessage->failed_reason);
+        }
+    }
+
+    public function test_rate_limit_failures_include_detailed_reason(): void
+    {
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'job-rate-limit',
+            'default_model' => 'gpt-4o-mini',
+        ]);
+        $prompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+        ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 321,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'content' => 'Trigger rate limit',
+        ]);
+
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+            'content' => '',
+        ]);
+
+        App::instance(\Atlas\Nexus\Integrations\Prism\TextRequestFactory::class, new RateLimitedTextRequestFactory);
+
+        $this->expectException(PrismRateLimitedException::class);
+
+        try {
+            RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+        } finally {
+            $assistantMessage->refresh();
+            $this->assertTrue($assistantMessage->status === AiMessageStatus::FAILED);
+            $this->assertNotNull($assistantMessage->failed_reason);
+            $this->assertStringContainsString('provider=openai', $assistantMessage->failed_reason);
+            $this->assertStringContainsString('model=gpt-4o-mini', $assistantMessage->failed_reason);
+            $this->assertStringContainsString('limits=[requests_per_minute', $assistantMessage->failed_reason);
+            $this->assertStringContainsString('context={assistant='.$assistant->slug, $assistantMessage->failed_reason);
         }
     }
 
