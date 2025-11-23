@@ -8,6 +8,7 @@ use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
@@ -16,6 +17,7 @@ use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadManagerAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\TestCase;
 
@@ -160,6 +162,36 @@ class ThreadStateServiceTest extends TestCase
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
         $this->assertCount(0, $state->providerTools);
+    }
+
+    public function test_thread_manager_prompt_variables_use_parent_thread_when_available(): void
+    {
+        ThreadManagerAssistantDefinition::updateConfig([
+            'system_prompt' => 'Summary for {THREAD.ID}: {THREAD.TITLE}',
+        ]);
+
+        /** @var AiThread $parent */
+        $parent = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'type' => AiThreadType::USER->value,
+            'title' => 'Ship the quarterly report',
+        ]);
+
+        /** @var AiThread $summaryThread */
+        $summaryThread = AiThread::factory()->create([
+            'assistant_key' => 'thread-manager',
+            'type' => AiThreadType::TOOL->value,
+            'parent_thread_id' => $parent->id,
+            'user_id' => $parent->user_id,
+            'group_id' => $parent->group_id,
+        ]);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($summaryThread->fresh());
+
+        $this->assertSame(
+            'Summary for '.$parent->getKey().': '.$parent->title,
+            $state->systemPrompt
+        );
     }
 
     private function migrationPath(): string

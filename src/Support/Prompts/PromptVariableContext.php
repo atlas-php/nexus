@@ -24,7 +24,8 @@ class PromptVariableContext
         public readonly ThreadState $threadState,
         private ?ResolvedAssistant $assistantOverride = null,
         private ?string $promptOverride = null,
-        private ?Authenticatable $user = null
+        private ?Authenticatable $user = null,
+        private ?AiThread $threadOverride = null
     ) {
         $this->userLoaded = $user !== null;
     }
@@ -39,7 +40,7 @@ class PromptVariableContext
 
     public function thread(): AiThread
     {
-        return $this->threadState->thread;
+        return $this->resolvedThread();
     }
 
     public function assistant(): ResolvedAssistant
@@ -61,14 +62,14 @@ class PromptVariableContext
         $this->userLoaded = true;
 
         try {
-            $relation = $this->threadState->thread->user();
+            $relation = $this->resolvedThread()->user();
             $relatedModel = $relation->getRelated();
 
             if (! Schema::hasTable($relatedModel->getTable())) {
                 return null;
             }
 
-            $loaded = $this->threadState->thread->getRelationValue('user');
+            $loaded = $this->resolvedThread()->getRelationValue('user');
 
             if ($loaded instanceof Authenticatable) {
                 $this->user = $loaded;
@@ -82,5 +83,10 @@ class PromptVariableContext
         }
 
         return $this->user;
+    }
+
+    private function resolvedThread(): AiThread
+    {
+        return $this->threadOverride ?? $this->threadState->thread;
     }
 }

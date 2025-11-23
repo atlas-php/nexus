@@ -25,6 +25,8 @@ use RuntimeException;
  */
 class ThreadStateService
 {
+    private const THREAD_MANAGER_KEY = 'thread-manager';
+
     public function __construct(
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
@@ -123,9 +125,33 @@ class ThreadStateService
             return null;
         }
 
-        $context = new PromptVariableContext($state);
+        $contextThread = $this->threadForPromptVariables($state);
+        $context = $contextThread->is($state->thread)
+            ? new PromptVariableContext($state)
+            : new PromptVariableContext($state, null, null, null, $contextThread);
         $render = $this->promptVariableService->renderWithVariables($state->prompt, $context);
 
         return $render['rendered_prompt'];
+    }
+
+    protected function threadForPromptVariables(ThreadState $state): AiThread
+    {
+        if ($state->assistant->key() !== self::THREAD_MANAGER_KEY) {
+            return $state->thread;
+        }
+
+        $parent = $state->thread->getRelationValue('parentThread');
+
+        if ($parent instanceof AiThread) {
+            return $parent;
+        }
+
+        if ($state->thread->parent_thread_id === null) {
+            return $state->thread;
+        }
+
+        $loadedParent = $state->thread->parentThread()->first();
+
+        return $loadedParent instanceof AiThread ? $loadedParent : $state->thread;
     }
 }
