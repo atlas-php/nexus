@@ -8,11 +8,10 @@ use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
-use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
+use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Facades\App;
@@ -47,16 +46,9 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create(['slug' => 'thread-message']);
-        /** @var AiAssistantPrompt $prompt */
-        $prompt = AiAssistantPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-        ]);
-        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
+            'assistant_key' => 'general-assistant',
             'user_id' => 321,
         ]);
 
@@ -82,21 +74,15 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create(['slug' => 'thread-blocking']);
-        /** @var AiAssistantPrompt $prompt */
-        $prompt = AiAssistantPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-        ]);
-        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
+            'assistant_key' => 'general-assistant',
             'user_id' => 999,
         ]);
 
         AiMessage::factory()->create([
             'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
             'role' => AiMessageRole::ASSISTANT->value,
             'sequence' => 1,
             'status' => AiMessageStatus::PROCESSING->value,
@@ -116,16 +102,9 @@ class ThreadMessageServiceTest extends TestCase
         Queue::fake();
         config()->set('atlas-nexus.responses.queue', 'nexus-long-running');
 
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create(['slug' => 'thread-queue']);
-        /** @var AiAssistantPrompt $prompt */
-        $prompt = AiAssistantPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-        ]);
-        $assistant->update(['current_prompt_id' => $prompt->id]);
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
+            'assistant_key' => 'general-assistant',
             'user_id' => 555,
         ]);
 
@@ -141,19 +120,13 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
-        /** @var AiAssistant $assistant */
-        $assistant = AiAssistant::factory()->create([
-            'slug' => 'thread-inline',
+        PrimaryAssistantDefinition::updateConfig([
             'default_model' => 'gpt-inline',
         ]);
-        /** @var AiAssistantPrompt $prompt */
-        $prompt = AiAssistantPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-        ]);
-        $assistant->update(['current_prompt_id' => $prompt->id]);
+
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
+            'assistant_key' => 'general-assistant',
             'user_id' => 777,
         ]);
 
@@ -189,19 +162,16 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertSame('inline-1', $assistantMessage->provider_response_id);
         $this->assertIsArray($assistantMessage->raw_response);
         $this->assertSame('Inline reply', $assistantMessage->raw_response['text']);
+
+        PrimaryAssistantDefinition::resetConfig();
     }
 
     public function test_it_marks_inline_failures_as_failed(): void
     {
         Queue::fake();
 
-        $assistant = AiAssistant::factory()->create(['slug' => 'thread-inline-failure']);
-        $prompt = AiAssistantPrompt::factory()->create([
-            'assistant_id' => $assistant->id,
-        ]);
-        $assistant->update(['current_prompt_id' => $prompt->id]);
         $thread = AiThread::factory()->create([
-            'assistant_id' => $assistant->id,
+            'assistant_key' => 'general-assistant',
             'user_id' => 888,
         ]);
 

@@ -24,15 +24,7 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
 
 ## Assistant Tool Keys
-Field: `ai_assistants.tools`
-
-| Field  | Description                                                   |
-|--------|---------------------------------------------------------------|
-| `tools` | JSON array of tool keys allowed for the assistant (nullable) |
-
-Rules:
-- Keys are normalized to unique strings; empty/null means no tools.
-- Thread state filters keys against the registered tool set; built-in tools are registered automatically when enabled.
+Assistant definition classes control which tool keys are available by overriding `tools()`. Thread state filters these keys against the registered tool set; built-in tools are registered automatically when enabled.
 
 ## Tool Runs
 Table: `ai_tool_runs`
@@ -42,6 +34,7 @@ Table: `ai_tool_runs`
 | `id`                    | Primary key                                                     |
 | `group_id`              | Optional tenant/account grouping (inherits from thread)         |
 | `tool_key`              | Registered tool key                                             |
+| `assistant_key`         | Assistant key that initiated the run                            |
 | `thread_id`             | Thread owning the run                                           |
 | `assistant_message_id`  | Assistant message that initiated the call                       |
 | `call_index`            | Int call order within response                                  |
@@ -63,6 +56,5 @@ Indexes: `tool_key`, `thread_id`, `assistant_message_id`.
 
 ## Services
 - `ToolRegistry` — maintains available tool definitions (built-ins + configured mappings).
-- `AiAssistantService` — CRUD + helpers for syncing assistant tool keys.
 - `AiToolRunService` — CRUD + status helpers; auto-applies `group_id` from thread when absent.
 - `ThreadStateService` — resolves registered tools matching an assistant's configured keys.

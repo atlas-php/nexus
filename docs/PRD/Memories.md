@@ -19,7 +19,7 @@ Table: `ai_memories`
 | `group_id`            | Optional tenant/account grouping (inherits from thread)         |
 | `owner_type`          | Enum (`user`,`assistant`,`org`)                                 |
 | `owner_id`            | Owner identifier                                                |
-| `assistant_id`        | Nullable assistant scope                                        |
+| `assistant_key`       | Nullable assistant scope                                        |
 | `thread_id`           | Nullable provenance thread id                                   |
 | `source_message_id`   | Nullable message provenance                                     |
 | `source_tool_run_id`  | Nullable tool run provenance                                    |
@@ -33,7 +33,7 @@ Table: `ai_memories`
   - `user` — tied to thread user
   - `assistant` — tied to current assistant
   - `org` — shared across org/tenant (`owner_id` provided by consumer)
-- `assistant_id` nullable: null = global; otherwise limited to the assistant.
+- `assistant_key` nullable: null = global; otherwise limited to the assistant key.
 
 ## Creation Rules
 - `AiMemoryService::saveForThread`:
@@ -45,7 +45,7 @@ Table: `ai_memories`
 ## Retrieval Rules
 - `AiMemoryService::listForThread` returns memories where:
   - Owner matches thread user (`user`), assistant (`assistant`), or org (`org`).
-  - `assistant_id` is null or matches the assistant.
+  - `assistant_key` is null or matches the assistant key.
   - Optional `memory_ids` filter limits to explicit identifiers.
   - Ordered by `id`.
 - `ThreadStateService` pulls memories for inclusion in LLM context and injects ids into assistant message metadata.

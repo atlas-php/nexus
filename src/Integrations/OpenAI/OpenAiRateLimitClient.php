@@ -97,7 +97,7 @@ class OpenAiRateLimitClient
     }
 
     /**
-     * @param  array<string, mixed>|array<int, mixed>  $data
+     * @param  array<int|string, mixed>  $data
      * @param  array<string, OpenAiRateLimit>  $limits
      */
     protected function collectLimits(array $data, array &$limits): void

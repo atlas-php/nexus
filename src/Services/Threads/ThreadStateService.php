@@ -6,14 +6,14 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
-use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -35,6 +35,7 @@ class ThreadStateService
         private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
+        private readonly AssistantRegistry $assistantRegistry,
         ConfigRepository $config
     ) {
         $this->includeMemoryTool = (bool) $config->get('atlas-nexus.tools.memory.enabled', true);
@@ -42,15 +43,14 @@ class ThreadStateService
 
     public function forThread(AiThread $thread, ?bool $includeMemoryTool = null): ThreadState
     {
-        $thread->loadMissing(['assistant', 'assistant.currentPrompt', 'assistantPrompt']);
+        $assistantKey = $thread->assistant_key;
 
-        $assistant = $thread->assistant;
-
-        if ($assistant === null) {
-            throw new RuntimeException('Thread is missing an associated assistant.');
+        if ($assistantKey === '') {
+            throw new RuntimeException('Thread is missing an assistant key.');
         }
 
-        $prompt = $this->resolvePrompt($thread, $assistant);
+        $assistant = $this->assistantRegistry->require($assistantKey);
+        $prompt = $assistant->systemPrompt();
         $messages = $this->messageService->query()
             ->where('thread_id', $thread->id)
             ->where('status', AiMessageStatus::COMPLETED->value)
@@ -73,7 +73,6 @@ class ThreadStateService
             $memories,
             $tools,
             null,
-            null,
             $providerTools
         );
 
@@ -86,32 +85,17 @@ class ThreadStateService
             $messages,
             $memories,
             $tools,
-            null,
             $systemPrompt,
             $providerTools
         );
     }
 
-    protected function resolvePrompt(
-        AiThread $thread,
-        AiAssistant $assistant
-    ): ?AiAssistantPrompt {
-        if ($thread->assistantPrompt !== null) {
-            return $thread->assistantPrompt;
-        }
-
-        return $assistant->currentPrompt;
-    }
-
     /**
      * @return Collection<int, \Atlas\Nexus\Support\Tools\ToolDefinition>
      */
-    protected function resolveTools(AiAssistant $assistant, bool $includeMemoryTool): Collection
+    protected function resolveTools(ResolvedAssistant $assistant, bool $includeMemoryTool): Collection
     {
-        $toolKeys = array_values(array_unique(array_map(
-            static fn ($key): string => (string) $key,
-            $assistant->tools ?? []
-        )));
+        $toolKeys = $assistant->tools();
 
         if (! $includeMemoryTool) {
             $toolKeys = array_values(array_filter(
@@ -128,12 +112,9 @@ class ThreadStateService
     /**
      * @return Collection<int, \Atlas\Nexus\Support\Tools\ProviderToolDefinition>
      */
-    protected function resolveProviderTools(AiAssistant $assistant): Collection
+    protected function resolveProviderTools(ResolvedAssistant $assistant): Collection
     {
-        $keys = array_values(array_unique(array_map(
-            static fn ($key): string => (string) $key,
-            $assistant->provider_tools ?? []
-        )));
+        $keys = $assistant->providerTools();
 
         return collect($this->providerToolRegistry->forKeys($keys));
     }
@@ -144,11 +125,8 @@ class ThreadStateService
             return null;
         }
 
-        $context = new PromptVariableContext($state, $state->prompt, $state->assistant);
-        $render = $this->promptVariableService->renderWithVariables(
-            $state->prompt->system_prompt,
-            $context
-        );
+        $context = new PromptVariableContext($state);
+        $render = $this->promptVariableService->renderWithVariables($state->prompt, $context);
 
         return $render['rendered_prompt'];
     }

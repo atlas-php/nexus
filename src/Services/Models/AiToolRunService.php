@@ -27,15 +27,19 @@ class AiToolRunService extends ModelService
      */
     public function create(array $data): AiToolRun
     {
-        if (! array_key_exists('group_id', $data)) {
-            $threadId = $data['thread_id'] ?? null;
+        $threadId = $data['thread_id'] ?? null;
 
-            if (is_int($threadId) || is_string($threadId)) {
-                /** @var AiThread|null $thread */
-                $thread = AiThread::query()->find($threadId);
+        if ((is_int($threadId) || is_string($threadId)) && (! array_key_exists('group_id', $data) || ! array_key_exists('assistant_key', $data))) {
+            /** @var AiThread|null $thread */
+            $thread = AiThread::query()->find($threadId);
 
-                if ($thread !== null) {
+            if ($thread !== null) {
+                if (! array_key_exists('group_id', $data)) {
                     $data['group_id'] = $thread->group_id;
+                }
+
+                if (! isset($data['assistant_key']) && $thread->assistant_key !== '') {
+                    $data['assistant_key'] = $thread->assistant_key;
                 }
             }
         }

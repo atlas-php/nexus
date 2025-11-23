@@ -6,9 +6,9 @@ namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
 use Atlas\Nexus\Enums\AiMemoryOwnerType;
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use RuntimeException;
@@ -54,7 +54,7 @@ class AiMemoryService extends ModelService
      * @param  array<string, mixed>|null  $metadata
      */
     public function saveForThread(
-        AiAssistant $assistant,
+        ResolvedAssistant $assistant,
         AiThread $thread,
         string $kind,
         string $content,
@@ -71,7 +71,7 @@ class AiMemoryService extends ModelService
         $memory = parent::create([
             'owner_type' => $ownerType->value,
             'owner_id' => $resolvedOwnerId,
-            'assistant_id' => $assistant->id,
+            'assistant_key' => $assistant->key(),
             'thread_id' => $threadScoped ? $thread->id : null,
             'group_id' => $thread->group_id,
             'source_message_id' => $sourceMessageId,
@@ -92,7 +92,7 @@ class AiMemoryService extends ModelService
      * @return Collection<int, AiMemory>
      */
     public function listForThread(
-        AiAssistant $assistant,
+        ResolvedAssistant $assistant,
         AiThread $thread,
         ?array $memoryIds = null
     ): Collection {
@@ -118,7 +118,7 @@ class AiMemoryService extends ModelService
      * Update a memory entry within the scoped context.
      */
     public function updateForThread(
-        AiAssistant $assistant,
+        ResolvedAssistant $assistant,
         AiThread $thread,
         int $memoryId,
         ?string $kind = null,
@@ -153,7 +153,7 @@ class AiMemoryService extends ModelService
     /**
      * Delete a memory entry only when it belongs to the current assistant and user context.
      */
-    public function removeForThread(AiAssistant $assistant, AiThread $thread, int $memoryId): bool
+    public function removeForThread(ResolvedAssistant $assistant, AiThread $thread, int $memoryId): bool
     {
         /** @var AiMemory|null $memory */
         $memory = $this->scopedQuery($assistant, $thread)
@@ -168,14 +168,14 @@ class AiMemoryService extends ModelService
     }
 
     protected function resolveOwnerId(
-        AiAssistant $assistant,
+        ResolvedAssistant $assistant,
         AiThread $thread,
         AiMemoryOwnerType $ownerType,
         ?int $ownerId = null
     ): int {
         return match ($ownerType) {
             AiMemoryOwnerType::USER => $thread->user_id,
-            AiMemoryOwnerType::ASSISTANT => $assistant->id,
+            AiMemoryOwnerType::ASSISTANT => (int) sprintf('%u', crc32($assistant->key())),
             AiMemoryOwnerType::ORG => $ownerId ?? 0,
         };
     }
@@ -183,21 +183,23 @@ class AiMemoryService extends ModelService
     /**
      * @return Builder<AiMemory>
      */
-    protected function scopedQuery(AiAssistant $assistant, AiThread $thread): Builder
+    protected function scopedQuery(ResolvedAssistant $assistant, AiThread $thread): Builder
     {
+        $assistantKey = $assistant->key();
+
         return $this->query()
-            ->where(function (Builder $builder) use ($assistant, $thread): void {
+            ->where(function (Builder $builder) use ($assistantKey, $thread): void {
                 $builder->where(function (Builder $userQuery) use ($thread): void {
                     $userQuery->where('owner_type', AiMemoryOwnerType::USER->value)
                         ->where('owner_id', $thread->user_id);
-                })->orWhere(function (Builder $assistantQuery) use ($assistant): void {
+                })->orWhere(function (Builder $assistantQuery) use ($assistantKey): void {
                     $assistantQuery->where('owner_type', AiMemoryOwnerType::ASSISTANT->value)
-                        ->where('owner_id', $assistant->id);
+                        ->where('assistant_key', $assistantKey);
                 })->orWhere('owner_type', AiMemoryOwnerType::ORG->value);
             })
-            ->where(function (Builder $builder) use ($assistant): void {
-                $builder->whereNull('assistant_id')
-                    ->orWhere('assistant_id', $assistant->id);
+            ->where(function (Builder $builder) use ($assistantKey): void {
+                $builder->whereNull('assistant_key')
+                    ->orWhere('assistant_key', $assistantKey);
             });
     }
 }

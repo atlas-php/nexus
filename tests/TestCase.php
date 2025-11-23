@@ -6,6 +6,11 @@ namespace Atlas\Nexus\Tests;
 
 use Atlas\Core\Testing\PackageTestCase;
 use Atlas\Nexus\Providers\AtlasNexusServiceProvider;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\SecondaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadManagerAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\WebSummaryAssistantDefinition;
 use Prism\Prism\PrismServiceProvider;
 
 /**
@@ -27,5 +32,28 @@ abstract class TestCase extends PackageTestCase
             AtlasNexusServiceProvider::class,
             PrismServiceProvider::class,
         ];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        PrimaryAssistantDefinition::resetConfig();
+        SecondaryAssistantDefinition::resetConfig();
+        ThreadManagerAssistantDefinition::resetConfig();
+        WebSummaryAssistantDefinition::resetConfig();
+
+        $assistants = config('atlas-nexus.assistants', []);
+        $assistants['definitions'] = [
+            PrimaryAssistantDefinition::class,
+            SecondaryAssistantDefinition::class,
+            ThreadManagerAssistantDefinition::class,
+            WebSummaryAssistantDefinition::class,
+        ];
+
+        config()->set('atlas-nexus.assistants', $assistants);
+        config()->set('atlas-nexus.assistants.definitions', $assistants['definitions']);
+
+        $this->app->make(AssistantRegistry::class)->refresh();
     }
 }

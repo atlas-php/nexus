@@ -8,13 +8,13 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Models\AiAssistantService;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -39,7 +39,7 @@ class NexusChatCommand extends Command
     protected $description = 'Keep a Nexus chat session alive, dispatching assistant responses via jobs and polling status.';
 
     public function __construct(
-        private readonly AiAssistantService $assistantService,
+        private readonly AssistantRegistry $assistantRegistry,
         private readonly AiThreadService $threadService,
         private readonly AiMessageService $messageService,
         private readonly ThreadMessageService $threadMessageService
@@ -49,22 +49,19 @@ class NexusChatCommand extends Command
 
     public function handle(): int
     {
-        $assistantSlug = (string) ($this->option('assistant') ?? $this->ask('Assistant slug'));
+        $assistantKey = (string) ($this->option('assistant') ?? $this->ask('Assistant key'));
         $userId = (int) ($this->option('user') ?? 1);
 
-        if ($assistantSlug === '') {
-            $this->components->error('An assistant slug is required.');
+        if ($assistantKey === '') {
+            $this->components->error('An assistant key is required.');
 
             return self::FAILURE;
         }
 
-        /** @var AiAssistant|null $assistant */
-        $assistant = $this->assistantService->query()
-            ->where('slug', $assistantSlug)
-            ->first();
+        $assistant = $this->assistantRegistry->find($assistantKey);
 
         if ($assistant === null) {
-            $this->components->error("Assistant [{$assistantSlug}] was not found.");
+            $this->components->error("Assistant [{$assistantKey}] was not found.");
 
             return self::FAILURE;
         }
@@ -73,7 +70,7 @@ class NexusChatCommand extends Command
 
         $this->components->info(sprintf(
             'Nexus chat ready for assistant [%s] on thread #%s. Type "exit" to quit.',
-            $assistant->slug,
+            $assistant->name(),
             $thread->id
         ));
 
@@ -113,7 +110,7 @@ class NexusChatCommand extends Command
         }
     }
 
-    protected function resolveThread(AiAssistant $assistant, int $userId): AiThread
+    protected function resolveThread(ResolvedAssistant $assistant, int $userId): AiThread
     {
         $threadId = $this->option('thread');
 
@@ -122,7 +119,7 @@ class NexusChatCommand extends Command
                 /** @var AiThread $thread */
                 $thread = $this->threadService->findOrFail((int) $threadId);
 
-                if ($thread->assistant_id === $assistant->id) {
+                if ($thread->assistant_key === $assistant->key()) {
                     return $thread;
                 }
 
@@ -134,8 +131,7 @@ class NexusChatCommand extends Command
 
         /** @var AiThread $thread */
         $thread = $this->threadService->create([
-            'assistant_id' => $assistant->id,
-            'assistant_prompt_id' => $assistant->current_prompt_id,
+            'assistant_key' => $assistant->key(),
             'user_id' => $userId,
             'type' => AiThreadType::USER->value,
             'status' => AiThreadStatus::OPEN->value,
@@ -144,7 +140,7 @@ class NexusChatCommand extends Command
             'metadata' => [],
         ]);
 
-        $this->components->info(sprintf('Created new thread #%s for assistant [%s].', $thread->id, $assistant->slug));
+        $this->components->info(sprintf('Created new thread #%s for assistant [%s].', $thread->id, $assistant->name()));
 
         return $thread;
     }

@@ -12,18 +12,17 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 - [Manage Memories](#manage-memories)
 
 ## Create an Assistant & Prompt
-1. Create an assistant row with defaults (`slug`, `default_model`, optional `temperature/top_p/max_output_tokens`).
-2. Create a prompt version via `AiAssistantPromptService::create` with `assistant_id` and `system_prompt` (the service auto-assigns the next version and seeds `original_prompt_id` for lineage tracking).
-3. Set `current_prompt_id` on the assistant to the active prompt. Subsequent edits must call `AiAssistantPromptService::edit($prompt, $data)`, which always clones a new row instead of updating in place.
+1. Create a class that extends `Atlas\Nexus\Support\Assistants\AssistantDefinition` and implement the required methods (`key`, `name`, `systemPrompt`, defaults, tools, etc.).
+2. Register the class inside `config/atlas-nexus.php` under `assistants.definitions`.
+3. Reference the assistant by its `key` everywhere else (threads, messages, tool runs, memories).
 
 ## Register Tools
 1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`).
 2. Register the tool via `atlas-nexus.tools.registry` (`key => handler_class`) or rely on built-ins.
-3. Add the tool key to the assistant `tools` array; run `atlas:nexus:seed` to add the Memory key when enabled.
+3. Include the tool key in the assistant definition’s `tools()` return value.
 
 ## Start a Thread
-1. Create `ai_threads` row with `assistant_id`, `user_id`, optional `group_id`, `type=user`, `status=open`.
-2. Optionally set `assistant_prompt_id` to override the assistant’s current prompt.
+1. Create an `ai_threads` row with `assistant_key`, `user_id`, optional `group_id`, `type=user`, `status=open`.
 
 ## Send a Message
 1. Call `ThreadMessageService::sendUserMessage($thread, $content, $userId, $contentType, $dispatchResponse)`.

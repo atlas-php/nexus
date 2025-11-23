@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('group_id')->nullable()->index();
             $table->string('owner_type');
             $table->unsignedBigInteger('owner_id');
-            $table->unsignedBigInteger('assistant_id')->nullable()->index();
+            $table->string('assistant_key')->nullable()->index();
             $table->unsignedBigInteger('thread_id')->nullable()->index();
             $table->unsignedBigInteger('source_message_id')->nullable()->index();
             $table->unsignedBigInteger('source_tool_run_id')->nullable()->index();

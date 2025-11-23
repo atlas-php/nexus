@@ -8,11 +8,12 @@ use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
-use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Carbon;
 use RuntimeException;
@@ -28,6 +29,7 @@ class ThreadMessageService
         private readonly AiMessageService $messageService,
         private readonly AiThreadService $threadService,
         private readonly AssistantResponseService $assistantResponseService,
+        private readonly AssistantRegistry $assistantRegistry,
         private readonly ConfigRepository $config
     ) {}
 
@@ -42,7 +44,7 @@ class ThreadMessageService
         bool $dispatchResponse = true
     ): array {
         $this->ensureAssistantIsIdle($thread);
-        $this->resolveAssistant($thread);
+        $assistant = $this->resolveAssistant($thread);
 
         $userId = $userId ?? $thread->user_id;
         $sequence = $this->nextSequence($thread);
@@ -50,6 +52,7 @@ class ThreadMessageService
         /** @var AiMessage $userMessage */
         $userMessage = $this->messageService->create([
             'thread_id' => $thread->id,
+            'assistant_key' => $assistant->key(),
             'user_id' => $userId,
             'group_id' => $thread->group_id,
             'role' => AiMessageRole::USER->value,
@@ -62,6 +65,7 @@ class ThreadMessageService
         /** @var AiMessage $assistantMessage */
         $assistantMessage = $this->messageService->create([
             'thread_id' => $thread->id,
+            'assistant_key' => $assistant->key(),
             'user_id' => null,
             'group_id' => $thread->group_id,
             'role' => AiMessageRole::ASSISTANT->value,
@@ -105,15 +109,15 @@ class ThreadMessageService
         }
     }
 
-    protected function resolveAssistant(AiThread $thread): AiAssistant
+    protected function resolveAssistant(AiThread $thread): ResolvedAssistant
     {
-        $thread->loadMissing('assistant');
+        $assistantKey = $thread->assistant_key;
 
-        if ($thread->assistant === null) {
+        if ($assistantKey === '') {
             throw new RuntimeException('Thread is missing an associated assistant.');
         }
 
-        return $thread->assistant;
+        return $this->assistantRegistry->require($assistantKey);
     }
 
     protected function nextSequence(AiThread $thread): int

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services;
 
 use Atlas\Core\Services\ModelService;
-use Atlas\Nexus\Services\Models\AiAssistantPromptService;
-use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 
@@ -21,8 +19,6 @@ class NexusPurgeService
     public const DEFAULT_CHUNK_SIZE = 100;
 
     public function __construct(
-        private readonly AiAssistantService $assistantService,
-        private readonly AiAssistantPromptService $promptService,
         private readonly AiMessageService $messageService,
         private readonly AiMemoryService $memoryService,
     ) {}
@@ -30,7 +26,7 @@ class NexusPurgeService
     /**
      * Purge all supported soft-deleted Nexus models.
      *
-     * @return array{messages: int, memories: int, prompts: int, assistants: int}
+     * @return array{messages: int, memories: int}
      */
     public function purge(?int $chunkSize = null): array
     {
@@ -39,8 +35,6 @@ class NexusPurgeService
         return [
             'messages' => $this->purgeService($this->messageService, $chunkSize),
             'memories' => $this->purgeService($this->memoryService, $chunkSize),
-            'prompts' => $this->purgeService($this->promptService, $chunkSize),
-            'assistants' => $this->purgeService($this->assistantService, $chunkSize),
         ];
     }
 

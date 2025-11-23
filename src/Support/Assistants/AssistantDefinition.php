@@ -13,7 +13,7 @@ namespace Atlas\Nexus\Support\Assistants;
  */
 abstract class AssistantDefinition
 {
-    abstract public function slug(): string;
+    abstract public function key(): string;
 
     abstract public function name(): string;
 
@@ -94,7 +94,8 @@ abstract class AssistantDefinition
     final public function assistantAttributes(): array
     {
         return [
-            'slug' => $this->slug(),
+            'assistant_key' => $this->key(),
+            'key' => $this->key(),
             'name' => $this->name(),
             'description' => $this->description(),
             'default_model' => $this->defaultModel(),
@@ -145,11 +146,12 @@ abstract class AssistantDefinition
 
         $keys = array_keys($normalized);
 
-        return $keys !== [] ? array_values($keys) : null;
+        return $keys !== [] ? $keys : null;
     }
 
     /**
-     * @param  array<mixed>  $metadata
+     * @param  array<string|int, mixed>  $metadata
+     * @return array<string, mixed>|null
      */
     final protected function normalizeMetadata(array $metadata): ?array
     {

@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 return [
     'assistants' => [
-        // Register assistant definition classes to seed or sync Nexus assistants.
-        // \App\Nexus\Assistants\GeneralAssistant::class,
+        'definitions' => [
+            // Register assistant definition classes controlled by the consuming app.
+            // \App\Nexus\Assistants\GeneralAssistant::class,
+        ],
+        'defaults' => [
+            'thread_manager' => env('ATLAS_NEXUS_THREAD_MANAGER_ASSISTANT', 'thread-manager'),
+            'web_summary' => env('ATLAS_NEXUS_WEB_SUMMARY_ASSISTANT', 'web-summarizer'),
+        ],
     ],
 
     'responses' => [
@@ -61,11 +67,7 @@ return [
         ],
     ],
 
-    'seeders' => [
-        \Atlas\Nexus\Services\Seeders\DefaultAssistantSeeder::class,
-        \Atlas\Nexus\Services\Seeders\WebSearchAssistantSeeder::class,
-        \Atlas\Nexus\Services\Seeders\ThreadManagerAssistantSeeder::class,
-    ],
+    'seeders' => [],
 
     'tables' => [
         'ai_assistants' => 'ai_assistants',

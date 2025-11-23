@@ -30,42 +30,9 @@ class MigrationTest extends TestCase
             '--realpath' => true,
         ])->run();
 
-        $this->assertTrue(Schema::hasColumns('ai_assistants', [
-            'id',
-            'slug',
-            'name',
-            'description',
-            'default_model',
-            'temperature',
-            'top_p',
-            'max_output_tokens',
-            'current_prompt_id',
-            'is_active',
-            'is_hidden',
-            'tools',
-            'metadata',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ]));
-
-        $this->assertTrue(Schema::hasColumns('ai_assistant_prompts', [
-            'id',
-            'assistant_id',
-            'user_id',
-            'version',
-            'original_prompt_id',
-            'system_prompt',
-            'is_active',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ]));
-
         $this->assertTrue(Schema::hasColumns('ai_threads', [
             'id',
-            'assistant_id',
-            'assistant_prompt_id',
+            'assistant_key',
             'user_id',
             'type',
             'parent_thread_id',
@@ -82,6 +49,7 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ai_messages', [
             'id',
             'thread_id',
+            'assistant_key',
             'user_id',
             'role',
             'content',
@@ -103,6 +71,7 @@ class MigrationTest extends TestCase
         $this->assertTrue(Schema::hasColumns('ai_tool_runs', [
             'id',
             'tool_key',
+            'assistant_key',
             'thread_id',
             'assistant_message_id',
             'call_index',
@@ -121,7 +90,7 @@ class MigrationTest extends TestCase
             'id',
             'owner_type',
             'owner_id',
-            'assistant_id',
+            'assistant_key',
             'thread_id',
             'source_message_id',
             'source_tool_run_id',
@@ -136,9 +105,9 @@ class MigrationTest extends TestCase
 
     public function test_migrations_respect_configured_table_overrides(): void
     {
-        config()->set('atlas-nexus.tables.ai_assistants', 'custom_ai_assistants');
+        config()->set('atlas-nexus.tables.ai_threads', 'custom_ai_threads');
 
-        $this->assertSame('custom_ai_assistants', config('atlas-nexus.tables.ai_assistants'));
+        $this->assertSame('custom_ai_threads', config('atlas-nexus.tables.ai_threads'));
 
         $this->runPendingCommand('migrate:fresh', [
             '--path' => $this->migrationPath(),
@@ -149,8 +118,8 @@ class MigrationTest extends TestCase
             ->pluck('name')
             ->all();
 
-        $this->assertContains('custom_ai_assistants', $tables);
-        $this->assertNotContains('ai_assistants', $tables);
+        $this->assertContains('custom_ai_threads', $tables);
+        $this->assertNotContains('ai_threads', $tables);
         $this->assertTrue(Schema::hasTable('ai_tool_runs'));
     }
 

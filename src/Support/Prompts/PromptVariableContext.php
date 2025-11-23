@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Support\Prompts;
 
-use Atlas\Nexus\Models\AiAssistant;
-use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Schema;
@@ -23,8 +22,8 @@ class PromptVariableContext
 
     public function __construct(
         public readonly ThreadState $threadState,
-        public readonly AiAssistantPrompt $prompt,
-        public readonly AiAssistant $assistant,
+        private ?ResolvedAssistant $assistantOverride = null,
+        private ?string $promptOverride = null,
         private ?Authenticatable $user = null
     ) {
         $this->userLoaded = $user !== null;
@@ -43,14 +42,14 @@ class PromptVariableContext
         return $this->threadState->thread;
     }
 
-    public function assistant(): AiAssistant
+    public function assistant(): ResolvedAssistant
     {
-        return $this->assistant;
+        return $this->assistantOverride ?? $this->threadState->assistant;
     }
 
-    public function prompt(): AiAssistantPrompt
+    public function prompt(): ?string
     {
-        return $this->prompt;
+        return $this->promptOverride ?? $this->threadState->prompt;
     }
 
     public function user(): ?Authenticatable

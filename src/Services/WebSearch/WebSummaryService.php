@@ -9,11 +9,10 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiToolRun;
-use Atlas\Nexus\Services\Models\AiAssistantService;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Web\WebSummaryDefaults;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -25,7 +24,7 @@ use RuntimeException;
 class WebSummaryService
 {
     public function __construct(
-        private readonly AiAssistantService $assistantService,
+        private readonly AssistantRegistry $assistantRegistry,
         private readonly AiThreadService $threadService,
         private readonly ThreadMessageService $threadMessageService
     ) {}
@@ -40,19 +39,8 @@ class WebSummaryService
             throw new RuntimeException('No website content available to summarize.');
         }
 
-        $assistant = $this->assistantService->query()
-            ->where('slug', WebSummaryDefaults::ASSISTANT_SLUG)
-            ->first();
-
-        if ($assistant === null) {
-            throw new RuntimeException('Web summary assistant has not been seeded.');
-        }
-
-        $assistant->loadMissing('currentPrompt');
-
-        if ($assistant->currentPrompt === null) {
-            throw new RuntimeException('Web summary assistant is missing an active prompt.');
-        }
+        $assistantKey = $this->assistantKey();
+        $assistant = $this->assistantRegistry->require($assistantKey);
 
         $sourceUrls = array_values(array_filter(array_map(
             static fn (array $source): string => (string) $source['url'],
@@ -60,8 +48,7 @@ class WebSummaryService
         ), static fn (string $url): bool => $url !== ''));
 
         $thread = $this->threadService->create([
-            'assistant_id' => $assistant->id,
-            'assistant_prompt_id' => $assistant->current_prompt_id,
+            'assistant_key' => $assistant->key(),
             'user_id' => $state->thread->user_id,
             'group_id' => $state->thread->group_id,
             'type' => AiThreadType::TOOL->value,
@@ -74,8 +61,6 @@ class WebSummaryService
                 'source_urls' => $sourceUrls,
             ],
         ]);
-
-        $thread->setRelation('assistant', $assistant);
 
         $result = $this->threadMessageService->sendUserMessage(
             $thread,
@@ -136,5 +121,16 @@ class WebSummaryService
         $first = $urls[0];
 
         return 'Web summary: '.Str::limit($first, 80, '...');
+    }
+
+    protected function assistantKey(): string
+    {
+        $key = config('atlas-nexus.assistants.defaults.web_summary');
+
+        if (! is_string($key) || trim($key) === '') {
+            throw new RuntimeException('Web summary assistant key is not configured.');
+        }
+
+        return $key;
     }
 }

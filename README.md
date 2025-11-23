@@ -35,29 +35,27 @@ composer require atlas-php/nexus
 php artisan vendor:publish --tag=atlas-nexus-config
 php artisan vendor:publish --tag=atlas-nexus-migrations
 php artisan migrate
-php artisan atlas:nexus:seed
 ```
 
 Full steps: [Install Guide](./docs/Install.md)
 
 ## Assistants & Prompts
-- Assistants live in `ai_assistants`; assistant-specific prompt versions live in `ai_assistant_prompts` (lineage scoped to each assistant via `original_prompt_id`).
-- Each prompt row belongs to a single assistant; calling `AiAssistantPromptService::edit()` always creates a new version rather than mutating the row.
-- Set `current_prompt_id` to pick the active prompt; threads can override via `assistant_prompt_id`.
-- Allowed tool keys live in the assistant `tools` JSON column (e.g., `["memory","calendar_lookup"]`).
+- Assistants are defined via `atlas-nexus.assistants.definitions` where each class extends `AssistantDefinition`. These classes control the assistant key, name/description, system prompt, default model, temperature/top_p/max tokens, available tool keys, and provider tool passthrough.
+- Runtime tables reference assistants via an `assistant_key` string so definitions stay code-driven and stateless.
+- Configure special assistants (thread manager, web summary, etc.) via `atlas-nexus.assistants.defaults`.
 
-See: [PRD — Assistants & Prompts](./docs/PRD/Assistants-and-Prompts.md)
+See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)
 
 ## Prompt Variables
-- Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside `ai_assistant_prompts.system_prompt`; values are resolved right before the model request.
+- Use placeholders like `{USER.NAME}` or `{USER.EMAIL}` inside assistant definition prompts; values are resolved right before the model request.
 - Built-in thread placeholders include `{THREAD.ID}`, `{THREAD.TITLE}`, `{THREAD.SUMMARY}`, `{THREAD.LONG_SUMMARY}`, `{THREAD.RECENT.IDS}` (comma-separated up to 5 of the user’s most recent threads for the assistant excluding the active thread, or `None` when there are no others), and `{DATETIME}`.
 - Defaults pull from the thread's authenticatable user when the `users` table exists.
 - Add more via `atlas-nexus.prompts.variables` by implementing `PromptVariableGroup` (multiple keys in one class) with `PromptVariableContext` (thread, assistant, prompt, user).
 - When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.
 
 ## Threads & Messages
-- Threads (`ai_threads`) hold `group_id`, `assistant_id`, `user_id`, status, and prompt overrides.
-- Messages (`ai_messages`) store role, content type, sequence, status, tokens, and provider ids.
+- Threads (`ai_threads`) hold `group_id`, `assistant_key`, `user_id`, status, and metadata.
+- Messages (`ai_messages`) store `assistant_key`, role, content type, sequence, status, tokens, and provider ids.
 - `ThreadMessageService::sendUserMessage` records user + assistant placeholder and runs responses inline or queued.
 
 See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
@@ -65,12 +63,12 @@ See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 ## Tools & Tool Runs
 - Tools are code-defined (`NexusTool` implementations) and registered by key via `ToolRegistry`.
 - Assistant tool keys and feature flags determine availability; missing handlers are skipped.
-- Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, `group_id`, and `tool_key`.
+- Tool runs (`ai_tool_runs`) log Prism tool calls with statuses, inputs/outputs, `group_id`, `assistant_key`, and `tool_key`.
 
 See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
 ## Memories
-- Memories (`ai_memories`) capture facts/preferences/summaries scoped to user, assistant, or org.
+- Memories (`ai_memories`) capture facts/preferences/summaries scoped to user, assistant (via `assistant_key`), or org.
 - Built-in `MemoryTool` lets assistants add/update/fetch/delete memories; thread state injects relevant memories into requests.
 
 See: [PRD — Memories](./docs/PRD/Memories.md)

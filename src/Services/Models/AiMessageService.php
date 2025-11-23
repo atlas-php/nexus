@@ -30,6 +30,7 @@ class AiMessageService extends ModelService
     public function create(array $data): AiMessage
     {
         $data = $this->applyGroupId($data);
+        $data = $this->applyAssistantKey($data);
 
         /** @var AiMessage $message */
         $message = parent::create($data);
@@ -82,6 +83,38 @@ class AiMessageService extends ModelService
 
         if ($thread !== null && $thread->group_id !== null) {
             $data['group_id'] = $thread->group_id;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function applyAssistantKey(array $data): array
+    {
+        if (isset($data['assistant_key'])) {
+            $value = (string) $data['assistant_key'];
+
+            if ($value !== '') {
+                $data['assistant_key'] = $value;
+
+                return $data;
+            }
+        }
+
+        $threadId = $data['thread_id'] ?? null;
+
+        if (! is_int($threadId) && ! is_string($threadId)) {
+            return $data;
+        }
+
+        /** @var AiThread|null $thread */
+        $thread = AiThread::query()->find($threadId);
+
+        if ($thread !== null && $thread->assistant_key !== '') {
+            $data['assistant_key'] = $thread->assistant_key;
         }
 
         return $data;

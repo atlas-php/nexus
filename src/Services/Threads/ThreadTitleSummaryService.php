@@ -6,12 +6,11 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Models\AiAssistantService;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
-use Atlas\Nexus\Support\Threads\ThreadManagerDefaults;
 use Illuminate\Support\Str;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use RuntimeException;
@@ -26,8 +25,8 @@ class ThreadTitleSummaryService
     public function __construct(
         private readonly TextRequestFactory $textRequestFactory,
         private readonly AiThreadService $threadService,
-        private readonly AiAssistantService $assistantService,
-        private readonly PromptVariableService $promptVariableService
+        private readonly PromptVariableService $promptVariableService,
+        private readonly AssistantRegistry $assistantRegistry
     ) {}
 
     /**
@@ -100,24 +99,19 @@ class ThreadTitleSummaryService
             throw new RuntimeException('Cannot generate title and summary without conversation messages.');
         }
 
-        $assistant = $this->assistantService->query()
-            ->where('slug', ThreadManagerDefaults::ASSISTANT_SLUG)
-            ->with('currentPrompt')
-            ->first();
+        $assistantKey = $this->assistantKey();
+        $assistant = $this->assistantRegistry->require($assistantKey);
+        $prompt = $assistant->systemPrompt();
 
-        if ($assistant === null || $assistant->currentPrompt === null) {
-            throw new RuntimeException('Thread manager assistant or prompt is missing. Please run the Nexus seeders.');
+        if ($prompt === '') {
+            throw new RuntimeException('Thread manager assistant prompt is missing.');
         }
 
-        $prompt = $assistant->currentPrompt;
-        $promptContext = new PromptVariableContext($state, $prompt, $assistant);
-        $promptText = $this->promptVariableService->apply(
-            $prompt->system_prompt,
-            $promptContext
-        );
+        $promptContext = new PromptVariableContext($state, $assistant, $prompt);
+        $promptText = $this->promptVariableService->apply($prompt, $promptContext);
 
         $request = $this->textRequestFactory->make()
-            ->using($this->provider(), $this->model($assistant->default_model))
+            ->using($this->provider(), $this->model($assistant->defaultModel()))
             ->withSystemPrompt($promptText)
             ->withMessages([
                 new UserMessage($conversation),
@@ -229,5 +223,16 @@ class ThreadTitleSummaryService
             ?? 'gpt-4o-mini';
 
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
+    }
+
+    protected function assistantKey(): string
+    {
+        $key = config('atlas-nexus.assistants.defaults.thread_manager');
+
+        if (! is_string($key) || trim($key) === '') {
+            throw new RuntimeException('Thread manager assistant key is not configured.');
+        }
+
+        return $key;
     }
 }

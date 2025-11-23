@@ -8,8 +8,7 @@ use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
-use Atlas\Nexus\Services\Models\AiAssistantPromptService;
-use Atlas\Nexus\Services\Models\AiAssistantService;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
@@ -55,8 +54,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->alias(NexusManager::class, 'atlas-nexus.manager');
         $this->app->alias(TextRequestFactory::class, 'atlas-nexus.text-factory');
 
-        $this->app->singleton(AiAssistantService::class);
-        $this->app->singleton(AiAssistantPromptService::class);
+        $this->app->singleton(AssistantRegistry::class);
         $this->app->singleton(AiThreadService::class);
         $this->app->singleton(AiMessageService::class);
         $this->app->singleton(AiToolRunService::class);

@@ -26,7 +26,7 @@ class OpenAiRateLimit
     ) {}
 
     /**
-     * @param  array<string, mixed>  $attributes
+     * @param  array<int|string, mixed>  $attributes
      */
     public static function fromArray(array $attributes): ?self
     {
@@ -124,7 +124,7 @@ class OpenAiRateLimit
     }
 
     /**
-     * @param  array<string, mixed>  $attributes
+     * @param  array<int|string, mixed>  $attributes
      * @param  array<int, string>  $keys
      */
     private static function valueFrom(array $attributes, array $keys): mixed

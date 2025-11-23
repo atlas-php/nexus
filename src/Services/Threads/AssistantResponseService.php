@@ -71,7 +71,7 @@ class AssistantResponseService
 
         /** @var AiMessage $assistantMessage */
         $assistantMessage = $this->messageService->findOrFail($assistantMessageId);
-        $assistantMessage->loadMissing('thread.assistant');
+        $assistantMessage->loadMissing('thread');
 
         try {
             if ($assistantMessage->thread === null) {
@@ -92,16 +92,22 @@ class AssistantResponseService
                 ->withMessages($this->convertMessages($state))
                 ->withMaxSteps($this->maxSteps());
 
-            if ($state->assistant->max_output_tokens !== null) {
-                $request->withMaxTokens($state->assistant->max_output_tokens);
+            $maxTokens = $state->assistant->maxOutputTokens();
+
+            if ($maxTokens !== null) {
+                $request->withMaxTokens($maxTokens);
             }
 
-            if ($state->assistant->temperature !== null) {
-                $request->usingTemperature($state->assistant->temperature);
+            $temperature = $state->assistant->temperature();
+
+            if ($temperature !== null) {
+                $request->usingTemperature($temperature);
             }
 
-            if ($state->assistant->top_p !== null) {
-                $request->usingTopP($state->assistant->top_p);
+            $topP = $state->assistant->topP();
+
+            if ($topP !== null) {
+                $request->usingTopP($topP);
             }
 
             if ($state->systemPrompt !== null) {
@@ -141,7 +147,7 @@ class AssistantResponseService
                     'raw_response' => $this->serializeResponse($response),
                     'status' => AiMessageStatus::COMPLETED->value,
                     'failed_reason' => null,
-                    'model' => $response->meta->model ?? $state->assistant->default_model,
+                    'model' => $response->meta->model ?? $state->assistant->defaultModel(),
                     'tokens_in' => $response->usage->promptTokens,
                     'tokens_out' => $response->usage->completionTokens,
                     'provider_response_id' => $response->meta->id ?? null,
@@ -530,7 +536,7 @@ class AssistantResponseService
 
     protected function resolveModel(ThreadState $state): string
     {
-        $model = $state->assistant->default_model;
+        $model = $state->assistant->defaultModel();
 
         if (! is_string($model) || $model === '') {
             $model = config('prism.default_model');
@@ -587,8 +593,9 @@ class AssistantResponseService
 
         if ($state !== null) {
             $details[] = sprintf(
-                'context={assistant=%s, thread_id=%s, messages=%d, tools=%d, memories=%d}',
-                $state->assistant->slug ?? ('#'.$state->assistant->getKey()),
+                'context={assistant_key=%s, assistant_name=%s, thread_id=%s, messages=%d, tools=%d, memories=%d}',
+                $state->assistant->key(),
+                $state->assistant->name(),
                 (string) $state->thread->getKey(),
                 $state->messages->count(),
                 $state->tools->count(),

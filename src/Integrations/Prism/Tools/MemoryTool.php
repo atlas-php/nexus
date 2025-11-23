@@ -252,7 +252,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
                 'id' => $memory->id,
                 'type' => $memory->kind,
                 'content' => $memory->content,
-                'assistant_id' => $memory->assistant_id,
+                'assistant_key' => $memory->assistant_key,
                 'owner_type' => $ownerType->value,
                 'user_id' => $ownerType === AiMemoryOwnerType::USER ? $memory->owner_id : null,
                 'thread_id' => $memory->thread_id,

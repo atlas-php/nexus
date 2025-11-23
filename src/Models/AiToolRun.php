@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $group_id
  * @property string $tool_key
  * @property int $thread_id
+ * @property string $assistant_key
  * @property int $assistant_message_id
  * @property int $call_index
  * @property array<string, mixed> $input_args
@@ -50,6 +51,7 @@ class AiToolRun extends AtlasModel
         'tool_key' => 'string',
         'thread_id' => 'int',
         'assistant_message_id' => 'int',
+        'assistant_key' => 'string',
         'call_index' => 'int',
         'input_args' => 'array',
         'status' => AiToolRunStatus::class,

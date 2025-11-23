@@ -18,7 +18,21 @@ class AssistantDefinitionTest extends TestCase
     {
         $definition = new class extends AssistantDefinition
         {
-            public function slug(): string
+            private string $descriptionValue = 'Demo description';
+
+            private string $modelValue = 'gpt-4o';
+
+            private float $temperatureValue = 0.25;
+
+            private float $topPValue = 0.8;
+
+            private int $maxTokensValue = 1024;
+
+            private bool $promptActive = false;
+
+            private int $promptUser = 77;
+
+            public function key(): string
             {
                 return 'demo-assistant';
             }
@@ -33,29 +47,44 @@ class AssistantDefinitionTest extends TestCase
                 return 'System prompt';
             }
 
+            /**
+             * @phpstan-return string
+             */
             public function description(): ?string
             {
-                return 'Demo description';
+                return $this->descriptionValue !== '' ? $this->descriptionValue : null;
             }
 
+            /**
+             * @phpstan-return string
+             */
             public function defaultModel(): ?string
             {
-                return 'gpt-4o';
+                return $this->modelValue !== '' ? $this->modelValue : null;
             }
 
+            /**
+             * @phpstan-return float
+             */
             public function temperature(): ?float
             {
-                return 0.25;
+                return $this->temperatureValue >= 0 ? $this->temperatureValue : null;
             }
 
+            /**
+             * @phpstan-return float
+             */
             public function topP(): ?float
             {
-                return 0.8;
+                return $this->topPValue >= 0 ? $this->topPValue : null;
             }
 
+            /**
+             * @phpstan-return int
+             */
             public function maxOutputTokens(): ?int
             {
-                return 1024;
+                return $this->maxTokensValue > 0 ? $this->maxTokensValue : null;
             }
 
             public function isActive(): bool
@@ -94,19 +123,22 @@ class AssistantDefinitionTest extends TestCase
 
             public function promptIsActive(): bool
             {
-                return false;
+                return $this->promptActive;
             }
 
+            /**
+             * @phpstan-return int
+             */
             public function promptUserId(): ?int
             {
-                return 77;
+                return $this->promptUser > 0 ? $this->promptUser : null;
             }
         };
 
         $assistant = $definition->assistantAttributes();
         $prompt = $definition->promptAttributes();
 
-        $this->assertSame('demo-assistant', $assistant['slug']);
+        $this->assertSame('demo-assistant', $assistant['assistant_key']);
         $this->assertSame('Demo Assistant', $assistant['name']);
         $this->assertSame('Demo description', $assistant['description']);
         $this->assertSame('gpt-4o', $assistant['default_model']);
@@ -128,7 +160,7 @@ class AssistantDefinitionTest extends TestCase
     {
         $definition = new class extends AssistantDefinition
         {
-            public function slug(): string
+            public function key(): string
             {
                 return 'minimal-assistant';
             }
@@ -147,7 +179,7 @@ class AssistantDefinitionTest extends TestCase
         $assistant = $definition->assistantAttributes();
         $prompt = $definition->promptAttributes();
 
-        $this->assertSame('minimal-assistant', $assistant['slug']);
+        $this->assertSame('minimal-assistant', $assistant['assistant_key']);
         $this->assertNull($assistant['tools']);
         $this->assertNull($assistant['provider_tools']);
         $this->assertNull($assistant['metadata']);

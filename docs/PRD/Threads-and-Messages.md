@@ -16,14 +16,13 @@ Table: `ai_threads`
 |-----------------------|-------------------------------------------------------------------|
 | `id`                  | Primary key                                                       |
 | `group_id`            | Optional tenant/account grouping                                  |
-| `assistant_id`        | Assistant owner                                                   |
+| `assistant_key`       | Assistant owner key                                               |
 | `user_id`             | User owner                                                        |
 | `type`                | `user` or `tool`                                                  |
 | `parent_thread_id`    | Nullable reference to parent thread (no FK)                      |
 | `parent_tool_run_id`  | Nullable reference to tool run (no FK)                           |
 | `title`               | Optional title                                                    |
 | `status`              | Enum (`open`, `archived`, `closed`)                               |
-| `assistant_prompt_id` | Optional prompt override pointing to an assistant prompt (no FK) |
 | `summary`             | Optional rolling summary                                          |
 | `last_message_at`     | Nullable timestamp                                                |
 | `metadata`            | JSON metadata                                                     |
@@ -37,6 +36,7 @@ Table: `ai_messages`
 | `id`                   | Primary key                                                       |
 | `group_id`             | Optional tenant/account grouping (inherits from thread)           |
 | `thread_id`            | Thread id                                                         |
+| `assistant_key`        | Assistant key (copied from thread)                                |
 | `user_id`              | Nullable user id (null for assistant messages)                    |
 | `role`                 | Enum (`user`, `assistant`)                                        |
 | `content`              | Text/JSON payload                                                 |

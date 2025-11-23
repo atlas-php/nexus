@@ -28,6 +28,7 @@ class AiToolRunFactory extends Factory
         return [
             'tool_key' => $this->faker->randomElement(['memory', 'calendar_lookup']),
             'thread_id' => $this->faker->numberBetween(1, 1_000),
+            'assistant_key' => 'general-assistant',
             'group_id' => null,
             'assistant_message_id' => $this->faker->numberBetween(1, 5_000),
             'call_index' => $this->faker->numberBetween(0, 10),

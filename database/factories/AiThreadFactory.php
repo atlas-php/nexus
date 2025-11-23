@@ -27,8 +27,7 @@ class AiThreadFactory extends Factory
         $shortSummary = $this->faker->optional()->sentence(12);
 
         return [
-            'assistant_id' => $this->faker->numberBetween(1, 1_000),
-            'assistant_prompt_id' => $this->faker->optional()->numberBetween(1, 1_000),
+            'assistant_key' => 'general-assistant',
             'user_id' => $this->faker->numberBetween(1, 5_000),
             'group_id' => $this->faker->optional()->numberBetween(1, 100),
             'type' => $this->faker->randomElement(AiThreadType::cases())->value,

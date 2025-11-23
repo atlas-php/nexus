@@ -55,7 +55,7 @@ class ThreadPromptVariables implements PromptVariableGroup
     {
         $ids = $this->threadService->query()
             ->select(['id', 'last_message_at', 'updated_at', 'created_at'])
-            ->where('assistant_id', $thread->assistant_id)
+            ->where('assistant_key', $thread->assistant_key)
             ->where('user_id', $thread->user_id)
             ->where('id', '!=', $thread->getKey())
             ->orderByRaw('COALESCE(last_message_at, updated_at, created_at) DESC')

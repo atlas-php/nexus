@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property AiMemoryOwnerType $owner_type
  * @property int $owner_id
  * @property int|null $group_id
- * @property int|null $assistant_id
+ * @property string|null $assistant_key
  * @property int|null $thread_id
  * @property int|null $source_message_id
  * @property int|null $source_tool_run_id
@@ -49,7 +49,7 @@ class AiMemory extends AtlasModel
     protected $casts = [
         'owner_id' => 'int',
         'group_id' => 'int',
-        'assistant_id' => 'int',
+        'assistant_key' => 'string',
         'thread_id' => 'int',
         'source_message_id' => 'int',
         'source_tool_run_id' => 'int',
@@ -63,17 +63,6 @@ class AiMemory extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_memories';
-    }
-
-    /**
-     * @return BelongsTo<AiAssistant, self>
-     */
-    public function assistant(): BelongsTo
-    {
-        /** @var BelongsTo<AiAssistant, self> $relation */
-        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
-
-        return $relation;
     }
 
     /**

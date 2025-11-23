@@ -26,6 +26,7 @@ class AiMessageFactory extends Factory
     {
         return [
             'thread_id' => $this->faker->numberBetween(1, 1_000),
+            'assistant_key' => 'general-assistant',
             'user_id' => $this->faker->optional()->numberBetween(1, 5_000),
             'group_id' => null,
             'role' => $this->faker->randomElement(AiMessageRole::cases())->value,

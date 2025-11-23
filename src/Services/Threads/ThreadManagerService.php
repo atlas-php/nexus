@@ -55,7 +55,7 @@ class ThreadManagerService
                 "{$threadsTable}.created_at",
                 "{$threadsTable}.updated_at",
             ])
-            ->where("{$threadsTable}.assistant_id", $state->assistant->getKey())
+            ->where("{$threadsTable}.assistant_key", $state->assistant->key())
             ->where("{$threadsTable}.user_id", $state->thread->user_id)
             ->where("{$threadsTable}.id", '!=', $state->thread->getKey())
             ->orderByRaw("COALESCE({$threadsTable}.last_message_at, {$threadsTable}.updated_at, {$threadsTable}.created_at) DESC");
@@ -117,7 +117,7 @@ class ThreadManagerService
         }
 
         $threads = $this->threadService->query()
-            ->where('assistant_id', $state->assistant->getKey())
+            ->where('assistant_key', $state->assistant->key())
             ->where('user_id', $state->thread->user_id)
             ->whereIn('id', $normalizedIds)
             ->with([
@@ -157,7 +157,7 @@ class ThreadManagerService
         bool $generate
     ): array {
         $thread = $this->threadService->query()
-            ->where('assistant_id', $state->assistant->getKey())
+            ->where('assistant_key', $state->assistant->key())
             ->where('user_id', $state->thread->user_id)
             ->where('id', $threadId)
             ->first();

@@ -20,8 +20,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * PRD Reference: Atlas Nexus Overview — ai_threads schema.
  *
  * @property int $id
- * @property int $assistant_id
- * @property int|null $assistant_prompt_id
+ * @property string $assistant_key
  * @property int $user_id
  * @property int|null $group_id
  * @property AiThreadType $type
@@ -49,8 +48,7 @@ class AiThread extends AtlasModel
      * @var array<string, string>
      */
     protected $casts = [
-        'assistant_id' => 'int',
-        'assistant_prompt_id' => 'int',
+        'assistant_key' => 'string',
         'user_id' => 'int',
         'group_id' => 'int',
         'parent_thread_id' => 'int',
@@ -68,28 +66,6 @@ class AiThread extends AtlasModel
     protected function defaultTableName(): string
     {
         return 'ai_threads';
-    }
-
-    /**
-     * @return BelongsTo<AiAssistant, self>
-     */
-    public function assistant(): BelongsTo
-    {
-        /** @var BelongsTo<AiAssistant, self> $relation */
-        $relation = $this->belongsTo(AiAssistant::class, 'assistant_id');
-
-        return $relation;
-    }
-
-    /**
-     * @return BelongsTo<AiAssistantPrompt, self>
-     */
-    public function assistantPrompt(): BelongsTo
-    {
-        /** @var BelongsTo<AiAssistantPrompt, self> $relation */
-        $relation = $this->belongsTo(AiAssistantPrompt::class, 'assistant_prompt_id');
-
-        return $relation;
     }
 
     /**

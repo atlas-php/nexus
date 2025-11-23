@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 return [
     'assistants' => [
-        \App\Nexus\Assistants\GeneralAssistant::class,
-        \App\Nexus\Assistants\HumanAssistant::class,
+        'definitions' => [
+            \App\Nexus\Assistants\GeneralAssistant::class,
+            \App\Nexus\Assistants\HumanAssistant::class,
+            \App\Nexus\Assistants\ThreadManagerAssistant::class,
+            \App\Nexus\Assistants\WebSummaryAssistant::class,
+        ],
+        'defaults' => [
+            'thread_manager' => 'thread-manager',
+            'web_summary' => 'web-summarizer',
+        ],
     ],
 
     'responses' => [
