@@ -1,15 +1,9 @@
 <?php
 
-use App\Console\Commands\InveloChatCommand;
-use App\Console\Commands\ListChatsCommand;
-use App\Console\Commands\LogChatCommand;
 use App\Console\Commands\NexusChatCommand;
 use App\Console\Commands\NexusPipelineCommand;
 use App\Console\Commands\NexusSetupCommand;
-use App\Console\Commands\PrismChatCommand;
-use App\Console\Commands\PrismTextCommand;
 use App\Console\Commands\SandboxStartFreshCommand;
-use App\Console\Commands\ViewChatCommand;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,12 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
         NexusPipelineCommand::class,
         NexusChatCommand::class,
         NexusSetupCommand::class,
-        PrismTextCommand::class,
-        PrismChatCommand::class,
-        LogChatCommand::class,
-        ListChatsCommand::class,
-        ViewChatCommand::class,
-        InveloChatCommand::class,
         SandboxStartFreshCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
