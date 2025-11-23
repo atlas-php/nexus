@@ -96,11 +96,8 @@ class ThreadManagerService
             throw new RuntimeException('Thread not found for this assistant and user.');
         }
 
+        /** @var AiThread $thread */
         $thread = reset($threads);
-
-        if ($thread === false || ! $thread instanceof AiThread) {
-            throw new RuntimeException('Thread not found for this assistant and user.');
-        }
 
         return $thread;
     }

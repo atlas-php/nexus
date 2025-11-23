@@ -69,6 +69,7 @@ class AbstractToolTest extends TestCase
         $tool = $this->app->make(NamedArgumentTool::class);
         $prismTool = $tool->toPrismTool()->as('named_argument_tool');
 
+        /** @phpstan-ignore-next-line Prism tool handler accepts normalized arrays although the interface defines scalars. */
         $result = $prismTool->handle(thread_ids: [1, 2, 3]);
 
         $this->assertSame('Captured arguments.', $result);

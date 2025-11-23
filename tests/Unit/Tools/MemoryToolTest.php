@@ -72,7 +72,7 @@ class MemoryToolTest extends TestCase
             'memory_ids' => [$memoryId],
         ]);
 
-        $this->assertStringContainsString('Memories retrieved', $fetchResponse->message());
+        $this->assertStringContainsString('Memories found', $fetchResponse->message());
 
         /** @var array<int, array<string, mixed>> $fetched */
         $fetched = $fetchResponse->meta()['memories'];
@@ -247,8 +247,13 @@ class MemoryToolTest extends TestCase
         $this->assertSame([], $response->meta()['removed_ids']);
         $this->assertArrayHasKey($foreignUserMemory->id, $response->meta()['errors']);
         $this->assertArrayHasKey($foreignAssistantMemory->id, $response->meta()['errors']);
-        $this->assertNull($foreignUserMemory->fresh()->deleted_at);
-        $this->assertNull($foreignAssistantMemory->fresh()->deleted_at);
+        $refreshedForeignUserMemory = $foreignUserMemory->fresh();
+        $refreshedForeignAssistantMemory = $foreignAssistantMemory->fresh();
+
+        $this->assertNotNull($refreshedForeignUserMemory);
+        $this->assertNotNull($refreshedForeignAssistantMemory);
+        $this->assertNull($refreshedForeignUserMemory->deleted_at);
+        $this->assertNull($refreshedForeignAssistantMemory->deleted_at);
     }
 
     public function test_memory_tool_validates_add_and_update_requirements(): void

@@ -10,6 +10,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * Class TestUser
  *
  * Minimal authenticatable model for prompt variable resolution during tests.
+ *
+ * @property string|null $name
+ * @property string|null $email
  */
 class TestUser extends Authenticatable
 {

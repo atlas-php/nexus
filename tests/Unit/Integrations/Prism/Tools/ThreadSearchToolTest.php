@@ -275,7 +275,13 @@ class ThreadSearchToolTest extends TestCase
         $tool = $this->app->make(ThreadSearchTool::class);
         $tool->setThreadState($state);
 
-        $userName = TestUser::query()->find($state->thread->user_id)?->name ?? '';
+        $userRecord = TestUser::query()->find($state->thread->user_id);
+
+        if ($userRecord === null) {
+            $this->fail('Expected test user to exist for the provided thread.');
+        }
+
+        $userName = $userRecord->name;
 
         $response = $tool->handle([
             'search' => [$userName],
