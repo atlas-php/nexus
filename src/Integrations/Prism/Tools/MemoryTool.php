@@ -176,7 +176,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         $serialized = $this->serializeMemories($memories);
         $message = $memories->isEmpty()
             ? 'No memories found.'
-            : "Memories retrieved:\n".implode("\n", array_map(
+            : "Memories found:\n".implode("\n", array_map(
                 static fn (array $memory): string => sprintf(
                     '- ID %s (%s): %s',
                     $memory['id'],
