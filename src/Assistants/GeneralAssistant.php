@@ -10,7 +10,7 @@ use Atlas\Nexus\Support\Assistants\AssistantDefinition;
  * Class GeneralAssistant
  *
  * Provides the built-in conversational assistant that packages can rely on for general guidance.
- * This definition mirrors the former sandbox assistant so consuming apps receive a ready-to-use option. 
+ * This definition mirrors the former sandbox assistant so consuming apps receive a ready-to-use option.
  */
 class GeneralAssistant extends AssistantDefinition
 {
