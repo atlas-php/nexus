@@ -9,6 +9,7 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\AbstractTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ToolParameter;
 use Atlas\Nexus\Integrations\Prism\Tools\ToolResponse;
 use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiAssistantPrompt;
@@ -17,6 +18,8 @@ use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Tests\TestCase;
+use Prism\Prism\Schema\ArraySchema;
+use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 
 /**
@@ -59,6 +62,17 @@ class AbstractToolTest extends TestCase
         $this->assertSame(AiToolRunStatus::FAILED, $run->status);
         $this->assertSame('Forced failure', $run->error_message);
         $this->assertNotNull($run->finished_at);
+    }
+
+    public function test_it_normalizes_named_arguments_without_numeric_indexes(): void
+    {
+        $tool = $this->app->make(NamedArgumentTool::class);
+        $prismTool = $tool->toPrismTool()->as('named_argument_tool');
+
+        $result = $prismTool->handle(thread_ids: [1, 2, 3]);
+
+        $this->assertSame('Captured arguments.', $result);
+        $this->assertSame(['thread_ids' => [1, 2, 3]], $tool->arguments());
     }
 
     protected function createState(): ThreadState
@@ -130,5 +144,62 @@ class FailingTool extends AbstractTool implements ThreadStateAwareTool
     public function handle(array $arguments): ToolResponse
     {
         throw new RuntimeException('Forced failure');
+    }
+}
+
+/**
+ * Class NamedArgumentTool
+ *
+ * Captures normalized arguments to ensure named tool calls are parsed without numeric indexes.
+ */
+class NamedArgumentTool extends AbstractTool
+{
+    /** @var array<string, mixed> */
+    private array $capturedArguments = [];
+
+    /**
+     * @return array<int, \Atlas\Nexus\Integrations\Prism\Tools\ToolParameter>
+     */
+    public function parameters(): array
+    {
+        return [
+            new ToolParameter(
+                new ArraySchema(
+                    'thread_ids',
+                    'Thread identifiers.',
+                    new StringSchema('thread_id', 'Thread identifier.', true),
+                    true
+                ),
+                true
+            ),
+        ];
+    }
+
+    public function name(): string
+    {
+        return 'Named Argument Tool';
+    }
+
+    public function description(): string
+    {
+        return 'Captures normalized arguments.';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function arguments(): array
+    {
+        return $this->capturedArguments;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    public function handle(array $arguments): ToolResponse
+    {
+        $this->capturedArguments = $arguments;
+
+        return $this->output('Captured arguments.', ['result' => $arguments]);
     }
 }

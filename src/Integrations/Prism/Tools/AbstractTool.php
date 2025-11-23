@@ -145,13 +145,17 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
      */
     protected function normalizeArguments(array $arguments): array
     {
-        if (count($arguments) === 1 && is_array($arguments[0])) {
+        $hasZeroIndex = array_key_exists(0, $arguments);
+
+        if ($hasZeroIndex && count($arguments) === 1 && is_array($arguments[0])) {
             $firstArgument = $arguments[0];
 
-            return array_is_list($firstArgument) ? $this->mapPositionalArguments($firstArgument) : $this->stringifyKeys($firstArgument);
+            return array_is_list($firstArgument)
+                ? $this->mapPositionalArguments($firstArgument)
+                : $this->stringifyKeys($firstArgument);
         }
 
-        if (array_is_list($arguments)) {
+        if ($hasZeroIndex && array_is_list($arguments)) {
             return $this->mapPositionalArguments($arguments);
         }
 
