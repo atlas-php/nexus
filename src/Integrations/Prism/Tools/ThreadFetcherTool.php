@@ -50,7 +50,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Search threads by title, summaries, keywords, and message content. Use fetch_thread with a thread_id to inspect a conversation.';
+        return 'Search the user’s threads by title, summary, keywords, or message text. Use fetch_thread with a thread_id to open a conversation.';
     }
 
     /**
@@ -61,7 +61,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
         return [
             new ToolParameter(new StringSchema('action', 'Action to perform: search_threads or fetch_thread.', true), true),
             new ToolParameter(new NumberSchema('page', 'Page number when listing/searching threads.', true), false),
-            new ToolParameter(new ArraySchema('search', 'Search terms within title, short summary, long summary, keywords, and all message content (search action).', new StringSchema('term', 'Search term', true), true), false),
+            new ToolParameter(new ArraySchema('search', 'Search multiple terms across title, summary, keywords, and all message content.', new StringSchema('term', 'Search term', true), true), false),
             new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
             new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch action.', true), false),
         ];
