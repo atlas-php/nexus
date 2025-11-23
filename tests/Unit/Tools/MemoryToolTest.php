@@ -187,7 +187,7 @@ class MemoryToolTest extends TestCase
         ]);
 
         $this->assertTrue($suggestion->meta()['error']);
-        $this->assertNotEmpty($suggestion->meta()['available_memories']);
+        $this->assertArrayNotHasKey('available_memories', $suggestion->meta());
 
         $response = $tool->handle([
             'action' => 'delete',
@@ -290,6 +290,37 @@ class MemoryToolTest extends TestCase
 
         $this->assertTrue($updateResponse->meta()['error']);
         $this->assertStringContainsString('memory_ids is required', $updateResponse->message());
+    }
+
+    public function test_memory_tool_rejects_updating_multiple_memories(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-update-guard']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 777,
+        ]);
+
+        $tool = $this->app->make(MemoryTool::class);
+        $tool->setThreadState(new ThreadState(
+            $thread,
+            $assistant,
+            null,
+            collect(),
+            collect(),
+            collect(),
+            null,
+            null,
+            collect()
+        ));
+
+        $response = $tool->handle([
+            'action' => 'update',
+            'memory_ids' => [1, 2],
+            'content' => 'Should not run.',
+        ]);
+
+        $this->assertTrue($response->meta()['error']);
+        $this->assertSame('You can only update 1 memory at a time', $response->message());
     }
 
     public function test_memory_tool_rejects_unknown_types(): void

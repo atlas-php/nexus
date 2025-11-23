@@ -137,6 +137,12 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function handleUpdate(array $arguments, ThreadState $state): ToolResponse
     {
+        $ids = $this->collectIds($arguments);
+
+        if (count($ids) > 1) {
+            return $this->output('You can only update 1 memory at a time', ['error' => true]);
+        }
+
         $memoryId = $this->requireMemoryId($arguments, 'update');
         $content = $this->normalizeContent($arguments['content'] ?? null);
         $type = $this->normalizeType($arguments['type'] ?? null);
@@ -199,13 +205,10 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         $ids = $this->collectIds($arguments);
 
         if ($ids === []) {
-            $available = $this->memoryService->listForThread($state->assistant, $state->thread);
-
             return $this->output(
                 'Provide memory_ids to delete. Use action=fetch first to list memories with their IDs.',
                 [
                     'error' => true,
-                    'available_memories' => $this->serializeMemories($available),
                 ]
             );
         }
