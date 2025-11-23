@@ -17,6 +17,7 @@ use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * Provides an interactive CLI chat loop that uses Nexus thread/message services and queued assistant responses.
@@ -151,6 +152,7 @@ class NexusChatCommand extends Command
     protected function displayExistingMessages(AiThread $thread): void
     {
         $messages = $this->messageService->query()
+            ->withoutGlobalScope(SoftDeletingScope::class)
             ->where('thread_id', $thread->id)
             ->whereIn('status', [
                 AiMessageStatus::COMPLETED->value,

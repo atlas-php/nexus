@@ -9,6 +9,7 @@ use App\Console\Commands\NexusSetupCommand;
 use App\Console\Commands\PrismChatCommand;
 use App\Console\Commands\PrismTextCommand;
 use App\Console\Commands\ViewChatCommand;
+use App\Console\Commands\SandboxStartFreshCommand;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ListChatsCommand::class,
         ViewChatCommand::class,
         InveloChatCommand::class,
+        SandboxStartFreshCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         //
