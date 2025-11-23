@@ -186,7 +186,10 @@ class ThreadStateServiceTest extends TestCase
             'group_id' => $parent->group_id,
         ]);
 
-        $state = $this->app->make(ThreadStateService::class)->forThread($summaryThread->fresh());
+        $freshSummary = $summaryThread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshSummary);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($freshSummary);
 
         $this->assertSame(
             'Summary for '.$parent->getKey().': '.$parent->title,
