@@ -87,7 +87,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
                 'Atlas Nexus',
                 'atlas-nexus.php',
                 $this->tags()->config(),
-                '*ai_assistants*',
+                '*create_ai_threads_table.php',
                 $this->tags()->migrations()
             );
 
