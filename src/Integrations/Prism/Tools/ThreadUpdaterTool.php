@@ -8,6 +8,7 @@ use Atlas\Nexus\Contracts\ThreadStateAwareTool;
 use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
+use Prism\Prism\Schema\EnumSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
@@ -53,7 +54,7 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new StringSchema('action', 'Action to perform: update_thread or generate_summary.', true), true),
+            new ToolParameter(new EnumSchema('action', 'Action to perform.', ['update_thread', 'generate_summary']), true),
             new ToolParameter(new StringSchema('thread_id', 'Thread identifier. Defaults to the active thread.', true), false),
             new ToolParameter(new StringSchema('title', 'New thread title (optional).', true), false),
             new ToolParameter(new StringSchema('summary', 'New short summary (optional).', true), false),
