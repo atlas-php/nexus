@@ -148,7 +148,7 @@ class AssistantResponseService
                     'raw_response' => $this->serializeResponse($response),
                     'status' => AiMessageStatus::COMPLETED->value,
                     'failed_reason' => null,
-                    'model' => $response->meta->model ?? $state->assistant->defaultModel(),
+                    'model' => $response->meta->model ?? $state->assistant->model(),
                     'tokens_in' => $response->usage->promptTokens,
                     'tokens_out' => $response->usage->completionTokens,
                     'provider_response_id' => $response->meta->id ?? null,
@@ -545,7 +545,7 @@ class AssistantResponseService
 
     protected function resolveModel(ThreadState $state): string
     {
-        $model = $state->assistant->defaultModel();
+        $model = $state->assistant->model();
 
         if (! is_string($model) || $model === '') {
             $model = config('prism.default_model');

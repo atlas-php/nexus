@@ -21,6 +21,8 @@ class ResolvedAssistantTest extends TestCase
         {
             private int $maxSteps = 5;
 
+            private ?string $modelKey = 'gpt-test';
+
             public function key(): string
             {
                 return 'configurable';
@@ -34,6 +36,16 @@ class ResolvedAssistantTest extends TestCase
             public function systemPrompt(): string
             {
                 return 'Prompt';
+            }
+
+            public function clearModel(): void
+            {
+                $this->modelKey = null;
+            }
+
+            public function model(): ?string
+            {
+                return $this->modelKey;
             }
 
             public function maxDefaultSteps(): ?int

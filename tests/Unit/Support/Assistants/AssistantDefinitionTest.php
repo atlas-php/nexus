@@ -60,7 +60,7 @@ class AssistantDefinitionTest extends TestCase
             /**
              * @phpstan-return string
              */
-            public function defaultModel(): ?string
+            public function model(): ?string
             {
                 return $this->modelValue !== '' ? $this->modelValue : null;
             }
@@ -202,6 +202,11 @@ class AssistantDefinitionTest extends TestCase
             public function systemPrompt(): string
             {
                 return 'Prompt';
+            }
+
+            public function model(): ?string
+            {
+                return null;
             }
         };
 

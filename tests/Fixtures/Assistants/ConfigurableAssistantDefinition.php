@@ -68,7 +68,7 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
         return (string) $this->data('system_prompt', 'You are a test assistant.');
     }
 
-    public function defaultModel(): ?string
+    public function model(): ?string
     {
         return $this->data('default_model');
     }

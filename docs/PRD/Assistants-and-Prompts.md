@@ -18,7 +18,7 @@ Each definition class must implement:
 | `key()` | Unique assistant key used by all runtime tables (`assistant_key` columns). |
 | `name()` / `description()` | Display metadata for UIs or logs. |
 | `systemPrompt()` | Raw system prompt text that `ThreadStateService` renders with prompt variables. |
-| `defaultModel()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
+| `model()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
 | `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
 | `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |

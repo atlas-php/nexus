@@ -17,7 +17,7 @@ class ResolvedAssistant
 
     private ?string $description;
 
-    private ?string $defaultModel;
+    private ?string $model;
 
     private ?float $temperature;
 
@@ -65,7 +65,7 @@ class ResolvedAssistant
         $this->key = is_string($key) && $key !== '' ? strtolower($key) : strtolower($definition->key());
         $this->name = (string) ($attributes['name'] ?? $definition->name());
         $this->description = $this->normalizeNullableString($attributes['description'] ?? null);
-        $this->defaultModel = $this->normalizeNullableString($attributes['default_model'] ?? null);
+        $this->model = $this->normalizeNullableString($attributes['default_model'] ?? null);
         $this->temperature = $this->normalizeNullableFloat($attributes['temperature'] ?? null);
         $this->topP = $this->normalizeNullableFloat($attributes['top_p'] ?? null);
         $this->maxOutputTokens = $this->normalizeNullableInt($attributes['max_output_tokens'] ?? null);
@@ -99,9 +99,9 @@ class ResolvedAssistant
         return $this->description;
     }
 
-    public function defaultModel(): ?string
+    public function model(): ?string
     {
-        return $this->defaultModel;
+        return $this->model;
     }
 
     public function temperature(): ?float

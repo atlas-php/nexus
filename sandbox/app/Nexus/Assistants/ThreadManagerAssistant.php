@@ -26,6 +26,21 @@ class ThreadManagerAssistant extends AssistantDefinition
         return 'Generates titles and summaries for threads.';
     }
 
+    public function model(): ?string
+    {
+        return 'gpt-4o-mini';
+    }
+
+    public function maxOutputTokens(): ?int
+    {
+        return 1048;
+    }
+
+    public function maxDefaultSteps(): ?int
+    {
+        return 1;
+    }
+
     public function systemPrompt(): string
     {
         return <<<'PROMPT'

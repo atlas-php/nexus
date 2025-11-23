@@ -13,7 +13,7 @@ use Atlas\Nexus\Support\Assistants\AssistantDefinition;
  */
 class HumanAssistant extends AssistantDefinition
 {
-    public function slug(): string
+    public function key(): string
     {
         return 'human-assistant';
     }
@@ -28,9 +28,19 @@ class HumanAssistant extends AssistantDefinition
         return 'An experimental conversational assistant that responds as Sara, a human.';
     }
 
-    public function defaultModel(): ?string
+    public function model(): ?string
     {
         return 'gpt-5.1';
+    }
+
+    public function maxOutputTokens(): ?int
+    {
+        return 256;
+    }
+
+    public function maxDefaultSteps(): ?int
+    {
+        return 2;
     }
 
     /**
@@ -38,7 +48,7 @@ class HumanAssistant extends AssistantDefinition
      */
     public function tools(): array
     {
-        return ['memory', 'thread_search', 'thread_fetcher', 'thread_updater'];
+        return array_merge(parent::tools(), ['memory', 'thread_search', 'thread_fetcher', 'thread_updater']);
     }
 
     /**
@@ -46,7 +56,7 @@ class HumanAssistant extends AssistantDefinition
      */
     public function providerTools(): array
     {
-        return ['web_search', 'file_search', 'code_interpreter'];
+        return array_merge(parent::providerTools(), ['web_search', 'file_search', 'code_interpreter']);
     }
 
     public function systemPrompt(): string

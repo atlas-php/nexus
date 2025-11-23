@@ -25,6 +25,21 @@ class WebSummaryAssistant extends AssistantDefinition
     {
         return 'Summarizes website content that tools retrieve.';
     }
+    
+    public function model(): ?string
+    {
+        return 'gpt-4o-mini';
+    }
+
+    public function maxOutputTokens(): ?int
+    {
+        return 512;
+    }
+
+    public function maxDefaultSteps(): ?int
+    {
+        return 1;
+    }
 
     public function systemPrompt(): string
     {

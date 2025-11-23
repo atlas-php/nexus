@@ -108,7 +108,7 @@ class ThreadTitleSummaryService
         $promptText = $this->promptVariableService->apply($prompt, $promptContext);
 
         $request = $this->textRequestFactory->make()
-            ->using($this->provider(), $this->model($assistant->defaultModel()))
+            ->using($this->provider(), $this->model($assistant->model()))
             ->withSystemPrompt($promptText)
             ->withMessages([
                 new UserMessage($conversation),

@@ -24,7 +24,7 @@ abstract class AssistantDefinition
         return null;
     }
 
-    public function defaultModel(): ?string
+    public function model(): ?string
     {
         return null;
     }
@@ -106,7 +106,7 @@ abstract class AssistantDefinition
             'key' => $this->key(),
             'name' => $this->name(),
             'description' => $this->description(),
-            'default_model' => $this->defaultModel(),
+            'default_model' => $this->model(),
             'temperature' => $this->temperature(),
             'top_p' => $this->topP(),
             'max_output_tokens' => $this->maxOutputTokens(),
