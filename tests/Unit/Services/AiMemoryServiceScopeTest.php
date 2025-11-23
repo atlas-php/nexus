@@ -10,7 +10,6 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Tests\TestCase;
-use Illuminate\Support\Carbon;
 use RuntimeException;
 
 /**
@@ -31,7 +30,7 @@ class AiMemoryServiceScopeTest extends TestCase
         ])->run();
     }
 
-    public function test_it_saves_and_filters_memories_by_scope_and_dates(): void
+    public function test_it_saves_and_filters_memories_by_scope(): void
     {
         $assistant = AiAssistant::factory()->create(['slug' => 'memory-service']);
         $thread = AiThread::factory()->create([
@@ -69,8 +68,6 @@ class AiMemoryServiceScopeTest extends TestCase
             AiMemoryOwnerType::USER
         );
 
-        $olderMemory->update(['created_at' => Carbon::now()->subDays(5)]);
-
         AiMemory::factory()->create([
             'owner_type' => AiMemoryOwnerType::USER->value,
             'owner_id' => 999,
@@ -79,14 +76,15 @@ class AiMemoryServiceScopeTest extends TestCase
         ]);
 
         $allMemories = $service->listForThread($assistant, $thread);
-        $recent = $service->listForThread($assistant, $thread, from: Carbon::now()->subDay());
+        $filtered = $service->listForThread($assistant, $thread, memoryIds: [$assistantMemory->id]);
 
         $this->assertTrue($allMemories->contains('id', $assistantMemory->id));
         $this->assertTrue($allMemories->contains('id', $threadMemory->id));
         $this->assertFalse($allMemories->contains('owner_id', 999));
 
-        $this->assertTrue($recent->contains('id', $assistantMemory->id));
-        $this->assertFalse($recent->contains('id', $olderMemory->id));
+        $this->assertCount(1, $filtered);
+        $this->assertTrue($filtered->contains('id', $assistantMemory->id));
+        $this->assertFalse($filtered->contains('id', $olderMemory->id));
     }
 
     public function test_it_removes_only_accessible_memories(): void

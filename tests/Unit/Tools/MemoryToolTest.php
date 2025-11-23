@@ -60,7 +60,7 @@ class MemoryToolTest extends TestCase
         ]);
 
         $this->assertSame('Memory added.', $addResponse->message());
-        $memoryId = $addResponse->meta()['memory_id'];
+        $memoryId = $addResponse->meta()['memory_ids'][0];
 
         $memory = AiMemory::find($memoryId);
         $this->assertInstanceOf(AiMemory::class, $memory);
@@ -69,7 +69,7 @@ class MemoryToolTest extends TestCase
 
         $fetchResponse = $tool->handle([
             'action' => 'fetch',
-            'memory_id' => $memoryId,
+            'memory_ids' => [$memoryId],
         ]);
 
         $this->assertStringContainsString('Memories retrieved', $fetchResponse->message());
@@ -78,10 +78,12 @@ class MemoryToolTest extends TestCase
         $fetched = $fetchResponse->meta()['memories'];
         $this->assertNotEmpty($fetched);
         $this->assertTrue(collect($fetched)->contains(fn ($memory) => $memory['id'] === $memoryId));
+        $this->assertSame($assistant->id, $fetched[0]['assistant_id']);
+        $this->assertSame($thread->user_id, $fetched[0]['user_id']);
 
         $updateResponse = $tool->handle([
             'action' => 'update',
-            'memory_id' => $memoryId,
+            'memory_ids' => [$memoryId],
             'content' => 'User prefers SMS alerts.',
             'type' => 'constraint',
         ]);
@@ -93,7 +95,7 @@ class MemoryToolTest extends TestCase
 
         $deleteResponse = $tool->handle([
             'action' => 'delete',
-            'memory_id' => $memoryId,
+            'memory_ids' => [$memoryId],
         ]);
 
         $this->assertSame('Memory removed.', $deleteResponse->message());
@@ -123,7 +125,7 @@ class MemoryToolTest extends TestCase
 
         $response = $tool->handle([
             'action' => 'delete',
-            'memory_id' => 404,
+            'memory_ids' => [404],
         ]);
 
         $this->assertSame('Some memories could not be removed.', $response->message());
@@ -200,6 +202,55 @@ class MemoryToolTest extends TestCase
         $this->assertSoftDeleted($memB);
     }
 
+    public function test_memory_tool_only_deletes_memories_for_current_context(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-guard']);
+        $otherAssistant = AiAssistant::factory()->create(['slug' => 'memory-tool-guard-foreign']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 4444,
+        ]);
+
+        $tool = $this->app->make(MemoryTool::class);
+        $tool->setThreadState(new ThreadState(
+            $thread,
+            $assistant,
+            null,
+            new Collection,
+            new Collection,
+            new Collection,
+            null,
+            null,
+            new Collection
+        ));
+
+        $foreignUserMemory = AiMemory::factory()->create([
+            'assistant_id' => $assistant->id,
+            'owner_type' => 'user',
+            'owner_id' => 12345,
+            'thread_id' => null,
+        ]);
+
+        $foreignAssistantMemory = AiMemory::factory()->create([
+            'assistant_id' => $otherAssistant->id,
+            'owner_type' => 'user',
+            'owner_id' => $thread->user_id,
+            'thread_id' => null,
+        ]);
+
+        $response = $tool->handle([
+            'action' => 'delete',
+            'memory_ids' => [$foreignUserMemory->id, $foreignAssistantMemory->id],
+        ]);
+
+        $this->assertSame('Some memories could not be removed.', $response->message());
+        $this->assertSame([], $response->meta()['removed_ids']);
+        $this->assertArrayHasKey($foreignUserMemory->id, $response->meta()['errors']);
+        $this->assertArrayHasKey($foreignAssistantMemory->id, $response->meta()['errors']);
+        $this->assertNull($foreignUserMemory->fresh()->deleted_at);
+        $this->assertNull($foreignAssistantMemory->fresh()->deleted_at);
+    }
+
     public function test_memory_tool_validates_add_and_update_requirements(): void
     {
         $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-validation']);
@@ -233,7 +284,7 @@ class MemoryToolTest extends TestCase
         ]);
 
         $this->assertTrue($updateResponse->meta()['error']);
-        $this->assertStringContainsString('memory_id is required', $updateResponse->message());
+        $this->assertStringContainsString('memory_ids is required', $updateResponse->message());
     }
 
     public function test_memory_tool_rejects_unknown_types(): void

@@ -10,7 +10,6 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Prism\Prism\Schema\ArraySchema;
 use Prism\Prism\Schema\EnumSchema;
@@ -53,12 +52,12 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
 
     public function name(): string
     {
-        return 'Memory Manager';
+        return 'Memory';
     }
 
     public function description(): string
     {
-        return 'Add, update, fetch, or delete contextual memories for this assistant and user.';
+        return 'Add, update, fetch, or delete contextual memories for this user.';
     }
 
     /**
@@ -70,10 +69,11 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
             new ToolParameter(new EnumSchema('action', 'Action to perform', ['add', 'update', 'fetch', 'delete'])),
             new ToolParameter(new EnumSchema('type', 'Memory type', self::SUPPORTED_TYPES, true), false),
             new ToolParameter(new StringSchema('content', 'Memory content to store', true), false),
-            new ToolParameter(new StringSchema('from_date', 'Earliest creation date (ISO8601)', true), false),
-            new ToolParameter(new StringSchema('to_date', 'Latest creation date (ISO8601)', true), false),
-            new ToolParameter(new NumberSchema('memory_id', 'Memory identifier for update, fetch, or delete', true, minimum: 1), false),
-            new ToolParameter(new ArraySchema('memory_ids', 'Memory identifiers for fetch or delete', new NumberSchema('id', 'Memory id')), false),
+            new ToolParameter(new ArraySchema(
+                'memory_ids',
+                'Memory ID(s) for fetch or deleting one or many',
+                new NumberSchema('id', 'Memory id')
+            ), false),
         ];
     }
 
@@ -126,7 +126,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         );
 
         return $this->output('Memory added.', [
-            'memory_id' => $memory->id,
+            'memory_ids' => [$memory->id],
             'type' => $memory->kind,
             'content' => $memory->content,
         ]);
@@ -154,7 +154,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         );
 
         return $this->output('Memory updated.', [
-            'memory_id' => $memory->id,
+            'memory_ids' => [$memory->id],
             'type' => $memory->kind,
             'content' => $memory->content,
         ]);
@@ -165,15 +165,11 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function handleFetch(array $arguments, ThreadState $state): ToolResponse
     {
-        $from = $this->parseDate($arguments['from_date'] ?? null);
-        $to = $this->parseDate($arguments['to_date'] ?? null);
         $ids = $this->collectIds($arguments);
 
         $memories = $this->memoryService->listForThread(
             $state->assistant,
             $state->thread,
-            $from,
-            $to,
             $ids === [] ? null : $ids
         );
 
@@ -206,7 +202,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
             $available = $this->memoryService->listForThread($state->assistant, $state->thread);
 
             return $this->output(
-                'Provide memory_id or memory_ids to delete. Use action=fetch first to list memories with their IDs.',
+                'Provide memory_ids to delete. Use action=fetch first to list memories with their IDs.',
                 [
                     'error' => true,
                     'available_memories' => $this->serializeMemories($available),
@@ -247,10 +243,15 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     protected function serializeMemories(Collection $memories): array
     {
         return $memories->map(function (AiMemory $memory): array {
+            $ownerType = $memory->owner_type;
+
             return [
                 'id' => $memory->id,
                 'type' => $memory->kind,
                 'content' => $memory->content,
+                'assistant_id' => $memory->assistant_id,
+                'owner_type' => $ownerType->value,
+                'user_id' => $ownerType === AiMemoryOwnerType::USER ? $memory->owner_id : null,
                 'thread_id' => $memory->thread_id,
                 'created_at' => $memory->created_at?->toAtomString(),
             ];
@@ -296,28 +297,18 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function requireMemoryId(array $arguments, string $context): int
     {
-        $memoryId = $arguments['memory_id'] ?? null;
+        $ids = $this->collectIds($arguments);
+        $memoryId = $ids[0] ?? null;
 
         if ($memoryId === null) {
-            throw new RuntimeException(sprintf('memory_id is required to %s a memory.', $context));
+            throw new RuntimeException(sprintf('memory_ids is required to %s a memory.', $context));
         }
 
-        $id = (int) $memoryId;
-
-        if ($id <= 0) {
-            throw new RuntimeException('memory_id must be a positive integer.');
+        if ($memoryId <= 0) {
+            throw new RuntimeException('memory_ids must contain positive integers.');
         }
 
-        return $id;
-    }
-
-    protected function parseDate(mixed $value): ?Carbon
-    {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        return Carbon::parse($value);
+        return $memoryId;
     }
 
     /**
@@ -326,24 +317,26 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function collectIds(array $arguments): array
     {
-        $ids = [];
+        $rawIds = $arguments['memory_ids'] ?? [];
 
-        $memoryId = $arguments['memory_id'] ?? null;
-
-        if ($memoryId !== null) {
-            $ids[] = (int) $memoryId;
+        if (is_scalar($rawIds) || $rawIds instanceof \Stringable) {
+            $rawIds = [(string) $rawIds];
         }
 
-        if (isset($arguments['memory_ids']) && is_array($arguments['memory_ids'])) {
-            foreach ($arguments['memory_ids'] as $id) {
-                $intId = (int) $id;
+        if (! is_array($rawIds)) {
+            return [];
+        }
 
-                if ($intId > 0) {
-                    $ids[] = $intId;
-                }
+        $ids = [];
+
+        foreach ($rawIds as $id) {
+            $intId = (int) $id;
+
+            if ($intId > 0) {
+                $ids[] = $intId;
             }
         }
 
-        return array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        return array_values(array_unique($ids));
     }
 }

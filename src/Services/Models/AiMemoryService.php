@@ -10,7 +10,6 @@ use Atlas\Nexus\Models\AiAssistant;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -86,7 +85,7 @@ class AiMemoryService extends ModelService
     }
 
     /**
-     * Fetch accessible memories, optionally filtered by date range or specific identifiers.
+     * Fetch accessible memories, optionally filtered by specific identifiers.
      * Thread scope is intentionally ignored and the results are ordered newest to oldest.
      *
      * @param  array<int, int>|null  $memoryIds
@@ -95,8 +94,6 @@ class AiMemoryService extends ModelService
     public function listForThread(
         AiAssistant $assistant,
         AiThread $thread,
-        ?Carbon $from = null,
-        ?Carbon $to = null,
         ?array $memoryIds = null
     ): Collection {
         $query = $this->scopedQuery($assistant, $thread)
@@ -110,8 +107,6 @@ class AiMemoryService extends ModelService
                 $query->whereIn('id', array_values(array_unique($ids)));
             }
         }
-
-        $this->applyDateBounds($query, $from, $to);
 
         /** @var Collection<int, AiMemory> $memories */
         $memories = $query->get();
@@ -206,17 +201,4 @@ class AiMemoryService extends ModelService
             });
     }
 
-    /**
-     * @param  Builder<AiMemory>  $query
-     */
-    protected function applyDateBounds(Builder $query, ?Carbon $from, ?Carbon $to): void
-    {
-        if ($from !== null) {
-            $query->where('created_at', '>=', $from);
-        }
-
-        if ($to !== null) {
-            $query->where('created_at', '<=', $to);
-        }
-    }
 }

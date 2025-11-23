@@ -46,7 +46,7 @@ Table: `ai_memories`
 - `AiMemoryService::listForThread` returns memories where:
   - Owner matches thread user (`user`), assistant (`assistant`), or org (`org`).
   - `assistant_id` is null or matches the assistant.
-  - Optional date bounds (`from`, `to`) apply.
+  - Optional `memory_ids` filter limits to explicit identifiers.
   - Ordered by `id`.
 - `ThreadStateService` pulls memories for inclusion in LLM context and injects ids into assistant message metadata.
 
