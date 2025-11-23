@@ -13,7 +13,7 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `web_search`), and is registered inside `ToolRegistry`.
 
 - Built-in tools are listed in `atlas-nexus.tools.registry` by default:
-  - `memory` — save/fetch/delete thread-aware memories.
+  - `memory` — add/update/fetch/delete thread-aware memories.
   - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant; options live under `atlas-nexus.tools.options.web_search`.
     - `allowed_domains` (array|null) restricts searches to configured domains; requests outside the list return `Error, this domain is not allowed to be searched`, and the tool description includes `Allowed domains: ...` for clarity.
   - `thread_manager` — update thread title/summary or auto-generate them from conversation context; options live under `atlas-nexus.tools.options.thread_manager`.

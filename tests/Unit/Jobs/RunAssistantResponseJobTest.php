@@ -231,10 +231,10 @@ class RunAssistantResponseJobTest extends TestCase
             text: 'Memory stored.',
             finishReason: FinishReason::Stop,
             toolCalls: [
-                new \Prism\Prism\ValueObjects\ToolCall('call-1', MemoryTool::KEY, ['action' => 'save'], 'result-1'),
+                new \Prism\Prism\ValueObjects\ToolCall('call-1', MemoryTool::KEY, ['action' => 'add'], 'result-1'),
             ],
             toolResults: [
-                new ToolResult('call-1', MemoryTool::KEY, ['action' => 'save'], ['success' => true]),
+                new ToolResult('call-1', MemoryTool::KEY, ['action' => 'add'], ['success' => true]),
             ],
             usage: new Usage(5, 10),
             meta: new Meta('res-555', 'gpt-4o'),
@@ -252,7 +252,7 @@ class RunAssistantResponseJobTest extends TestCase
 
         $this->assertInstanceOf(AiToolRun::class, $toolRun);
         $this->assertSame(AiToolRunStatus::SUCCEEDED->value, $toolRun->status->value);
-        $this->assertSame(['action' => 'save'], $toolRun->input_args);
+        $this->assertSame(['action' => 'add'], $toolRun->input_args);
         $this->assertSame(['success' => true], $toolRun->response_output);
         $this->assertSame($assistantMessage->id, $toolRun->assistant_message_id);
     }

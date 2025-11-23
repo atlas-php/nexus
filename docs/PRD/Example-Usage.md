@@ -42,6 +42,6 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 - Tool run metadata stores Prism `tool_call_id` and `tool_call_result_id` when available.
 
 ## Manage Memories
-- `MemoryTool` (seeded) allows assistants to save/fetch/delete memories via tool calls.
+- `MemoryTool` (seeded) allows assistants to add/update/fetch/delete memories via tool calls.
 - `AiMemoryService::saveForThread` stores memory with `group_id` and owner/assistant scope.
 - `ThreadStateService` injects applicable memories into request context; assistant message metadata includes `memory_ids`.

@@ -17,7 +17,7 @@ use RuntimeException;
 /**
  * Class AiMemoryService
  *
- * Handles CRUD operations for shared memory entries, scoped retrieval, and safe deletion within a thread context.
+ * Handles CRUD operations for shared memory entries, scoped retrieval, mutation, and safe deletion within a thread context.
  * PRD Reference: Atlas Nexus Overview — ai_memories schema.
  *
  * @extends ModelService<AiMemory>
@@ -86,18 +86,30 @@ class AiMemoryService extends ModelService
     }
 
     /**
-     * Fetch accessible memories, optionally filtered by date range. Thread scope is intentionally ignored.
+     * Fetch accessible memories, optionally filtered by date range or specific identifiers.
+     * Thread scope is intentionally ignored and the results are ordered newest to oldest.
      *
+     * @param  array<int, int>|null  $memoryIds
      * @return Collection<int, AiMemory>
      */
     public function listForThread(
         AiAssistant $assistant,
         AiThread $thread,
         ?Carbon $from = null,
-        ?Carbon $to = null
+        ?Carbon $to = null,
+        ?array $memoryIds = null
     ): Collection {
         $query = $this->scopedQuery($assistant, $thread)
-            ->orderBy('id');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
+
+        if ($memoryIds !== null && $memoryIds !== []) {
+            $ids = array_values(array_filter(array_map(static fn ($id): int => (int) $id, $memoryIds), static fn (int $id): bool => $id > 0));
+
+            if ($ids !== []) {
+                $query->whereIn('id', array_values(array_unique($ids)));
+            }
+        }
 
         $this->applyDateBounds($query, $from, $to);
 
@@ -105,6 +117,42 @@ class AiMemoryService extends ModelService
         $memories = $query->get();
 
         return $memories;
+    }
+
+    /**
+     * Update a memory entry within the scoped context.
+     */
+    public function updateForThread(
+        AiAssistant $assistant,
+        AiThread $thread,
+        int $memoryId,
+        ?string $kind = null,
+        ?string $content = null
+    ): AiMemory {
+        if ($kind === null && $content === null) {
+            throw new RuntimeException('A memory update requires new content or type.');
+        }
+
+        /** @var AiMemory|null $memory */
+        $memory = $this->scopedQuery($assistant, $thread)
+            ->where('id', $memoryId)
+            ->first();
+
+        if ($memory === null) {
+            throw new RuntimeException('Memory not found for this assistant or user.');
+        }
+
+        if ($kind !== null) {
+            $memory->kind = $kind;
+        }
+
+        if ($content !== null) {
+            $memory->content = $content;
+        }
+
+        $memory->save();
+
+        return $memory;
     }
 
     /**

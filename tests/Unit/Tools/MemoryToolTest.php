@@ -17,7 +17,7 @@ use function collect;
 /**
  * Class MemoryToolTest
  *
- * Ensures the built-in memory tool can save, fetch, and remove scoped memories for a thread.
+ * Ensures the built-in memory tool can add, update, fetch, and remove scoped memories for a thread.
  */
 class MemoryToolTest extends TestCase
 {
@@ -32,7 +32,7 @@ class MemoryToolTest extends TestCase
         ])->run();
     }
 
-    public function test_memory_tool_handles_save_fetch_and_delete(): void
+    public function test_memory_tool_handles_add_fetch_update_and_delete(): void
     {
         $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool']);
         $thread = AiThread::factory()->create([
@@ -53,23 +53,23 @@ class MemoryToolTest extends TestCase
             collect()
         ));
 
-        $saveResponse = $tool->handle([
-            'action' => 'save',
-            'kind' => 'preference',
+        $addResponse = $tool->handle([
+            'action' => 'add',
+            'type' => 'preference',
             'content' => 'User prefers email summaries.',
-            'thread_specific' => true,
         ]);
 
-        $this->assertSame('Memory saved.', $saveResponse->message());
-        $memoryId = $saveResponse->meta()['memory_id'];
+        $this->assertSame('Memory added.', $addResponse->message());
+        $memoryId = $addResponse->meta()['memory_id'];
 
         $memory = AiMemory::find($memoryId);
         $this->assertInstanceOf(AiMemory::class, $memory);
-        $this->assertSame($thread->id, $memory->thread_id);
+        $this->assertNull($memory->thread_id);
         $this->assertSame($thread->user_id, $memory->owner_id);
 
         $fetchResponse = $tool->handle([
             'action' => 'fetch',
+            'memory_id' => $memoryId,
         ]);
 
         $this->assertStringContainsString('Memories retrieved', $fetchResponse->message());
@@ -78,6 +78,18 @@ class MemoryToolTest extends TestCase
         $fetched = $fetchResponse->meta()['memories'];
         $this->assertNotEmpty($fetched);
         $this->assertTrue(collect($fetched)->contains(fn ($memory) => $memory['id'] === $memoryId));
+
+        $updateResponse = $tool->handle([
+            'action' => 'update',
+            'memory_id' => $memoryId,
+            'content' => 'User prefers SMS alerts.',
+            'type' => 'constraint',
+        ]);
+
+        $this->assertSame('Memory updated.', $updateResponse->message());
+        $memory->refresh();
+        $this->assertSame('constraint', $memory->kind);
+        $this->assertSame('User prefers SMS alerts.', $memory->content);
 
         $deleteResponse = $tool->handle([
             'action' => 'delete',
@@ -153,6 +165,21 @@ class MemoryToolTest extends TestCase
             'owner_id' => $thread->user_id,
         ]);
 
+        $orderedFetch = $tool->handle([
+            'action' => 'fetch',
+        ]);
+
+        $orderedMemories = $orderedFetch->meta()['memories'];
+        $this->assertSame($memB->id, $orderedMemories[0]['id']);
+
+        $filteredFetch = $tool->handle([
+            'action' => 'fetch',
+            'memory_ids' => [$memA->id],
+        ]);
+
+        $this->assertCount(1, $filteredFetch->meta()['memories']);
+        $this->assertSame($memA->id, $filteredFetch->meta()['memories'][0]['id']);
+
         $suggestion = $tool->handle([
             'action' => 'delete',
         ]);
@@ -171,6 +198,73 @@ class MemoryToolTest extends TestCase
         $this->assertTrue(in_array($memB->id, $response->meta()['removed_ids'], true));
         $this->assertSoftDeleted($memA);
         $this->assertSoftDeleted($memB);
+    }
+
+    public function test_memory_tool_validates_add_and_update_requirements(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-validation']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 222,
+        ]);
+
+        $tool = $this->app->make(MemoryTool::class);
+        $tool->setThreadState(new ThreadState(
+            $thread,
+            $assistant,
+            null,
+            collect(),
+            collect(),
+            collect(),
+            null,
+            null,
+            collect()
+        ));
+
+        $addResponse = $tool->handle([
+            'action' => 'add',
+        ]);
+
+        $this->assertTrue($addResponse->meta()['error']);
+
+        $updateResponse = $tool->handle([
+            'action' => 'update',
+            'content' => 'Missing id',
+        ]);
+
+        $this->assertTrue($updateResponse->meta()['error']);
+        $this->assertStringContainsString('memory_id is required', $updateResponse->message());
+    }
+
+    public function test_memory_tool_rejects_unknown_types(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-tool-type']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 333,
+        ]);
+
+        $tool = $this->app->make(MemoryTool::class);
+        $tool->setThreadState(new ThreadState(
+            $thread,
+            $assistant,
+            null,
+            collect(),
+            collect(),
+            collect(),
+            null,
+            null,
+            collect()
+        ));
+
+        $response = $tool->handle([
+            'action' => 'add',
+            'type' => 'mystery',
+            'content' => 'Unsupported type.',
+        ]);
+
+        $this->assertTrue($response->meta()['error']);
+        $this->assertStringContainsString('Memory type must be one of', $response->message());
     }
 
     private function migrationPath(): string

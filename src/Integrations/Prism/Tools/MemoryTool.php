@@ -13,10 +13,8 @@ use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\BooleanSchema;
 use Prism\Prism\Schema\EnumSchema;
 use Prism\Prism\Schema\NumberSchema;
-use Prism\Prism\Schema\ObjectSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
@@ -24,44 +22,24 @@ use Throwable;
 /**
  * Class MemoryTool
  *
- * Built-in tool that allows assistants to save, retrieve, and remove scoped memories for the active user and thread.
+ * Built-in tool that allows assistants to add, update, fetch, and remove scoped memories for the active user and thread.
  */
 class MemoryTool extends AbstractTool implements ThreadStateAwareTool
 {
     public const KEY = 'memory';
+
+    private const DEFAULT_TYPE = 'fact';
+
+    /**
+     * @var array<int, string>
+     */
+    private const SUPPORTED_TYPES = ['fact', 'preference', 'constraint'];
 
     protected ?ThreadState $state = null;
 
     public function __construct(
         private readonly AiMemoryService $memoryService
     ) {}
-
-    /**
-     * @return array{
-     *     type: string,
-     *     properties: array<string, mixed>,
-     *     required: array<int, string>
-     * }
-     */
-    public static function toolSchema(): array
-    {
-        return [
-            'type' => 'object',
-            'properties' => [
-                'action' => ['type' => 'string', 'enum' => ['save', 'fetch', 'delete']],
-                'kind' => ['type' => 'string', 'description' => 'Memory category such as fact, preference, or constraint'],
-                'content' => ['type' => 'string', 'description' => 'Memory content to store'],
-                'scope' => ['type' => 'string', 'enum' => ['user', 'assistant', 'global']],
-                'thread_specific' => ['type' => 'boolean', 'description' => 'Whether the memory is tied to this thread'],
-                'from_date' => ['type' => 'string', 'format' => 'date-time'],
-                'to_date' => ['type' => 'string', 'format' => 'date-time'],
-                'memory_id' => ['type' => 'number', 'description' => 'Identifier of the memory to remove'],
-                'memory_ids' => ['type' => 'array', 'items' => ['type' => 'number'], 'description' => 'Array of memory IDs to remove'],
-                'metadata' => ['type' => 'object'],
-            ],
-            'required' => ['action'],
-        ];
-    }
 
     public static function definition(): ToolDefinition
     {
@@ -80,7 +58,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Access, store, and delete contextual memories for this assistant and user.';
+        return 'Add, update, fetch, or delete contextual memories for this assistant and user.';
     }
 
     /**
@@ -89,16 +67,13 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new EnumSchema('action', 'Action to perform', ['save', 'fetch', 'delete'])),
-            new ToolParameter(new StringSchema('kind', 'Memory type such as fact or preference', true), false),
-            new ToolParameter(new StringSchema('content', 'Memory content to persist', true), false),
-            new ToolParameter(new EnumSchema('scope', 'Target scope: user (default), assistant, or global', ['user', 'assistant', 'global'], true), false),
-            new ToolParameter(new BooleanSchema('thread_specific', 'Associate the memory to this thread', true), false),
+            new ToolParameter(new EnumSchema('action', 'Action to perform', ['add', 'update', 'fetch', 'delete'])),
+            new ToolParameter(new EnumSchema('type', 'Memory type', self::SUPPORTED_TYPES, true), false),
+            new ToolParameter(new StringSchema('content', 'Memory content to store', true), false),
             new ToolParameter(new StringSchema('from_date', 'Earliest creation date (ISO8601)', true), false),
             new ToolParameter(new StringSchema('to_date', 'Latest creation date (ISO8601)', true), false),
-            new ToolParameter(new NumberSchema('memory_id', 'Memory identifier to remove', true, minimum: 1), false),
-            new ToolParameter(new ArraySchema('memory_ids', 'Memory identifiers to remove', new NumberSchema('id', 'Memory id')), false),
-            new ToolParameter(new ObjectSchema('metadata', 'Optional metadata to store', [], [], allowAdditionalProperties: true, nullable: true), false),
+            new ToolParameter(new NumberSchema('memory_id', 'Memory identifier for update, fetch, or delete', true, minimum: 1), false),
+            new ToolParameter(new ArraySchema('memory_ids', 'Memory identifiers for fetch or delete', new NumberSchema('id', 'Memory id')), false),
         ];
     }
 
@@ -113,11 +88,12 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
 
         $state = $this->state;
 
-        $action = (string) ($arguments['action'] ?? 'fetch');
+        $action = strtolower((string) ($arguments['action'] ?? 'fetch'));
 
         try {
             return match ($action) {
-                'save' => $this->handleSave($arguments, $state),
+                'add' => $this->handleAdd($arguments, $state),
+                'update' => $this->handleUpdate($arguments, $state),
                 'delete' => $this->handleDelete($arguments, $state),
                 default => $this->handleFetch($arguments, $state),
             };
@@ -131,33 +107,56 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     /**
      * @param  array<string, mixed>  $arguments
      */
-    protected function handleSave(array $arguments, ThreadState $state): ToolResponse
+    protected function handleAdd(array $arguments, ThreadState $state): ToolResponse
     {
-        $content = (string) ($arguments['content'] ?? '');
-        $kind = (string) ($arguments['kind'] ?? 'note');
+        $content = $this->normalizeContent($arguments['content'] ?? null);
 
-        if ($content === '') {
-            return $this->output('Memory content is required to save a memory.', ['error' => true]);
+        if ($content === null) {
+            return $this->output('Memory content is required to add a memory.', ['error' => true]);
         }
 
-        $ownerType = $this->ownerTypeFromScope($arguments['scope'] ?? null);
-        $threadScoped = (bool) ($arguments['thread_specific'] ?? false);
-        $metadata = $this->normalizeMetadata($arguments['metadata'] ?? null);
+        $type = $this->normalizeType($arguments['type'] ?? null) ?? self::DEFAULT_TYPE;
 
         $memory = $this->memoryService->saveForThread(
             $state->assistant,
             $state->thread,
-            $kind,
+            $type,
             $content,
-            $ownerType,
-            $metadata,
-            $threadScoped
+            AiMemoryOwnerType::USER
         );
 
-        return $this->output('Memory saved.', [
+        return $this->output('Memory added.', [
             'memory_id' => $memory->id,
-            'owner_type' => $memory->owner_type->value,
-            'thread_id' => $memory->thread_id,
+            'type' => $memory->kind,
+            'content' => $memory->content,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    protected function handleUpdate(array $arguments, ThreadState $state): ToolResponse
+    {
+        $memoryId = $this->requireMemoryId($arguments, 'update');
+        $content = $this->normalizeContent($arguments['content'] ?? null);
+        $type = $this->normalizeType($arguments['type'] ?? null);
+
+        if ($content === null && $type === null) {
+            return $this->output('Provide new content or type to update a memory.', ['error' => true]);
+        }
+
+        $memory = $this->memoryService->updateForThread(
+            $state->assistant,
+            $state->thread,
+            $memoryId,
+            $type,
+            $content
+        );
+
+        return $this->output('Memory updated.', [
+            'memory_id' => $memory->id,
+            'type' => $memory->kind,
+            'content' => $memory->content,
         ]);
     }
 
@@ -168,12 +167,14 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
     {
         $from = $this->parseDate($arguments['from_date'] ?? null);
         $to = $this->parseDate($arguments['to_date'] ?? null);
+        $ids = $this->collectIds($arguments);
 
         $memories = $this->memoryService->listForThread(
             $state->assistant,
             $state->thread,
             $from,
-            $to
+            $to,
+            $ids === [] ? null : $ids
         );
 
         $serialized = $this->serializeMemories($memories);
@@ -183,7 +184,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
                 static fn (array $memory): string => sprintf(
                     '- ID %s (%s): %s',
                     $memory['id'],
-                    $memory['kind'],
+                    $memory['type'],
                     $memory['content']
                 ),
                 $serialized
@@ -248,7 +249,7 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         return $memories->map(function (AiMemory $memory): array {
             return [
                 'id' => $memory->id,
-                'kind' => $memory->kind,
+                'type' => $memory->kind,
                 'content' => $memory->content,
                 'thread_id' => $memory->thread_id,
                 'created_at' => $memory->created_at?->toAtomString(),
@@ -256,29 +257,58 @@ class MemoryTool extends AbstractTool implements ThreadStateAwareTool
         })->all();
     }
 
-    protected function ownerTypeFromScope(?string $scope): AiMemoryOwnerType
+    protected function normalizeContent(mixed $value): ?string
     {
-        return match ($scope) {
-            'assistant' => AiMemoryOwnerType::ASSISTANT,
-            'global' => AiMemoryOwnerType::ORG,
-            default => AiMemoryOwnerType::USER,
-        };
+        if (is_string($value)) {
+            $trimmed = trim($value);
+
+            return $trimmed === '' ? null : $trimmed;
+        }
+
+        if (is_scalar($value)) {
+            return $this->normalizeContent((string) $value);
+        }
+
+        return null;
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    protected function normalizeMetadata(mixed $metadata): ?array
+    protected function normalizeType(mixed $value): ?string
     {
-        if ($metadata === null) {
+        if (! is_string($value)) {
             return null;
         }
 
-        if (is_array($metadata)) {
-            return $metadata;
+        $normalized = strtolower(trim($value));
+
+        if ($normalized === '') {
+            return null;
         }
 
-        return ['value' => $metadata];
+        if (! in_array($normalized, self::SUPPORTED_TYPES, true)) {
+            throw new RuntimeException('Memory type must be one of: '.implode(', ', self::SUPPORTED_TYPES).'.');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    protected function requireMemoryId(array $arguments, string $context): int
+    {
+        $memoryId = $arguments['memory_id'] ?? null;
+
+        if ($memoryId === null) {
+            throw new RuntimeException(sprintf('memory_id is required to %s a memory.', $context));
+        }
+
+        $id = (int) $memoryId;
+
+        if ($id <= 0) {
+            throw new RuntimeException('memory_id must be a positive integer.');
+        }
+
+        return $id;
     }
 
     protected function parseDate(mixed $value): ?Carbon

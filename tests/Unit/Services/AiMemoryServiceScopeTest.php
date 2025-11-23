@@ -122,6 +122,73 @@ class AiMemoryServiceScopeTest extends TestCase
         $service->removeForThread($assistant, $thread, $memory->id + 100);
     }
 
+    public function test_it_updates_memories_and_respects_filters(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-updates']);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 777,
+        ]);
+
+        $service = $this->app->make(AiMemoryService::class);
+
+        $older = $service->saveForThread(
+            $assistant,
+            $thread,
+            'fact',
+            'Older memory'
+        );
+
+        $recent = $service->saveForThread(
+            $assistant,
+            $thread,
+            'preference',
+            'Recent memory'
+        );
+
+        $service->updateForThread($assistant, $thread, $older->id, content: 'Older updated', kind: 'constraint');
+
+        $ordered = $service->listForThread($assistant, $thread);
+        $this->assertSame([$recent->id, $older->id], $ordered->pluck('id')->all());
+
+        $filtered = $service->listForThread($assistant, $thread, memoryIds: [$older->id]);
+        $this->assertCount(1, $filtered);
+        $single = $filtered->first();
+        $this->assertInstanceOf(AiMemory::class, $single);
+        $this->assertSame('constraint', $single->kind);
+        $this->assertSame('Older updated', $single->content);
+
+        $this->expectException(RuntimeException::class);
+        $service->updateForThread($assistant, $thread, 99999);
+    }
+
+    public function test_user_memories_are_accessible_across_threads(): void
+    {
+        $assistant = AiAssistant::factory()->create(['slug' => 'memory-cross-thread']);
+        $threadOne = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 1111,
+        ]);
+
+        $threadTwo = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 1111,
+        ]);
+
+        $service = $this->app->make(AiMemoryService::class);
+
+        $memory = $service->saveForThread(
+            $assistant,
+            $threadOne,
+            'fact',
+            'User detail for all threads',
+            threadScoped: true
+        );
+
+        $memories = $service->listForThread($assistant, $threadTwo);
+        $this->assertTrue($memories->contains('id', $memory->id));
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';
