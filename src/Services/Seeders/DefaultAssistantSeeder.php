@@ -11,7 +11,6 @@ use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;
 use Atlas\Nexus\Support\Assistants\DefaultGeneralAssistantDefaults;
 use Atlas\Nexus\Support\Assistants\DefaultHumanAssistantDefaults;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
 
 /**
  * Class DefaultAssistantSeeder
@@ -22,8 +21,7 @@ class DefaultAssistantSeeder implements NexusSeeder
 {
     public function __construct(
         private readonly AiAssistantService $assistantService,
-        private readonly AiAssistantPromptService $promptService,
-        private readonly ConfigRepository $config
+        private readonly AiAssistantPromptService $promptService
     ) {}
 
     public function seed(): void
@@ -45,9 +43,7 @@ class DefaultAssistantSeeder implements NexusSeeder
 
     protected function defaultModel(): string
     {
-        $model = $this->config->get('prism.default_model') ?? 'gpt-4o-mini';
-
-        return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
+        return 'gpt-5.1';
     }
 
     /**
@@ -60,6 +56,8 @@ class DefaultAssistantSeeder implements NexusSeeder
             'description' => $description,
             'is_active' => true,
             'is_hidden' => false,
+            'tools' => ['memory', 'thread_manager'],
+            'provider_tools' => ['web_search', 'file_search', 'code_interpreter'],
         ];
 
         if (! is_string($assistant->default_model) || $assistant->default_model === '') {
@@ -95,6 +93,7 @@ class DefaultAssistantSeeder implements NexusSeeder
     {
         return trim($prompt->system_prompt) !== trim($systemPrompt) || ! $prompt->is_active;
     }
+
     private function seedAssistant(
         string $slug,
         string $name,
@@ -113,7 +112,8 @@ class DefaultAssistantSeeder implements NexusSeeder
                 'default_model' => $this->defaultModel(),
                 'is_active' => true,
                 'is_hidden' => false,
-                'tools' => [],
+                'tools' => ['memory', 'thread_manager'],
+                'provider_tools' => ['web_search', 'file_search', 'code_interpreter'],
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant, $name, $description));
 

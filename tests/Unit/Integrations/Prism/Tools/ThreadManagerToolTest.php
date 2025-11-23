@@ -175,6 +175,34 @@ class ThreadManagerToolTest extends TestCase
         $this->assertSame('Actions', $filtered[0]['title']);
     }
 
+    public function test_it_guides_when_search_results_are_empty(): void
+    {
+        $state = $this->createState();
+
+        AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'Quarterly Planning',
+            'summary' => 'Roadmap for Q3.',
+            'last_message_at' => now(),
+        ]);
+
+        $tool = $this->app->make(ThreadManagerTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'action' => 'search_threads',
+            'search' => ['Maggie Smith'],
+        ]);
+
+        $this->assertSame(
+            'No threads matched those keywords. Search only checks thread titles, summaries, keywords, and message content—it cannot find user names. Use fetch_thread with a thread_id to inspect a specific conversation.',
+            $response->message()
+        );
+        $this->assertSame([], $response->meta()['result']['threads']);
+    }
+
     public function test_it_filters_threads_between_dates(): void
     {
         $state = $this->createState();

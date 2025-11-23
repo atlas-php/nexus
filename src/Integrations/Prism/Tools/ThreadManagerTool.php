@@ -51,7 +51,7 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Search threads by title/name, summaries, keywords, and message content, then inspect and summarize conversations for the current assistant user.';
+        return 'Search threads by their title, summaries, keywords, and message content. Use fetch_thread with a thread_id to inspect the full conversation; search does not look up users.';
     }
 
     /**
@@ -62,7 +62,7 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
         return [
             new ToolParameter(new StringSchema('action', 'Action to perform: search_threads, fetch_thread, update_thread.', true), true),
             new ToolParameter(new NumberSchema('page', 'Page number when listing/searching threads.', true), false),
-            new ToolParameter(new ArraySchema('search', 'Search terms applied to title/name, short summary, long summary, keywords, and all message content (search action).', new StringSchema('term', 'Search term', true), true), false),
+            new ToolParameter(new ArraySchema('search', 'Search terms within title, short summary, long summary, keywords, and all message content (search action).', new StringSchema('term', 'Search term', true), true), false),
             new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
             new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch/update actions.', true), false),
             new ToolParameter(new StringSchema('title', 'New thread title (optional).', true), false),
@@ -103,6 +103,7 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
      */
     protected function handleSearch(ThreadState $state, array $arguments): ToolResponse
     {
+        $searchProvided = $this->hasSearchTerms($arguments['search'] ?? null);
         $paginator = $this->threadManagerService->listThreads($state, [
             'page' => $this->normalizeInt($arguments['page'] ?? null),
             'search' => $arguments['search'] ?? null,
@@ -122,7 +123,13 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
             ->values()
             ->all();
 
-        return $this->output('Fetched matching threads.', [
+        $message = 'Fetched matching threads.';
+
+        if ($searchProvided && $threads === []) {
+            $message = 'No threads matched those keywords. Search only checks thread titles, summaries, keywords, and message content—it cannot find user names. Use fetch_thread with a thread_id to inspect a specific conversation.';
+        }
+
+        return $this->output($message, [
             'result' => [
                 'threads' => $threads,
                 'page' => $paginator->currentPage(),
@@ -294,5 +301,24 @@ class ThreadManagerTool extends AbstractTool implements ThreadStateAwareTool
             })
             ->values()
             ->all();
+    }
+
+    protected function hasSearchTerms(mixed $value): bool
+    {
+        if (is_string($value)) {
+            return trim($value) !== '';
+        }
+
+        if (! is_array($value)) {
+            return false;
+        }
+
+        foreach ($value as $term) {
+            if (is_string($term) && trim($term) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

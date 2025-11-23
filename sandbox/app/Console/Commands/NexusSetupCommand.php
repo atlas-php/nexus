@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\User;
-use Atlas\Nexus\Enums\AiThreadStatus;
-use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiAssistantPrompt;
 use Atlas\Nexus\Services\Models\AiAssistantPromptService;
 use Atlas\Nexus\Services\Models\AiAssistantService;

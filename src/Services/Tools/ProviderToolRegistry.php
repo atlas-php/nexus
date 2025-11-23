@@ -133,9 +133,9 @@ class ProviderToolRegistry
 
     /**
      * @param  array<string, mixed>  $options
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function normalizeWebSearchOptions(array $options): ?array
+    private function normalizeWebSearchOptions(array $options): array
     {
         $filters = $options['filters'] ?? null;
 
