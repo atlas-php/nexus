@@ -35,7 +35,7 @@ class HumanAssistant extends AssistantDefinition
 
     public function maxOutputTokens(): ?int
     {
-        return 256;
+        return 128;
     }
 
     public function maxDefaultSteps(): ?int
