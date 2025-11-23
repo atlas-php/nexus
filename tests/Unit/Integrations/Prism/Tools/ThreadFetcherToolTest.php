@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Class ThreadFetcherToolTest
  *
- * Ensures the Prism tool can list and inspect user threads.
+ * Ensures the Prism tool fetches single or multiple threads for inspection.
  */
 class ThreadFetcherToolTest extends TestCase
 {
@@ -49,309 +49,9 @@ class ThreadFetcherToolTest extends TestCase
         });
     }
 
-    public function test_it_lists_threads_for_user(): void
-    {
-        $state = $this->createState();
-        AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Follow Up Thread',
-            'summary' => 'Short recap.',
-            'long_summary' => 'Detailed recap for the follow up.',
-            'metadata' => ['summary_keywords' => ['follow-up', 'recap']],
-            'last_message_at' => now(),
-        ]);
-        $titleThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Quarterly Budget Review',
-            'summary' => 'Financial planning summary.',
-            'long_summary' => 'Extended financial rundown.',
-            'last_message_at' => now()->subHours(2),
-        ]);
-        $summaryThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Inventory',
-            'summary' => 'Contains roadmap insights for roadmap planning.',
-            'long_summary' => 'Extended financial rundown.',
-            'last_message_at' => now()->subHours(3),
-        ]);
-        $longSummaryThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Support Tickets',
-            'summary' => 'Support data.',
-            'long_summary' => 'The long summary includes deep dive into retention metrics.',
-            'last_message_at' => now()->subHours(4),
-        ]);
-        $keywordThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Campaign Work',
-            'summary' => 'Marketing review.',
-            'long_summary' => 'Marketing review details.',
-            'metadata' => ['summary_keywords' => ['ops', 'campaign']],
-            'last_message_at' => now()->subHours(5),
-        ]);
-        $messageThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Actions',
-            'summary' => 'Pending action items.',
-            'long_summary' => 'Pending action items and blockers listed in this thread.',
-            'last_message_at' => now()->subDay(),
-        ]);
-        AiMessage::factory()->create([
-            'thread_id' => $messageThread->id,
-            'role' => AiMessageRole::USER->value,
-            'status' => AiMessageStatus::COMPLETED->value,
-            'sequence' => 1,
-            'content' => 'Ledgernote details and transcripts for audit.',
-            'content_type' => AiMessageContentType::TEXT->value,
-        ]);
-        AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id + 10,
-            'status' => AiThreadStatus::OPEN->value,
-        ]);
-
-        $tool = $this->app->make(ThreadFetcherTool::class);
-        $tool->setThreadState($state);
-
-        $response = $tool->handle([
-            'action' => 'search_threads',
-            'page' => 1,
-        ]);
-
-        $this->assertSame('Fetched matching threads.', $response->message());
-        $threads = $response->meta()['result']['threads'];
-
-        $this->assertCount(6, $threads);
-        $firstThread = $threads[0];
-        $this->assertArrayHasKey('id', $firstThread);
-        $this->assertArrayHasKey('title', $firstThread);
-        $this->assertArrayHasKey('summary', $firstThread);
-        $hasKeywordMatch = false;
-
-        foreach ($threads as $threadSummary) {
-            if (($threadSummary['keywords'] ?? []) === ['follow-up', 'recap']) {
-                $hasKeywordMatch = true;
-                break;
-            }
-        }
-
-        $this->assertTrue($hasKeywordMatch, 'Expected to find keywords from the follow-up thread.');
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['follow-up']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Follow Up Thread', $filtered[0]['title']);
-        $this->assertArrayHasKey('id', $filtered[0]);
-        $this->assertArrayHasKey('summary', $filtered[0]);
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['quarterly budget']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Quarterly Budget Review', $filtered[0]['title']);
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['roadmap']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Inventory', $filtered[0]['title']);
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['retention metrics']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Support Tickets', $filtered[0]['title']);
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['campaign']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Campaign Work', $filtered[0]['title']);
-
-        $response = $tool->handle(['action' => 'search_threads', 'search' => ['ledgernote']]);
-        $filtered = $response->meta()['result']['threads'];
-        $this->assertCount(1, $filtered);
-        $this->assertSame('Actions', $filtered[0]['title']);
-    }
-
-    public function test_it_guides_when_search_results_are_empty(): void
-    {
-        $state = $this->createState();
-
-        AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Quarterly Planning',
-            'summary' => 'Roadmap for Q3.',
-            'last_message_at' => now(),
-        ]);
-
-        $tool = $this->app->make(ThreadFetcherTool::class);
-        $tool->setThreadState($state);
-
-        $response = $tool->handle([
-            'action' => 'search_threads',
-            'search' => ['Unknown Query'],
-        ]);
-
-        $this->assertSame(
-            'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use fetch_thread with a thread_id to inspect a specific conversation.',
-            $response->message()
-        );
-        $this->assertSame([], $response->meta()['result']['threads']);
-    }
-
-    public function test_it_filters_threads_between_dates(): void
-    {
-        $state = $this->createState();
-
-        AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Old Thread',
-            'summary' => 'Outside range.',
-            'created_at' => now()->subDays(10),
-            'updated_at' => now()->subDays(10),
-            'last_message_at' => now()->subDays(10),
-        ]);
-
-        $recent = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Recent Thread',
-            'summary' => 'Inside range.',
-            'created_at' => now()->subDays(2),
-            'updated_at' => now()->subDays(2),
-            'last_message_at' => now()->subDays(2),
-        ]);
-
-        $newest = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Newest Thread',
-            'summary' => 'Inside range too.',
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
-            'last_message_at' => now()->subDay(),
-        ]);
-
-        $tool = $this->app->make(ThreadFetcherTool::class);
-        $tool->setThreadState($state);
-
-        $response = $tool->handle([
-            'action' => 'search_threads',
-            'between_dates' => [
-                now()->subDays(3)->toDateString(),
-                now()->toDateString(),
-            ],
-        ]);
-
-        $threads = $response->meta()['result']['threads'];
-        $titles = array_column($threads, 'title');
-
-        $this->assertContains('Recent Thread', $titles);
-        $this->assertContains('Newest Thread', $titles);
-        $this->assertNotContains('Old Thread', $titles);
-        $this->assertNotContains($state->thread->title, $titles);
-    }
-
-    public function test_search_threads_supports_multiple_terms_with_or_logic(): void
-    {
-        $state = $this->createState();
-
-        $roadmapThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Roadmap Planning',
-            'summary' => 'Contains roadmap milestones.',
-            'long_summary' => 'Detailed roadmap document.',
-        ]);
-
-        $ledgerThread = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Finance Ledger',
-            'summary' => 'Pending finance audits.',
-            'long_summary' => 'Need to review ledgernote history.',
-        ]);
-
-        AiMessage::factory()->create([
-            'thread_id' => $ledgerThread->id,
-            'role' => AiMessageRole::USER->value,
-            'status' => AiMessageStatus::COMPLETED->value,
-            'sequence' => 1,
-            'content' => 'Ledgernote compliance requires attention.',
-            'content_type' => AiMessageContentType::TEXT->value,
-        ]);
-
-        $tool = $this->app->make(ThreadFetcherTool::class);
-        $tool->setThreadState($state);
-
-        $response = $tool->handle([
-            'action' => 'search_threads',
-            'search' => ['roadmap', 'ledgernote'],
-        ]);
-
-        $titles = array_column($response->meta()['result']['threads'], 'title');
-
-        $this->assertContains('Roadmap Planning', $titles);
-        $this->assertContains('Finance Ledger', $titles);
-    }
-
-    public function test_search_by_user_name_returns_latest_threads(): void
-    {
-        $state = $this->createState();
-
-        $latest = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Latest Thread',
-            'summary' => 'Latest summary.',
-            'last_message_at' => now(),
-        ]);
-
-        $older = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Older Thread',
-            'summary' => 'Older summary.',
-            'last_message_at' => now()->subHours(2),
-        ]);
-
-        $tool = $this->app->make(ThreadFetcherTool::class);
-        $tool->setThreadState($state);
-
-        $userName = TestUser::query()->find($state->thread->user_id)?->name ?? '';
-
-        $response = $tool->handle([
-            'action' => 'search_threads',
-            'search' => [$userName],
-        ]);
-
-        $threads = $response->meta()['result']['threads'];
-
-        $this->assertSame([$latest->id, $older->id], array_column($threads, 'id'));
-    }
-
     public function test_it_fetches_thread_with_messages(): void
     {
-        $state = $this->createState();
+        $state = $this->createState(withMessages: true);
 
         /** @var AiThread $other */
         $other = AiThread::factory()->create([
@@ -385,17 +85,87 @@ class ThreadFetcherToolTest extends TestCase
         $tool->setThreadState($state);
 
         $response = $tool->handle([
-            'action' => 'fetch_thread',
-            'thread_id' => $other->id,
+            'thread_ids' => [$other->id],
         ]);
 
         $this->assertSame('Fetched thread context.', $response->message());
         $payload = $response->meta()['result'];
+        $this->assertSame([$other->id], $response->meta()['thread_ids']);
 
         $this->assertSame('Archived Thread', $payload['title']);
         $this->assertSame(['archived'], $payload['keywords']);
         $this->assertCount(2, $payload['messages']);
         $this->assertSame('Need context.', $payload['messages'][0]['content']);
+    }
+
+    public function test_it_fetches_multiple_threads_in_requested_order(): void
+    {
+        $state = $this->createState();
+
+        $first = AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'First Thread',
+            'summary' => 'First summary.',
+            'last_message_at' => now()->subDay(),
+        ]);
+
+        $second = AiThread::factory()->create([
+            'assistant_id' => $state->assistant->id,
+            'user_id' => $state->thread->user_id,
+            'status' => AiThreadStatus::OPEN->value,
+            'title' => 'Second Thread',
+            'summary' => 'Second summary.',
+            'last_message_at' => now(),
+        ]);
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'thread_ids' => [$second->id, $first->id],
+        ]);
+
+        $this->assertSame('Fetched 2 threads.', $response->message());
+        $meta = $response->meta();
+
+        $this->assertSame([$second->id, $first->id], $meta['thread_ids']);
+        $threads = $meta['result']['threads'];
+
+        $this->assertCount(2, $threads);
+        $this->assertSame($second->id, $threads[0]['id']);
+        $this->assertSame($first->id, $threads[1]['id']);
+    }
+
+    public function test_it_requires_thread_identifier(): void
+    {
+        $state = $this->createState();
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'thread_ids' => [],
+        ]);
+
+        $this->assertSame('Provide at least one thread_id to fetch.', $response->message());
+        $this->assertTrue($response->meta()['error'] ?? false);
+    }
+
+    public function test_it_errors_when_thread_is_missing(): void
+    {
+        $state = $this->createState();
+
+        $tool = $this->app->make(ThreadFetcherTool::class);
+        $tool->setThreadState($state);
+
+        $response = $tool->handle([
+            'thread_ids' => [$state->thread->id + 999],
+        ]);
+
+        $this->assertSame('Thread not found for this assistant and user.', $response->message());
+        $this->assertTrue($response->meta()['error'] ?? false);
     }
 
     protected function createState(bool $withMessages = false): ThreadState

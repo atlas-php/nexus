@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Tests\Unit\Services\Tools;
 
 use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool;
+use Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool;
 use Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
@@ -26,6 +27,7 @@ class ToolRegistryTest extends TestCase
 
         $this->assertArrayHasKey(MemoryTool::KEY, $available);
         $this->assertArrayHasKey(WebSearchTool::KEY, $available);
+        $this->assertArrayHasKey(ThreadSearchTool::KEY, $available);
         $this->assertArrayHasKey(ThreadFetcherTool::KEY, $available);
         $this->assertArrayHasKey(ThreadUpdaterTool::KEY, $available);
     }

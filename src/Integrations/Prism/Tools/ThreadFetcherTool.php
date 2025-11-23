@@ -11,17 +11,24 @@ use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\NumberSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
 
+use function array_column;
+use function array_unique;
+use function array_values;
 use function collect;
+use function count;
+use function is_array;
+use function is_int;
+use function is_numeric;
+use function sprintf;
 
 /**
  * Class ThreadFetcherTool
  *
- * Enables assistants to search and inspect existing threads that belong to the current assistant + user context.
+ * Fetches one or more threads by id so assistants can inspect summaries and message content.
  */
 class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 {
@@ -45,12 +52,12 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     public function name(): string
     {
-        return 'Thread Fetcher';
+        return 'Fetch Thread Content';
     }
 
     public function description(): string
     {
-        return 'Search the user’s threads by title, summaries, and keywords. Use fetch_thread with a thread_id to open a conversation.';
+        return 'Fetch one or more threads by id to view their summaries, keywords, and message content.';
     }
 
     /**
@@ -59,11 +66,15 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new StringSchema('action', 'Action to perform: search_threads or fetch_thread.', true), true),
-            new ToolParameter(new NumberSchema('page', 'Optional page number when listing/searching threads.', true), false),
-            new ToolParameter(new ArraySchema('search', 'Optional search multiple terms across title, summary and keywords', new StringSchema('term', 'Search term', true), true), false),
-            new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
-            new ToolParameter(new StringSchema('thread_id', 'Thread identifier for fetch action.', true), false),
+            new ToolParameter(
+                new ArraySchema(
+                    'thread_ids',
+                    'Thread identifiers to fetch (one or many). Provide numeric strings or integers.',
+                    new StringSchema('thread_id', 'Thread identifier.', true),
+                    true
+                ),
+                true
+            ),
         ];
     }
 
@@ -77,14 +88,29 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
         }
 
         try {
-            $state = $this->state;
-            $action = $this->normalizeAction($arguments['action'] ?? null);
+            $threadIds = $this->resolveThreadIds($arguments);
+            $threads = $this->threadManagerService->fetchThreads($this->state, $threadIds);
 
-            return match ($action) {
-                'search' => $this->handleSearch($state, $arguments),
-                'fetch' => $this->handleFetch($state, $arguments),
-                default => $this->output('Provide a valid action: search_threads or fetch_thread.', ['error' => true]),
-            };
+            $payloads = collect($threads)
+                ->map(fn (AiThread $thread): array => $this->mapThread($thread))
+                ->values()
+                ->all();
+
+            if (count($payloads) === 1) {
+                $thread = $payloads[0];
+
+                return $this->output('Fetched thread context.', [
+                    'thread_ids' => [$thread['id']],
+                    'result' => $thread,
+                ]);
+            }
+
+            return $this->output(sprintf('Fetched %d threads.', count($payloads)), [
+                'thread_ids' => array_column($payloads, 'id'),
+                'result' => [
+                    'threads' => $payloads,
+                ],
+            ]);
         } catch (RuntimeException $exception) {
             return $this->output($exception->getMessage(), ['error' => true]);
         } catch (Throwable $exception) {
@@ -94,110 +120,67 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     /**
      * @param  array<string, mixed>  $arguments
+     * @return array<int, int>
      */
-    protected function handleSearch(ThreadState $state, array $arguments): ToolResponse
+    protected function resolveThreadIds(array $arguments): array
     {
-        $searchProvided = $this->hasSearchTerms($arguments['search'] ?? null);
-        $paginator = $this->threadManagerService->listThreads($state, [
-            'page' => $this->normalizeInt($arguments['page'] ?? null),
-            'search' => $arguments['search'] ?? null,
-            'between_dates' => $arguments['between_dates'] ?? null,
-        ]);
+        $threadIds = $this->normalizeThreadIds($arguments['thread_ids'] ?? null);
 
-        $threads = collect($paginator->items())
-            ->map(function (AiThread $thread): array {
-                return [
-                    'id' => $thread->id,
-                    'title' => $thread->title,
-                    'summary' => $thread->summary,
-                    'long_summary' => $thread->long_summary,
-                    'keywords' => $this->threadManagerService->keywordsForThread($thread),
-                ];
-            })
-            ->values()
-            ->all();
-
-        $message = 'Fetched matching threads.';
-
-        if ($searchProvided && $threads === []) {
-            $message = 'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use fetch_thread with a thread_id to inspect a specific conversation.';
+        if ($threadIds === []) {
+            throw new RuntimeException('Provide at least one thread_id to fetch.');
         }
 
-        return $this->output($message, [
-            'result' => [
-                'threads' => $threads,
-                'page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
-        ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $arguments
-     */
-    protected function handleFetch(ThreadState $state, array $arguments): ToolResponse
-    {
-        $threadId = $this->normalizeThreadId($arguments['thread_id'] ?? null);
-
-        if ($threadId === null) {
-            throw new RuntimeException('Provide a valid thread_id to fetch its context.');
-        }
-
-        $thread = $this->threadManagerService->fetchThread($state, $threadId);
-        $keywords = $this->threadManagerService->keywordsForThread($thread);
-        $payload = [
-            'id' => $thread->id,
-            'title' => $thread->title,
-            'summary' => $thread->summary,
-            'long_summary' => $thread->long_summary,
-            'keywords' => $keywords,
-            'messages' => $this->mapMessages($thread),
-        ];
-
-        return $this->output('Fetched thread context.', [
-            'thread_id' => $thread->id,
-            'result' => $payload,
-        ]);
-    }
-
-    protected function normalizeAction(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $normalized = strtolower(str_replace('-', '_', trim($value)));
-
-        return match ($normalized) {
-            'search', 'search_threads', 'search_thread', 'list', 'list_threads', 'list_thread' => 'search',
-            'fetch', 'fetch_thread', 'show_thread' => 'fetch',
-            default => null,
-        };
-    }
-
-    protected function normalizeInt(mixed $value): ?int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value;
-        }
-
-        return null;
+        return array_values(array_unique($threadIds));
     }
 
     protected function normalizeThreadId(mixed $value): ?int
     {
-        $id = $this->normalizeInt($value);
-
-        if ($id === null) {
+        if (is_int($value)) {
+            $id = $value;
+        } elseif (is_numeric($value)) {
+            $id = (int) $value;
+        } else {
             return null;
         }
 
         return $id > 0 ? $id : null;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    protected function normalizeThreadIds(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($value as $id) {
+            $normalizedId = $this->normalizeThreadId($id);
+
+            if ($normalizedId !== null) {
+                $normalized[] = $normalizedId;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function mapThread(AiThread $thread): array
+    {
+        return [
+            'id' => $thread->id,
+            'title' => $thread->title,
+            'summary' => $thread->summary,
+            'long_summary' => $thread->long_summary,
+            'keywords' => $this->threadManagerService->keywordsForThread($thread),
+            'messages' => $this->mapMessages($thread),
+        ];
     }
 
     /**
@@ -219,24 +202,5 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
             })
             ->values()
             ->all();
-    }
-
-    protected function hasSearchTerms(mixed $value): bool
-    {
-        if (is_string($value)) {
-            return trim($value) !== '';
-        }
-
-        if (! is_array($value)) {
-            return false;
-        }
-
-        foreach ($value as $term) {
-            if (is_string($term) && trim($term) !== '') {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

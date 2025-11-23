@@ -101,22 +101,51 @@ class ThreadManagerService
 
     public function fetchThread(ThreadState $state, int $threadId): AiThread
     {
-        $thread = $this->threadService->query()
+        $threads = $this->fetchThreads($state, [$threadId]);
+
+        return $threads[0];
+    }
+
+    /**
+     * Fetch multiple threads scoped to the assistant/user ordering results per request.
+     *
+     * @param  array<int, int>  $threadIds
+     * @return array<int, AiThread>
+     */
+    public function fetchThreads(ThreadState $state, array $threadIds): array
+    {
+        $normalizedIds = $this->normalizeThreadIds($threadIds);
+
+        if ($normalizedIds === []) {
+            throw new RuntimeException('Provide at least one thread_id to fetch.');
+        }
+
+        $threads = $this->threadService->query()
             ->where('assistant_id', $state->assistant->getKey())
             ->where('user_id', $state->thread->user_id)
-            ->where('id', $threadId)
+            ->whereIn('id', $normalizedIds)
             ->with([
                 'messages' => function ($query): void {
                     $query->orderBy('sequence');
                 },
             ])
-            ->first();
+            ->get()
+            ->keyBy('id');
 
-        if ($thread === null) {
-            throw new RuntimeException('Thread not found for this assistant and user.');
+        $ordered = [];
+
+        foreach ($normalizedIds as $threadId) {
+            /** @var AiThread|null $thread */
+            $thread = $threads->get($threadId);
+
+            if ($thread === null) {
+                throw new RuntimeException('Thread not found for this assistant and user.');
+            }
+
+            $ordered[] = $thread;
         }
 
-        return $thread;
+        return $ordered;
     }
 
     /**
@@ -341,5 +370,30 @@ class ThreadManagerService
         }
 
         return array_slice($normalized, 0, 12);
+    }
+
+    /**
+     * @param  array<int, mixed>  $threadIds
+     * @return array<int, int>
+     */
+    protected function normalizeThreadIds(array $threadIds): array
+    {
+        $normalized = [];
+
+        foreach ($threadIds as $value) {
+            if (is_int($value)) {
+                $id = $value;
+            } elseif (is_numeric($value)) {
+                $id = (int) $value;
+            } else {
+                continue;
+            }
+
+            if ($id > 0) {
+                $normalized[] = $id;
+            }
+        }
+
+        return array_values(array_unique($normalized));
     }
 }

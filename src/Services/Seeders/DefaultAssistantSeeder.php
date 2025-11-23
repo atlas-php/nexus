@@ -56,7 +56,7 @@ class DefaultAssistantSeeder implements NexusSeeder
             'description' => $description,
             'is_active' => true,
             'is_hidden' => false,
-            'tools' => ['memory', 'thread_fetcher', 'thread_updater'],
+            'tools' => ['memory', 'thread_search', 'thread_fetcher', 'thread_updater'],
             'provider_tools' => ['web_search', 'file_search', 'code_interpreter'],
         ];
 
@@ -112,7 +112,7 @@ class DefaultAssistantSeeder implements NexusSeeder
                 'default_model' => $this->defaultModel(),
                 'is_active' => true,
                 'is_hidden' => false,
-                'tools' => ['memory', 'thread_fetcher', 'thread_updater'],
+                'tools' => ['memory', 'thread_search', 'thread_fetcher', 'thread_updater'],
                 'provider_tools' => ['web_search', 'file_search', 'code_interpreter'],
             ])
             : $this->assistantService->update($assistant, $this->assistantUpdates($assistant, $name, $description));

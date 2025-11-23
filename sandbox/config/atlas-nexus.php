@@ -20,6 +20,7 @@ return [
         'registry' => [
             'memory' => \Atlas\Nexus\Integrations\Prism\Tools\MemoryTool::class,
             'web_search' => \Atlas\Nexus\Integrations\Prism\Tools\WebSearchTool::class,
+            'thread_search' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool::class,
             'thread_fetcher' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool::class,
             'thread_updater' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool::class,
             // 'custom_tool' => \App\Tools\CustomTool::class,
