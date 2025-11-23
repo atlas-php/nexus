@@ -52,7 +52,7 @@ class ThreadTitleSummaryService
         $generated = $this->generate($state);
 
         $metadata = array_merge($state->thread->metadata ?? [], [
-            'summary_keywords' => $generated['keywords'],
+            'keywords' => $generated['keywords'],
         ]);
 
         $payload = [

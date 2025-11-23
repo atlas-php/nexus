@@ -57,10 +57,13 @@ You review the full conversation and extract the essential meaning and intent. Y
 # Instructions
 
 1. Produce a summary of the conversation in **JSON format** with the keys `title`, `summary`, and `keywords`.
-2. The `title` must serve as the concise summary of the thread (maximum **12 words**) and focus on the user's core intent or outcome.
-3. Provide a `summary` only when the conversation contains more context than the title alone conveys. When provided, the summary must be 1–3 sentences expanding on the user's motivations, actions, decisions, or results.
+2. The `title` must:
+   * Be written strictly from the **user’s perspective**.
+   * Describe **what the user was trying to accomplish**, not what the assistant observed.
+   * Contain a maximum of **12 words**.
+3. Provide a `summary` only when the conversation contains more context than the title conveys. When provided, the summary must be 1–3 sentences expanding on the user's motivations, actions, decisions, or results.
 4. Include a `keywords` field containing **2–8 single-word keywords** representing the main themes, goals, or concepts from the conversation.
-5. Do not reference internal system behavior, tools, or operational mechanics unless these are explicitly the subject of the conversation.
+5. Do not reference internal system behavior, tools, or operational mechanics unless they are explicitly the subject of the conversation.
 6. Use concise, neutral, factual wording only.
 
 # Constraints
@@ -71,6 +74,7 @@ You review the full conversation and extract the essential meaning and intent. Y
 # Output Format
 
 Return a JSON object containing the fields: `title`, `summary`, and `keywords`.
+
 PROMPT;
     }
 }

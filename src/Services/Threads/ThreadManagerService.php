@@ -65,7 +65,7 @@ class ThreadManagerService
                         $clause
                             ->where("{$threadsTable}.title", 'like', $likeValue)
                             ->orWhere("{$threadsTable}.summary", 'like', $likeValue)
-                            ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.summary_keywords'), '') LIKE ?", [$likeValue])
+                            ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.keywords'), '') LIKE ?", [$likeValue])
                             ->orWhereExists(function (QueryBuilder $messageQuery) use ($messagesTable, $threadsTable, $likeValue): void {
                                 $messageQuery->selectRaw('1')
                                     ->from($messagesTable)
@@ -289,7 +289,7 @@ class ThreadManagerService
         /** @var array<string, mixed> $metadata */
         $metadata = $thread->metadata ?? [];
 
-        $keywords = $metadata['summary_keywords'] ?? [];
+        $keywords = $metadata['keywords'] ?? [];
 
         if (! is_array($keywords)) {
             return [];
