@@ -10,6 +10,7 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
@@ -286,19 +287,39 @@ class ThreadTitleSummaryService
             return '';
         }
 
-        $messages = $state->messages
+        $messages = $state->messages;
+        $hasPreviousSummary = $state->thread->last_summary_message_id !== null;
+
+        if ($hasPreviousSummary) {
+            $messages = $messages->filter(function (AiMessage $message) use ($state): bool {
+                $lastSummaryId = $state->thread->last_summary_message_id ?? 0;
+
+                return $message->getKey() > $lastSummaryId;
+            });
+        }
+
+        $recentMessages = $messages
             ->sortBy('sequence')
-            ->slice(max(0, $state->messages->count() - 10))
-            ->map(function ($message): string {
+            ->map(function (AiMessage $message): string {
                 $role = $message->role->value ?? 'message';
 
                 return strtoupper($role).': '.trim((string) $message->content);
             })
             ->all();
 
-        $joined = implode("\n", $messages);
+        $joined = implode("\n", $recentMessages);
+        $joined = Str::limit($joined, 6000, '...');
 
-        return Str::limit($joined, 6000, '...');
+        if ($hasPreviousSummary) {
+            $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
+            $recentText = $joined === '' ? 'None' : $joined;
+
+            $context = "Current thread summary:\n{$summaryText}\n\nRecent messages:\n{$recentText}";
+
+            return Str::limit($context, 7000, '...');
+        }
+
+        return $joined;
     }
 
     protected function trimValue(?string $value): ?string
