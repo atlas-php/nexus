@@ -246,7 +246,7 @@ class ThreadTitleSummaryService
             'last_message_at' => Carbon::now(),
         ]);
 
-        $conversationContent = sprintf("# Prompt\n%s\n\n# Conversation\n%s", $promptText, $conversation);
+        $conversationContent = sprintf("%s\n\n%s", $promptText, $conversation);
 
         $this->messageService->create([
             'thread_id' => $summaryThread->id,
@@ -314,7 +314,7 @@ class ThreadTitleSummaryService
             $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
             $recentText = $joined === '' ? 'None' : $joined;
 
-            $context = "Current thread summary:\n{$summaryText}\n\nRecent messages:\n{$recentText}";
+            $context = "# Current thread summary:\n{$summaryText}\n# Recent messages:\n{$recentText}";
 
             return Str::limit($context, 7000, '...');
         }
