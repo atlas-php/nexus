@@ -105,9 +105,7 @@ class ThreadTitleSummaryService
      */
     protected function generate(ThreadState $state): array
     {
-        $conversation = $this->conversationText($state);
-
-        if ($conversation === '') {
+        if ($state->messages->isEmpty()) {
             throw new RuntimeException('Cannot generate title and summary without conversation messages.');
         }
 
@@ -120,6 +118,7 @@ class ThreadTitleSummaryService
 
         $promptContext = new PromptVariableContext($state, $assistant, $prompt);
         $promptText = $this->promptVariableService->apply($prompt, $promptContext);
+        $conversation = $this->conversationText($state, $promptText);
 
         $request = $this->textRequestFactory->make()
             ->using($this->provider(), $this->model($assistant->model()))
@@ -246,7 +245,7 @@ class ThreadTitleSummaryService
             'last_message_at' => Carbon::now(),
         ]);
 
-        $conversationContent = sprintf("%s\n\n%s", $promptText, $conversation);
+        $conversationContent = $conversation;
 
         $this->messageService->create([
             'thread_id' => $summaryThread->id,
@@ -281,19 +280,13 @@ class ThreadTitleSummaryService
         ]);
     }
 
-    protected function conversationText(ThreadState $state): string
+    protected function conversationText(ThreadState $state, string $promptText): string
     {
-        if ($state->messages->isEmpty()) {
-            return '';
-        }
-
         $messages = $state->messages;
-        $hasPreviousSummary = $state->thread->last_summary_message_id !== null;
+        $lastSummaryId = $state->thread->last_summary_message_id;
 
-        if ($hasPreviousSummary) {
-            $messages = $messages->filter(function (AiMessage $message) use ($state): bool {
-                $lastSummaryId = $state->thread->last_summary_message_id ?? 0;
-
+        if ($lastSummaryId !== null) {
+            $messages = $messages->filter(function (AiMessage $message) use ($lastSummaryId): bool {
                 return $message->getKey() > $lastSummaryId;
             });
         }
@@ -307,19 +300,16 @@ class ThreadTitleSummaryService
             })
             ->all();
 
-        $joined = implode("\n", $recentMessages);
-        $joined = Str::limit($joined, 6000, '...');
+        $joined = Str::limit(implode("\n", $recentMessages), 6000, '...');
 
-        if ($hasPreviousSummary) {
-            $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
-            $recentText = $joined === '' ? 'None' : $joined;
+        $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
+        $recentText = $joined === '' ? 'None' : $joined;
 
-            $context = "# Current thread summary:\n{$summaryText}\n# Recent messages:\n{$recentText}";
+        $promptSection = "{$promptText}";
+        $context = "# Current thread summary:\n{$summaryText}\n# Recent messages:\n{$recentText}";
+        $limitedContext = Str::limit($context, 7000, '...');
 
-            return Str::limit($context, 7000, '...');
-        }
-
-        return $joined;
+        return "{$promptSection}\n{$limitedContext}";
     }
 
     protected function trimValue(?string $value): ?string
