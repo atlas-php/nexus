@@ -125,9 +125,7 @@ class ThreadSearchToolTest extends TestCase
         $tool = $this->app->make(ThreadSearchTool::class);
         $tool->setThreadState($state);
 
-        $response = $tool->handle([
-            'page' => 1,
-        ]);
+        $response = $tool->handle([]);
 
         $this->assertSame('Fetched matching threads.', $response->message());
         $threads = $response->meta()['result']['threads'];
@@ -206,62 +204,6 @@ class ThreadSearchToolTest extends TestCase
             $response->message()
         );
         $this->assertSame([], $response->meta()['result']['threads']);
-    }
-
-    public function test_it_filters_threads_between_dates(): void
-    {
-        $state = $this->createState();
-
-        AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Old Thread',
-            'summary' => 'Outside range.',
-            'created_at' => now()->subDays(10),
-            'updated_at' => now()->subDays(10),
-            'last_message_at' => now()->subDays(10),
-        ]);
-
-        $recent = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Recent Thread',
-            'summary' => 'Inside range.',
-            'created_at' => now()->subDays(2),
-            'updated_at' => now()->subDays(2),
-            'last_message_at' => now()->subDays(2),
-        ]);
-
-        $newest = AiThread::factory()->create([
-            'assistant_id' => $state->assistant->id,
-            'user_id' => $state->thread->user_id,
-            'status' => AiThreadStatus::OPEN->value,
-            'title' => 'Newest Thread',
-            'summary' => 'Inside range too.',
-            'created_at' => now()->subDay(),
-            'updated_at' => now()->subDay(),
-            'last_message_at' => now()->subDay(),
-        ]);
-
-        $tool = $this->app->make(ThreadSearchTool::class);
-        $tool->setThreadState($state);
-
-        $response = $tool->handle([
-            'between_dates' => [
-                now()->subDays(3)->toDateString(),
-                now()->toDateString(),
-            ],
-        ]);
-
-        $threads = $response->meta()['result']['threads'];
-        $titles = array_column($threads, 'title');
-
-        $this->assertContains('Recent Thread', $titles);
-        $this->assertContains('Newest Thread', $titles);
-        $this->assertNotContains('Old Thread', $titles);
-        $this->assertNotContains($state->thread->title, $titles);
     }
 
     public function test_search_threads_supports_multiple_terms_with_or_logic(): void

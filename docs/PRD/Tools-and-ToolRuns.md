@@ -16,7 +16,7 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
   - `memory` — add/update/fetch/delete thread-aware memories.
   - `web_search` — fetch website content and optionally summarize it inline via the built-in web summarizer assistant; options live under `atlas-nexus.tools.options.web_search`.
     - `allowed_domains` (array|null) restricts searches to configured domains; requests outside the list return `Error, this domain is not allowed to be searched`, and the tool description includes `Allowed domains: ...` for clarity.
-  - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name with optional date filters.
+  - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name.
   - `thread_fetcher` — fetch one or many threads (IDs provided by the search tool or other signals) and return summaries, keywords, and ordered message transcripts.
   - `thread_updater` — update thread title/summary or auto-generate them from conversation context; options live under `atlas-nexus.tools.options.thread_updater`.
 - Additional tools can be registered through config (`atlas-nexus.tools.registry`) mapping `key => handler_class` (string or `['handler' => FQCN]`).

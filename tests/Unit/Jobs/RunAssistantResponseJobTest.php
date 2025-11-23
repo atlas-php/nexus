@@ -28,6 +28,7 @@ use Prism\Prism\Text\Response as TextResponse;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\Meta;
+use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
 use Prism\Prism\ValueObjects\Usage;
 use RuntimeException;
@@ -147,6 +148,105 @@ class RunAssistantResponseJobTest extends TestCase
         $this->assertSame('calendar_lookup', $toolRun->tool_key);
         $this->assertSame(['events' => 2], $toolRun->response_output);
         $this->assertSame(['date' => '2025-01-01'], $toolRun->input_args);
+    }
+
+    public function test_tool_results_include_logged_output(): void
+    {
+        config()->set('atlas-nexus.tools.registry', [
+            'thread_fetcher' => \Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool::class,
+        ]);
+
+        $assistant = AiAssistant::factory()->create([
+            'slug' => 'job-tool-result',
+            'default_model' => 'gpt-4o',
+            'tools' => ['thread_fetcher'],
+        ]);
+        $prompt = AiAssistantPrompt::factory()->create([
+            'assistant_id' => $assistant->id,
+        ]);
+        $assistant->update(['current_prompt_id' => $prompt->id]);
+        $thread = AiThread::factory()->create([
+            'assistant_id' => $assistant->id,
+            'user_id' => 7,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'content' => 'Fetch my thread.',
+            'content_type' => AiMessageContentType::TEXT->value,
+        ]);
+
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::PROCESSING->value,
+            'content' => '',
+        ]);
+
+        $toolRun = AiToolRun::factory()->create([
+            'assistant_message_id' => $assistantMessage->id,
+            'thread_id' => $thread->id,
+            'tool_key' => 'thread_fetcher',
+            'call_index' => 0,
+            'input_args' => ['thread_ids' => [555]],
+            'status' => AiToolRunStatus::SUCCEEDED->value,
+            'response_output' => [
+                'threads' => [
+                    ['id' => 555, 'title' => 'Example Thread'],
+                ],
+            ],
+        ]);
+
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
+        $messages = collect([
+            new UserMessage('Fetch my thread.'),
+            new AssistantMessage('Fetched threads.'),
+        ]);
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Fetched threads.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [
+                new ToolCall('call-1', 'thread_fetcher', ['thread_ids' => [555]]),
+            ],
+            toolResults: [
+                new ToolResult('call-1', 'thread_fetcher', ['thread_ids' => [555]], 'Fetched matching threads.', 'result-555'),
+            ],
+            usage: new Usage(5, 10),
+            meta: new Meta('res-tool', 'gpt-4o-mini'),
+            messages: $messages,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+        $assistantMessage->refresh();
+
+        $toolResults = $assistantMessage->raw_response['tool_results'] ?? [];
+        $this->assertSame(
+            [
+                'threads' => [
+                    ['id' => 555, 'title' => 'Example Thread'],
+                ],
+            ],
+            $toolResults[0]['result'] ?? null
+        );
+
+        $toolRun->refresh();
+        $this->assertSame(
+            [
+                'threads' => [
+                    ['id' => 555, 'title' => 'Example Thread'],
+                ],
+            ],
+            $toolRun->response_output
+        );
     }
 
     public function test_it_marks_message_as_failed_when_prism_errors(): void

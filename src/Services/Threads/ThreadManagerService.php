@@ -7,7 +7,6 @@ namespace Atlas\Nexus\Services\Threads;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -40,10 +39,8 @@ class ThreadManagerService
      */
     public function listThreads(ThreadState $state, array $options = []): LengthAwarePaginator
     {
-        $page = $this->normalizePage($options['page'] ?? null);
-        $searchTerms = $this->normalizeSearchTerms($options['search'] ?? null);
-        $userNameSearch = $this->isUserNameSearch($searchTerms, $state);
-        [$startDate, $endDate] = $this->normalizeDateRange($options['between_dates'] ?? null);
+        $searchQueries = $this->normalizeSearchQueries($options['search'] ?? null);
+        $userNameSearch = $this->isUserNameSearch($searchQueries, $state);
         $threadsTable = $this->threadTable();
         $messagesTable = $this->messageTable();
 
@@ -63,18 +60,10 @@ class ThreadManagerService
             ->where("{$threadsTable}.id", '!=', $state->thread->getKey())
             ->orderByRaw("COALESCE({$threadsTable}.last_message_at, {$threadsTable}.updated_at, {$threadsTable}.created_at) DESC");
 
-        if ($startDate !== null) {
-            $query->whereDate("{$threadsTable}.created_at", '>=', $startDate);
-        }
-
-        if ($endDate !== null) {
-            $query->whereDate("{$threadsTable}.created_at", '<=', $endDate);
-        }
-
-        if ($searchTerms !== [] && ! $userNameSearch) {
-            $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchTerms): void {
-                foreach ($searchTerms as $term) {
-                    $likeValue = '%'.$term.'%';
+        if ($searchQueries !== [] && ! $userNameSearch) {
+            $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchQueries): void {
+                foreach ($searchQueries as $queryTerm) {
+                    $likeValue = '%'.$queryTerm.'%';
 
                     $builder->orWhere(function (Builder $clause) use ($threadsTable, $messagesTable, $likeValue): void {
                         $clause
@@ -94,7 +83,7 @@ class ThreadManagerService
         }
 
         /** @var LengthAwarePaginator<int, AiThread> $paginator */
-        $paginator = $query->paginate(self::PER_PAGE, ['*'], 'page', $page);
+        $paginator = $query->paginate(self::PER_PAGE);
 
         return $paginator;
     }
@@ -215,7 +204,7 @@ class ThreadManagerService
     /**
      * @return array<int, string>
      */
-    protected function normalizeSearchTerms(mixed $value): array
+    protected function normalizeSearchQueries(mixed $value): array
     {
         $terms = [];
 
@@ -247,11 +236,11 @@ class ThreadManagerService
     }
 
     /**
-     * @param  array<int, string>  $searchTerms
+     * @param  array<int, string>  $queries
      */
-    protected function isUserNameSearch(array $searchTerms, ThreadState $state): bool
+    protected function isUserNameSearch(array $queries, ThreadState $state): bool
     {
-        if ($searchTerms === []) {
+        if ($queries === []) {
             return false;
         }
 
@@ -263,7 +252,7 @@ class ThreadManagerService
 
         $normalizedUser = mb_strtolower($userName);
 
-        foreach ($searchTerms as $term) {
+        foreach ($queries as $term) {
             $normalizedTerm = mb_strtolower($term);
 
             if ($normalizedTerm === '') {
@@ -299,54 +288,6 @@ class ThreadManagerService
         $trimmed = trim($name);
 
         return $trimmed === '' ? null : $trimmed;
-    }
-
-    protected function normalizePage(mixed $page): int
-    {
-        if (is_numeric($page)) {
-            $page = (int) $page;
-        } else {
-            $page = 1;
-        }
-
-        return max(1, $page);
-    }
-
-    /**
-     * @return array{0: ?CarbonImmutable, 1: ?CarbonImmutable}
-     */
-    protected function normalizeDateRange(mixed $value): array
-    {
-        if (! is_array($value) || $value === []) {
-            return [null, null];
-        }
-
-        $start = $value['start'] ?? $value[0] ?? null;
-        $end = $value['end'] ?? $value[1] ?? null;
-
-        return [
-            $this->parseDate($start),
-            $this->parseDate($end),
-        ];
-    }
-
-    protected function parseDate(mixed $value): ?CarbonImmutable
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        if ($trimmed === '') {
-            return null;
-        }
-
-        try {
-            return CarbonImmutable::parse($trimmed);
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     /**

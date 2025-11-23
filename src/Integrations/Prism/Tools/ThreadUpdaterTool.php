@@ -44,7 +44,7 @@ class ThreadUpdaterTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Update the current thread title, short summary, and long summary or request auto-generated summaries using the built-in assistant.';
+        return 'Update the current thread title, short summary, and long summary or request auto-generated summaries';
     }
 
     /**

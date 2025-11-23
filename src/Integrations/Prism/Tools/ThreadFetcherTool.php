@@ -53,12 +53,12 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
 
     public function name(): string
     {
-        return 'Fetch Thread Content';
+        return 'Fetch Thread Conversations';
     }
 
     public function description(): string
     {
-        return 'Fetch one or more threads by id to view their summaries, keywords, and message content.';
+        return 'Fetch one or more threads by id to view the conversations';
     }
 
     /**
@@ -70,7 +70,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
             new ToolParameter(
                 new ArraySchema(
                     'thread_ids',
-                    'Thread identifiers to fetch (one or many). Provide numeric strings or integers.',
+                    'Thread ID(s) to fetch (one or many). Provide numeric strings or integers.',
                     new StringSchema('thread_id', 'Thread identifier.', true),
                     true
                 ),

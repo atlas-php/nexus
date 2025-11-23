@@ -10,15 +10,12 @@ use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\NumberSchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
 
 use function collect;
 use function is_array;
-use function is_int;
-use function is_numeric;
 use function is_string;
 use function trim;
 
@@ -54,7 +51,7 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     public function description(): string
     {
-        return 'Search the user\'s threads by title, summaries, keywords, and message content. Use Fetch Thread Content with the thread_ids parameter to inspect a conversation.';
+        return 'Search the user\'s previous thread conversations to find a list of threads.';
     }
 
     /**
@@ -63,9 +60,7 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new NumberSchema('page', 'Optional page number when listing/searching threads.', true), false),
-            new ToolParameter(new ArraySchema('search', 'Optional search terms across title, summary, keywords, and message content.', new StringSchema('term', 'Search term', true), true), false),
-            new ToolParameter(new ArraySchema('between_dates', 'Optional [start, end] ISO 8601 dates for filtering threads.', new StringSchema('date', 'Date string', true), true, 0, 2), false),
+            new ToolParameter(new ArraySchema('search', '(Optional) multiple search queries', new StringSchema('query', 'Search query', true), true), false),
         ];
     }
 
@@ -80,11 +75,9 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
 
         try {
             $state = $this->state;
-            $searchProvided = $this->hasSearchTerms($arguments['search'] ?? null);
+            $searchProvided = $this->hasSearchQueries($arguments['search'] ?? null);
             $paginator = $this->threadManagerService->listThreads($state, [
-                'page' => $this->normalizeInt($arguments['page'] ?? null),
                 'search' => $arguments['search'] ?? null,
-                'between_dates' => $arguments['between_dates'] ?? null,
             ]);
 
             $threads = collect($paginator->items())
@@ -121,20 +114,7 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
         }
     }
 
-    protected function normalizeInt(mixed $value): ?int
-    {
-        if (is_int($value)) {
-            return $value;
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value;
-        }
-
-        return null;
-    }
-
-    protected function hasSearchTerms(mixed $value): bool
+    protected function hasSearchQueries(mixed $value): bool
     {
         if (is_string($value)) {
             return trim($value) !== '';

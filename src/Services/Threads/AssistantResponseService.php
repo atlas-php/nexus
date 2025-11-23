@@ -11,6 +11,7 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
+use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
@@ -44,6 +45,11 @@ use Throwable;
  */
 class AssistantResponseService
 {
+    /**
+     * @var array<string, array<string, mixed>|int|float|string|null>
+     */
+    protected array $recordedToolOutputs = [];
+
     public function __construct(
         private readonly ThreadStateService $threadStateService,
         private readonly AiMessageService $messageService,
@@ -54,6 +60,8 @@ class AssistantResponseService
 
     public function handle(int $assistantMessageId): void
     {
+        $this->recordedToolOutputs = [];
+
         /** @var AiMessage $assistantMessage */
         $assistantMessage = $this->messageService->findOrFail($assistantMessageId);
         $assistantMessage->loadMissing('thread.assistant');
@@ -141,6 +149,8 @@ class AssistantResponseService
             $this->messageService->markStatus($assistantMessage, AiMessageStatus::FAILED, $exception->getMessage());
 
             throw $exception;
+        } finally {
+            $this->recordedToolOutputs = [];
         }
     }
 
@@ -225,28 +235,10 @@ class AssistantResponseService
 
         foreach ($toolCalls as $index => $toolCall) {
             $toolKey = $this->toolKeyFromMap($toolCall->name, $toolMap);
+            $callIndex = (int) $index;
 
-            $run = $this->toolRunService->create([
-                'tool_key' => $toolKey,
-                'thread_id' => $assistantMessage->thread_id,
-                'group_id' => $assistantMessage->group_id,
-                'assistant_message_id' => $assistantMessage->id,
-                'call_index' => (int) $index,
-                'input_args' => $toolCall->arguments(),
-                'status' => AiToolRunStatus::RUNNING->value,
-                'metadata' => [
-                    'tool_call_id' => $toolCall->id,
-                    'tool_call_result_id' => $toolCall->resultId ?? null,
-                ],
-            ]);
-
-            $runsByCallId[$toolCall->id] = $run;
-        }
-
-        foreach ($toolResults as $index => $toolResult) {
-            $toolKey = $this->toolKeyFromMap($toolResult->toolName, $toolMap);
-
-            $run = $runsByCallId[$toolResult->toolCallId] ?? null;
+            /** @var AiToolRun|null $run */
+            $run = $this->findExistingToolRun($assistantMessage->id, $toolKey, $callIndex);
 
             if ($run === null) {
                 $run = $this->toolRunService->create([
@@ -254,7 +246,43 @@ class AssistantResponseService
                     'thread_id' => $assistantMessage->thread_id,
                     'group_id' => $assistantMessage->group_id,
                     'assistant_message_id' => $assistantMessage->id,
-                    'call_index' => (int) $index,
+                    'call_index' => $callIndex,
+                    'input_args' => $toolCall->arguments(),
+                    'status' => AiToolRunStatus::RUNNING->value,
+                    'metadata' => [
+                        'tool_call_id' => $toolCall->id,
+                        'tool_call_result_id' => $toolCall->resultId ?? null,
+                    ],
+                ]);
+            } else {
+                $metadata = $run->metadata ?? [];
+                $metadata['tool_call_id'] = $toolCall->id;
+                $metadata['tool_call_result_id'] = $toolCall->resultId ?? null;
+
+                $this->toolRunService->update($run, [
+                    'metadata' => $metadata,
+                ]);
+            }
+
+            $runsByCallId[$toolCall->id] = $run;
+        }
+
+        foreach ($toolResults as $index => $toolResult) {
+            $toolKey = $this->toolKeyFromMap($toolResult->toolName, $toolMap);
+            $run = $runsByCallId[$toolResult->toolCallId] ?? null;
+            $callIndex = (int) $index;
+
+            if ($run === null) {
+                $run = $this->findExistingToolRun($assistantMessage->id, $toolKey, $callIndex);
+            }
+
+            if ($run === null) {
+                $run = $this->toolRunService->create([
+                    'tool_key' => $toolKey,
+                    'thread_id' => $assistantMessage->thread_id,
+                    'group_id' => $assistantMessage->group_id,
+                    'assistant_message_id' => $assistantMessage->id,
+                    'call_index' => $callIndex,
                     'input_args' => $toolResult->args,
                     'status' => AiToolRunStatus::RUNNING->value,
                     'response_output' => null,
@@ -265,16 +293,12 @@ class AssistantResponseService
                 ]);
             }
 
-            $responseOutput = is_array($toolResult->result)
-                ? $toolResult->result
-                : ['result' => $toolResult->result];
+            $responseOutput = $run->response_output ?? $this->normalizeToolResultOutput($toolResult->result);
+            $metadata = $run->metadata ?? [];
+            $metadata['tool_call_id'] = $toolResult->toolCallId;
+            $metadata['tool_call_result_id'] = $toolResult->toolCallResultId;
 
-            $metadata = [
-                'tool_call_id' => $toolResult->toolCallId,
-                'tool_call_result_id' => $toolResult->toolCallResultId,
-            ];
-
-            $this->toolRunService->update($run, [
+            $run = $this->toolRunService->update($run, [
                 'status' => AiToolRunStatus::SUCCEEDED->value,
                 'response_output' => $responseOutput,
                 'metadata' => $metadata,
@@ -282,6 +306,7 @@ class AssistantResponseService
                 'finished_at' => Carbon::now(),
             ]);
 
+            $this->recordedToolOutputs[$toolResult->toolCallId] = $responseOutput;
             $recordedIds[] = (int) $run->id;
         }
 
@@ -394,11 +419,13 @@ class AssistantResponseService
      */
     protected function serializeToolResult(ToolResult $toolResult): array
     {
+        $result = $this->recordedToolOutputs[$toolResult->toolCallId] ?? $toolResult->result;
+
         return [
             'tool_call_id' => $toolResult->toolCallId,
             'tool_name' => $toolResult->toolName,
             'args' => $toolResult->args,
-            'result' => $toolResult->result,
+            'result' => $result,
             'tool_call_result_id' => $toolResult->toolCallResultId,
         ];
     }
@@ -445,6 +472,32 @@ class AssistantResponseService
                 'resets_at' => $limit->resetsAt?->toIso8601String(),
             ], $meta->rateLimits),
         ];
+    }
+
+    protected function findExistingToolRun(int $assistantMessageId, string $toolKey, int $callIndex): ?AiToolRun
+    {
+        /** @var AiToolRun|null $run */
+        $run = $this->toolRunService->query()
+            ->where('assistant_message_id', $assistantMessageId)
+            ->where('tool_key', $toolKey)
+            ->where('call_index', $callIndex)
+            ->orderByDesc('id')
+            ->first();
+
+        return $run;
+    }
+
+    /**
+     * @param  array<string, mixed>|int|float|string|null  $result
+     * @return array<string, mixed>|null
+     */
+    protected function normalizeToolResultOutput(int|float|string|array|null $result): ?array
+    {
+        if ($result === null) {
+            return null;
+        }
+
+        return is_array($result) ? $result : ['result' => $result];
     }
 
     /**
