@@ -21,7 +21,6 @@ return [
         \App\Nexus\Assistants\GeneralAssistant::class,
         \App\Nexus\Assistants\HumanAssistant::class,
         \App\Nexus\Assistants\ThreadManagerAssistant::class,
-        \App\Nexus\Assistants\WebSummaryAssistant::class,
     ],
 
     'variables' => [

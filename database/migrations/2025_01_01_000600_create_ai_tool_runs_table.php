@@ -16,9 +16,9 @@ return new class extends Migration
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('group_id')->nullable()->index();
+            $table->string('assistant_key')->index();
             $table->string('tool_key')->index();
             $table->unsignedBigInteger('thread_id')->index();
-            $table->string('assistant_key')->index();
             $table->unsignedBigInteger('assistant_message_id')->index();
             $table->unsignedInteger('call_index');
             $table->json('input_args');
