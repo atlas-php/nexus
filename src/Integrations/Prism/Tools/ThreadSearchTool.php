@@ -96,7 +96,7 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
             $message = 'Fetched matching threads.';
 
             if ($searchProvided && $threads === []) {
-                $message = 'No threads matched those keywords. Search checks thread titles, summaries, keywords, message content, and user names. Use Fetch Thread Content with the thread_ids parameter to inspect a specific conversation.';
+                $message = 'No threads matched those keywords.';
             }
 
             return $this->output($message, [

@@ -82,7 +82,7 @@ class ThreadFetcherTool extends AbstractTool implements ThreadStateAwareTool
                 ),
                 true
             ),
-            new ToolParameter(new BooleanSchema('include_assistant', 'Include assistant messages in the output text.', true), false),
+            new ToolParameter(new BooleanSchema('include_assistant', '(optional) Include assistant messages in the output text.', true), false),
         ];
     }
 
