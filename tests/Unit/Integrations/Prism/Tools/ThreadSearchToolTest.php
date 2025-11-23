@@ -286,7 +286,6 @@ class ThreadSearchToolTest extends TestCase
         $this->assertSame([$latest->id, $older->id], array_column($threads, 'id'));
     }
 
-
     protected function createState(bool $withMessages = false): ThreadState
     {
         /** @var AiAssistant $assistant */
