@@ -65,6 +65,7 @@ You review the **current segment of the conversation** along with the **existing
 2. Output all newly discovered memories as a **JSON array of strings** where each entry is a concise factual statement.
 3. If **no** new memories exist, return an **empty JSON array**: `[]`.
 4. Only extract memories that are:
+
    * Stable, recurring, or explicitly stated traits, interests, preferences, or motivations.
    * Concrete facts, not interpretations.
    * Meaningful enough to be useful for personalization.
@@ -85,11 +86,20 @@ Return:
 * A JSON array of new memories, **or**
 * `[]` if no new memory exists.
 
-# Example Memories
+# Example Output
 
-* Prefers premium-quality products.
-* Interested in items with long-term durability.
-* Lives in Charlotte, NC.
+## When new memories are found
+
+[
+    "Prefers premium-quality products",
+    "Interested in items with long-term durability",
+    "Lives in Charlotte, NC"
+]
+
+## When no new memories exist
+
+[]
+
 ```
 PROMPT;
     }
