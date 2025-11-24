@@ -120,8 +120,11 @@ class ThreadTitleSummaryService
         $promptText = $this->promptVariableService->apply($prompt, $promptContext);
         $conversation = $this->conversationText($state, $promptText);
 
+        $provider = $this->provider();
+        $model = $this->model($assistant->model());
+
         $request = $this->textRequestFactory->make()
-            ->using($this->provider(), $this->model($assistant->model()))
+            ->using($provider, $model)
             ->withSystemPrompt($promptText)
             ->withMessages([
                 new UserMessage($conversation),
@@ -130,6 +133,12 @@ class ThreadTitleSummaryService
 
         $maxTokens = $assistant->maxOutputTokens() ?? 300;
         $request->withMaxTokens($maxTokens);
+
+        $providerOptions = $this->resolveProviderOptions($assistant, $provider);
+
+        if ($providerOptions !== []) {
+            $request->withProviderOptions($providerOptions);
+        }
 
         $response = $request->asText();
 
@@ -365,5 +374,23 @@ class ThreadTitleSummaryService
             ?? 'gpt-4o-mini';
 
         return is_string($model) && $model !== '' ? $model : 'gpt-4o-mini';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function resolveProviderOptions(ResolvedAssistant $assistant, string $provider): array
+    {
+        $options = [];
+
+        if (strtolower($provider) === 'openai') {
+            $reasoning = $assistant->reasoning();
+
+            if (is_array($reasoning) && $reasoning !== []) {
+                $options['reasoning'] = $reasoning;
+            }
+        }
+
+        return $options;
     }
 }

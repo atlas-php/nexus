@@ -142,9 +142,9 @@ class AssistantDefinitionTest extends TestCase
             }
 
             /**
-             * @return array<string, mixed>|null
+             * @return array<string, mixed>
              */
-            public function reasoning(): ?array
+            public function reasoning(): array
             {
                 return [
                     'effort' => 'high',

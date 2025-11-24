@@ -319,7 +319,7 @@ class ResolvedAssistant
     }
 
     /**
-     * @param  array<string, mixed>|null  $config
+     * @param  array<string|int, mixed>|null  $config
      * @return array<string, mixed>|null
      */
     private function normalizeConfigurationArray(?array $config): ?array

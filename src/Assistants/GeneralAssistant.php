@@ -52,6 +52,16 @@ class GeneralAssistant extends AssistantDefinition
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function reasoning(): ?array
+    {
+        return [
+            'effort' => 'low',
+        ];
+    }
+
     public function systemPrompt(): string
     {
         return <<<'PROMPT'

@@ -10,6 +10,8 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Services\Threads\ThreadTitleSummaryService;
+use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Collection;
 use Prism\Prism\Enums\FinishReason;
@@ -19,6 +21,7 @@ use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\Meta;
 use Prism\Prism\ValueObjects\Usage;
+use ReflectionMethod;
 
 use function collect;
 
@@ -309,6 +312,55 @@ class ThreadTitleSummaryServiceTest extends TestCase
         });
     }
 
+    public function test_it_resolves_openai_reasoning_options(): void
+    {
+        PrimaryAssistantDefinition::resetConfig();
+        PrimaryAssistantDefinition::updateConfig([
+            'reasoning' => [
+                'effort' => 'medium',
+                'budget_tokens' => 256,
+            ],
+        ]);
+
+        $assistant = new ResolvedAssistant(new PrimaryAssistantDefinition);
+
+        $service = $this->app->make(ThreadTitleSummaryService::class);
+        $method = new ReflectionMethod(ThreadTitleSummaryService::class, 'resolveProviderOptions');
+        $method->setAccessible(true);
+
+        $options = $method->invoke($service, $assistant, 'openai');
+
+        $this->assertSame([
+            'reasoning' => [
+                'effort' => 'medium',
+                'budget_tokens' => 256,
+            ],
+        ], $options);
+
+        PrimaryAssistantDefinition::resetConfig();
+    }
+
+    public function test_it_skips_reasoning_options_for_other_providers(): void
+    {
+        PrimaryAssistantDefinition::resetConfig();
+        PrimaryAssistantDefinition::updateConfig([
+            'reasoning' => [
+                'effort' => 'high',
+            ],
+        ]);
+
+        $assistant = new ResolvedAssistant(new PrimaryAssistantDefinition);
+
+        $service = $this->app->make(ThreadTitleSummaryService::class);
+        $method = new ReflectionMethod(ThreadTitleSummaryService::class, 'resolveProviderOptions');
+        $method->setAccessible(true);
+
+        $options = $method->invoke($service, $assistant, 'reka');
+
+        $this->assertSame([], $options);
+
+        PrimaryAssistantDefinition::resetConfig();
+    }
 
     private function migrationPath(): string
     {

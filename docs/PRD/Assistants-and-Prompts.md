@@ -32,6 +32,22 @@ Each definition class must implement:
 
 The base class normalizes arrays, deduplicates tool keys, and exposes helper setters (`promptIsActive`, `promptUserId`). Tool and provider tool declarations may be strings or associative arrays; any configuration arrays are preserved and supplied to the runtime services so every assistant can own its own tool options.
 
+### Reasoning (OpenAI)
+
+When the default provider is OpenAI, Nexus forwards each assistant's `reasoning()` payload straight into Prism so you can dial in OpenAI's native reasoning behaviors (effort, budget, etc.). The configuration is a plain associative array:
+
+```php
+public function reasoning(): ?array
+{
+    return [
+        'effort' => 'low',      // low, medium, or high
+        'budget_tokens' => 512, // optional token budget
+    ];
+}
+```
+
+If the active provider is not OpenAI, the payload is ignored. The bundled `GeneralAssistant` ships with `['effort' => 'low']` so every install benefits from a deterministic baseline, and consumers can override this per assistant to match their own usage targets.
+
 ### Tool Configuration Examples
 
 ```php
