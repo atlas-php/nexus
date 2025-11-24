@@ -7,9 +7,11 @@ namespace Atlas\Nexus\Tests\Unit\Integrations\Prism\Tools;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\Tools\FetchMoreContextTool;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadManagerService;
+use Atlas\Nexus\Services\Threads\ThreadMemoryService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -98,10 +100,14 @@ class FetchMoreContextToolTest extends TestCase
         $memoryThread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => $activeThread->user_id,
-            'memories' => [
-                ['content' => 'Prefers remote skiing trips'],
-            ],
             'last_message_at' => Carbon::now()->subMinutes(1),
+        ]);
+
+        AiMemory::factory()->create([
+            'assistant_id' => $memoryThread->assistant_key,
+            'thread_id' => $memoryThread->id,
+            'user_id' => $memoryThread->user_id,
+            'content' => 'Prefers remote skiing trips',
         ]);
 
         AiMessage::factory()->create([
@@ -111,6 +117,9 @@ class FetchMoreContextToolTest extends TestCase
             'role' => AiMessageRole::USER->value,
             'status' => AiMessageStatus::COMPLETED->value,
         ]);
+
+        $memories = $this->app->make(ThreadMemoryService::class)->memoriesForThread($memoryThread);
+        $this->assertCount(1, $memories);
 
         $state = $this->stateService->forThread($activeThread);
         $tool = new FetchMoreContextTool($this->manager);

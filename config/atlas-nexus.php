@@ -11,6 +11,7 @@ return [
             'ai_threads' => 'ai_threads',
             'ai_messages' => 'ai_messages',
             'ai_message_tools' => 'ai_message_tools',
+            'ai_memories' => 'ai_memories',
         ],
     ],
 

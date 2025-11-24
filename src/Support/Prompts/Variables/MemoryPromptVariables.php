@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Support\Prompts\Variables;
 
 use Atlas\Nexus\Contracts\PromptVariableGroup;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Support\Collection;
 
@@ -32,19 +33,19 @@ class MemoryPromptVariables implements PromptVariableGroup
     }
 
     /**
-     * @param  Collection<int, array<string, mixed>>  $memories
+     * @param  Collection<int, AiMemory>  $memories
      */
     private function formatContext(Collection $memories): ?string
     {
         $lines = $memories
-            ->map(function (array $memory): ?string {
-                $content = $this->stringValue($memory['content'] ?? null);
+            ->map(function (AiMemory $memory): ?string {
+                $content = $this->stringValue($memory->content);
+                $threadId = $memory->thread_id;
 
                 if ($content === null) {
                     return null;
                 }
 
-                $threadId = $memory['thread_id'] ?? null;
                 $prefix = is_int($threadId) ? sprintf('(thread %d) ', $threadId) : '';
 
                 return sprintf('- %s%s', $prefix, $content);

@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Tests\Unit\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
@@ -69,12 +70,7 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         ]);
 
         $payload = [
-            'memories' => [
-                [
-                    'content' => 'User lives in Portland and enjoys gardening.',
-                    'source_message_ids' => [$first->id, $second->id],
-                ],
-            ],
+            'User lives in Portland and enjoys gardening.',
         ];
 
         $encodedPayload = json_encode($payload, JSON_PRETTY_PRINT);
@@ -113,18 +109,11 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertTrue($firstFresh->is_memory_checked);
         $this->assertTrue($secondFresh->is_memory_checked);
 
-        $updatedThread = $thread->fresh();
-        $this->assertInstanceOf(AiThread::class, $updatedThread);
-        $threadMemories = $updatedThread->memories ?? [];
-        $this->assertCount(1, $threadMemories);
-        $firstMemory = $threadMemories[0] ?? null;
-        if (! is_array($firstMemory)) {
-            $this->fail('Expected thread memory array.');
-        }
-        $this->assertSame(
-            [$first->id, $second->id],
-            $firstMemory['source_message_ids']
-        );
+        $memories = AiMemory::query()->where('thread_id', $thread->id)->get();
+        $this->assertCount(1, $memories);
+        $firstMemory = $memories->first();
+        $this->assertInstanceOf(AiMemory::class, $firstMemory);
+        $this->assertSame('User lives in Portland and enjoys gardening.', $firstMemory->content);
     }
 
     public function test_it_throws_when_response_payload_is_invalid(): void

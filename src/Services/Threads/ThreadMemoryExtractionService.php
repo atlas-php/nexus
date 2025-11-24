@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
@@ -88,14 +89,14 @@ class ThreadMemoryExtractionService
     private function buildPayload(AiThread $thread, Collection $messages): string
     {
         $userMemories = $this->threadMemoryService
-            ->userMemories($thread->user_id)
-            ->map(fn (array $memory): string => (string) ($memory['content'] ?? ''))
+            ->userMemories($thread->user_id, $thread->assistant_key)
+            ->map(fn (AiMemory $memory): string => (string) $memory->content)
             ->filter(static fn (string $content): bool => $content !== '')
             ->values();
 
         $threadMemories = $this->threadMemoryService
             ->memoriesForThread($thread)
-            ->map(fn (array $memory): string => (string) ($memory['content'] ?? ''))
+            ->map(fn (AiMemory $memory): string => (string) $memory->content)
             ->filter(static fn (string $content): bool => $content !== '')
             ->values();
 
@@ -127,7 +128,7 @@ class ThreadMemoryExtractionService
             throw new RuntimeException('Unable to encode memory extraction payload.');
         }
 
-        return "Analyze the payload below and extract new memories.\n".$encoded;
+        return "Analyze the payload below and extract new memories as a JSON array of strings.\n".$encoded;
     }
 
     /**
@@ -158,16 +159,19 @@ class ThreadMemoryExtractionService
             throw new RuntimeException('Unable to decode memory extraction response.');
         }
 
-        $memories = $decoded['memories'] ?? [];
-
-        if (! is_array($memories)) {
-            return [];
-        }
-
+        $payload = $this->resolveMemoryPayload($decoded);
         $normalized = [];
 
-        foreach ($memories as $memory) {
-            $content = $this->stringValue($memory['content'] ?? null);
+        foreach ($payload as $memory) {
+            if (is_string($memory)) {
+                $content = $this->stringValue($memory);
+                $sourceIds = [];
+            } elseif (is_array($memory)) {
+                $content = $this->stringValue($memory['content'] ?? null);
+                $sourceIds = $this->normalizeMessageIds($memory['source_message_ids'] ?? []);
+            } else {
+                continue;
+            }
 
             if ($content === null) {
                 continue;
@@ -175,11 +179,34 @@ class ThreadMemoryExtractionService
 
             $normalized[] = [
                 'content' => $content,
-                'source_message_ids' => $this->normalizeMessageIds($memory['source_message_ids'] ?? []),
+                'source_message_ids' => $sourceIds,
             ];
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<mixed>  $decoded
+     * @return array<int, mixed>
+     */
+    private function resolveMemoryPayload(array $decoded): array
+    {
+        if ($decoded === []) {
+            return [];
+        }
+
+        if (array_is_list($decoded)) {
+            return $decoded;
+        }
+
+        $memories = $decoded['memories'] ?? null;
+
+        if (is_array($memories)) {
+            return $memories;
+        }
+
+        throw new RuntimeException('Unable to decode memory extraction response.');
     }
 
     private function extractJson(string $text): ?string

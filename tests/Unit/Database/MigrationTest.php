@@ -42,8 +42,20 @@ class MigrationTest extends TestCase
             'summary',
             'last_message_at',
             'last_summary_message_id',
-            'memories',
             'metadata',
+            'deleted_at',
+            'created_at',
+            'updated_at',
+        ]));
+
+        $this->assertTrue(Schema::hasColumns('ai_memories', [
+            'id',
+            'group_id',
+            'user_id',
+            'assistant_id',
+            'thread_id',
+            'content',
+            'source_message_ids',
             'deleted_at',
             'created_at',
             'updated_at',

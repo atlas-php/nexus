@@ -38,7 +38,6 @@ class AiThreadFactory extends Factory
             'summary' => $shortSummary !== null ? Str::limit($shortSummary, 2000, '') : null,
             'last_message_at' => $this->faker->optional()->dateTimeBetween('-2 weeks'),
             'last_summary_message_id' => null,
-            'memories' => [],
             'metadata' => $this->faker->optional()->randomElement([
                 ['topic' => 'support'],
                 ['topic' => 'sales'],

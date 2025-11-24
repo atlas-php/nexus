@@ -8,6 +8,7 @@ use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadType;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
@@ -43,12 +44,13 @@ class ThreadStateServiceTest extends TestCase
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
-            'memories' => [
-                [
-                    'content' => 'User prefers morning updates.',
-                    'created_at' => now()->toAtomString(),
-                ],
-            ],
+        ]);
+
+        AiMemory::factory()->create([
+            'assistant_id' => $thread->assistant_key,
+            'thread_id' => $thread->id,
+            'user_id' => $thread->user_id,
+            'content' => 'User prefers morning updates.',
         ]);
 
         AiMessage::factory()->create([
@@ -69,8 +71,8 @@ class ThreadStateServiceTest extends TestCase
         $this->assertCount(1, $state->messages);
         $this->assertCount(1, $state->memories);
         $firstMemory = $state->memories->first();
-        $this->assertIsArray($firstMemory);
-        $this->assertSame('User prefers morning updates.', $firstMemory['content']);
+        $this->assertInstanceOf(AiMemory::class, $firstMemory);
+        $this->assertSame('User prefers morning updates.', $firstMemory->content);
         $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
 
         $this->assertTrue(in_array('calendar_lookup', $toolKeys, true));

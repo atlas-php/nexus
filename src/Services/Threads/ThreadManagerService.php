@@ -25,7 +25,8 @@ class ThreadManagerService
     public function __construct(
         private readonly AiThreadService $threadService,
         private readonly ThreadStateService $threadStateService,
-        private readonly ThreadTitleSummaryService $titleSummaryService
+        private readonly ThreadTitleSummaryService $titleSummaryService,
+        private readonly ThreadMemoryService $threadMemoryService
     ) {}
 
     /**
@@ -40,9 +41,12 @@ class ThreadManagerService
         $userNameSearch = $this->isUserNameSearch($searchQueries, $state);
         $threadsTable = $this->threadTable();
         $messagesTable = $this->messageTable();
+        $memoriesTable = $this->memoryTable();
 
         $query = $this->threadService->query()
             ->select([
+                "{$threadsTable}.assistant_key",
+                "{$threadsTable}.user_id",
                 "{$threadsTable}.id",
                 "{$threadsTable}.title",
                 "{$threadsTable}.summary",
@@ -57,7 +61,7 @@ class ThreadManagerService
             ->orderByRaw("COALESCE({$threadsTable}.last_message_at, {$threadsTable}.updated_at, {$threadsTable}.created_at) DESC");
 
         if ($searchQueries !== [] && ! $userNameSearch) {
-            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable);
+            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable, $memoriesTable);
         }
 
         /** @var LengthAwarePaginator<int, AiThread> $paginator */
@@ -77,6 +81,7 @@ class ThreadManagerService
         $userNameSearch = $this->isUserNameSearch($searchQueries, $state);
         $threadsTable = $this->threadTable();
         $messagesTable = $this->messageTable();
+        $memoriesTable = $this->memoryTable();
 
         $query = $this->threadService->query()
             ->select([
@@ -84,7 +89,6 @@ class ThreadManagerService
                 "{$threadsTable}.title",
                 "{$threadsTable}.summary",
                 "{$threadsTable}.metadata",
-                "{$threadsTable}.memories",
                 "{$threadsTable}.last_message_at",
                 "{$threadsTable}.created_at",
                 "{$threadsTable}.updated_at",
@@ -96,7 +100,7 @@ class ThreadManagerService
             ->limit(self::PER_PAGE);
 
         if ($searchQueries !== [] && ! $userNameSearch) {
-            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable);
+            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable, $memoriesTable);
         }
 
         /** @var \Illuminate\Support\Collection<int, AiThread> $threads */
@@ -219,18 +223,24 @@ class ThreadManagerService
      * @param  Builder<AiThread>  $query
      * @param  array<int, string>  $searchQueries
      */
-    protected function applyContextSearchFilters(Builder $query, array $searchQueries, string $threadsTable, string $messagesTable): void
+    protected function applyContextSearchFilters(Builder $query, array $searchQueries, string $threadsTable, string $messagesTable, string $memoriesTable): void
     {
-        $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchQueries): void {
+        $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $memoriesTable, $searchQueries): void {
             foreach ($searchQueries as $queryTerm) {
                 $likeValue = '%'.$queryTerm.'%';
 
-                $builder->orWhere(function (Builder $clause) use ($threadsTable, $messagesTable, $likeValue): void {
+                $builder->orWhere(function (Builder $clause) use ($threadsTable, $messagesTable, $memoriesTable, $likeValue): void {
                     $clause
                         ->where("{$threadsTable}.title", 'like', $likeValue)
                         ->orWhere("{$threadsTable}.summary", 'like', $likeValue)
                         ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.keywords'), '') LIKE ?", [$likeValue])
-                        ->orWhere("{$threadsTable}.memories", 'like', $likeValue)
+                        ->orWhereExists(function (QueryBuilder $memoryQuery) use ($memoriesTable, $threadsTable, $likeValue): void {
+                            $memoryQuery->selectRaw('1')
+                                ->from($memoriesTable)
+                                ->whereNull("{$memoriesTable}.deleted_at")
+                                ->whereColumn("{$memoriesTable}.thread_id", "{$threadsTable}.id")
+                                ->where("{$memoriesTable}.content", 'like', $likeValue);
+                        })
                         ->orWhereExists(function (QueryBuilder $messageQuery) use ($messagesTable, $threadsTable, $likeValue): void {
                             $messageQuery->selectRaw('1')
                                 ->from($messagesTable)
@@ -250,6 +260,11 @@ class ThreadManagerService
     protected function messageTable(): string
     {
         return config('atlas-nexus.database.tables.ai_messages', 'ai_messages');
+    }
+
+    protected function memoryTable(): string
+    {
+        return config('atlas-nexus.database.tables.ai_memories', 'ai_memories');
     }
 
     /**
@@ -379,35 +394,25 @@ class ThreadManagerService
      */
     protected function contextualMemories(AiThread $thread, int $limit = 5): array
     {
-        $memories = $thread->memories;
+        $memories = $this->threadMemoryService->memoriesForThread($thread);
 
-        if (! is_array($memories) || $memories === []) {
-            return [];
+        return $memories
+            ->map(fn (\Atlas\Nexus\Models\AiMemory $memory): ?string => $this->stringValue($memory->content))
+            ->filter(static fn (?string $value): bool => $value !== null)
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    private function stringValue(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
         }
 
-        $collected = [];
+        $trimmed = trim($value);
 
-        foreach ($memories as $memory) {
-            $content = $memory['content'] ?? null;
-
-            if (! is_string($content)) {
-                continue;
-            }
-
-            $trimmed = trim($content);
-
-            if ($trimmed === '') {
-                continue;
-            }
-
-            $collected[] = $trimmed;
-
-            if (count($collected) >= $limit) {
-                break;
-            }
-        }
-
-        return $collected;
+        return $trimmed === '' ? null : $trimmed;
     }
 
     /**
