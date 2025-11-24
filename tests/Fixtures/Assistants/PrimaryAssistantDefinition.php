@@ -21,7 +21,7 @@ class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
             'top_p' => 0.5,
             'max_output_tokens' => 512,
             'max_default_steps' => 8,
-            'tools' => ['thread_search'],
+            'tools' => ['fetch_more_context'],
             'provider_tools' => [],
             'metadata' => [],
             'reasoning' => null,

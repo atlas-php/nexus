@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Atlas\Nexus\Contracts\ThreadStateAwareTool;
-use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadManagerService;
 use Atlas\Nexus\Support\Chat\ThreadState;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
@@ -14,20 +13,19 @@ use Prism\Prism\Schema\StringSchema;
 use RuntimeException;
 use Throwable;
 
-use function collect;
 use function implode;
 use function is_array;
 use function is_string;
 use function trim;
 
 /**
- * Class ThreadSearchTool
+ * Class FetchMoreContextTool
  *
- * Searches an assistant's existing user threads so agents can find relevant prior conversations.
+ * Provides paginated thread context so assistants can reference prior conversations without switching threads.
  */
-class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
+class FetchMoreContextTool extends AbstractTool implements ThreadStateAwareTool
 {
-    public const KEY = 'thread_search';
+    public const KEY = 'fetch_more_context';
 
     protected ?ThreadState $state = null;
 
@@ -47,12 +45,12 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
 
     public function name(): string
     {
-        return 'Thread Search';
+        return 'Fetch More Context';
     }
 
     public function description(): string
     {
-        return 'Search the user\'s previous thread conversations to find a list of threads.';
+        return 'Search existing threads (title, summary, keywords, memories, and message content) to gather up to 10 summaries for additional context.';
     }
 
     /**
@@ -61,7 +59,15 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
     public function parameters(): array
     {
         return [
-            new ToolParameter(new ArraySchema('search', '(Optional) multiple search queries', new StringSchema('query', 'Search query', true), true), false),
+            new ToolParameter(
+                new ArraySchema(
+                    'search',
+                    '(Optional) One or more search queries to filter threads.',
+                    new StringSchema('query', 'Search query.', true),
+                    true
+                ),
+                false
+            ),
         ];
     }
 
@@ -71,64 +77,28 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
     public function handle(array $arguments): ToolResponse
     {
         if (! isset($this->state)) {
-            return $this->output('Thread search unavailable: missing thread context.', ['error' => true]);
+            return $this->output('FetchMoreContext unavailable: missing thread context.', ['error' => true]);
         }
 
         try {
             $state = $this->state;
-            $searchProvided = $this->hasSearchQueries($arguments['search'] ?? null);
-            $paginator = $this->threadManagerService->listThreads($state, [
-                'search' => $arguments['search'] ?? null,
-            ]);
-
-            $threads = collect($paginator->items())
-                ->map(function (AiThread $thread): array {
-                    return [
-                        'id' => $thread->id,
-                        'title' => $thread->title,
-                        'summary' => $thread->summary,
-                        'keywords' => $this->threadManagerService->keywordsForThread($thread),
-                    ];
-                })
-                ->values()
-                ->all();
+            $searchTerms = $arguments['search'] ?? null;
+            $threads = $this->threadManagerService->fetchContextSummaries($state, $searchTerms);
 
             $message = $threads === []
-                ? 'No threads matched those keywords.'
+                ? 'No threads matched those queries.'
                 : $this->formatThreadSummaries($threads);
 
             return $this->output($message, [
                 'result' => [
                     'threads' => $threads,
-                    'page' => $paginator->currentPage(),
-                    'per_page' => $paginator->perPage(),
-                    'total' => $paginator->total(),
                 ],
             ]);
         } catch (RuntimeException $exception) {
             return $this->output($exception->getMessage(), ['error' => true]);
         } catch (Throwable $exception) {
-            return $this->output('Thread search failed: '.$exception->getMessage(), ['error' => true]);
+            return $this->output('FetchMoreContext failed: '.$exception->getMessage(), ['error' => true]);
         }
-    }
-
-    protected function hasSearchQueries(mixed $value): bool
-    {
-        if (is_string($value)) {
-            return trim($value) !== '';
-        }
-
-        if (! is_array($value)) {
-            return false;
-        }
-
-        foreach ($value as $term) {
-            if (is_string($term) && trim($term) !== '') {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -154,13 +124,23 @@ class ThreadSearchTool extends AbstractTool implements ThreadStateAwareTool
                 $lines[] = 'Summary: '.$summary;
             }
 
+            $memories = $thread['memories'] ?? [];
+
+            if (is_array($memories) && $memories !== []) {
+                $lines[] = 'Memories:';
+
+                foreach ($memories as $memory) {
+                    $lines[] = '- '.$memory;
+                }
+            }
+
             $blocks[] = implode("\n", $lines);
         }
 
         return implode("\n\n", $blocks);
     }
 
-    protected function stringValue(mixed $value): ?string
+    private function stringValue(mixed $value): ?string
     {
         if (! is_string($value)) {
             return null;

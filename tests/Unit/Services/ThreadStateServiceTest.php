@@ -68,7 +68,9 @@ class ThreadStateServiceTest extends TestCase
         $this->assertNotNull($state->systemPrompt);
         $this->assertCount(1, $state->messages);
         $this->assertCount(1, $state->memories);
-        $this->assertSame('User prefers morning updates.', $state->memories->first()['content']);
+        $firstMemory = $state->memories->first();
+        $this->assertIsArray($firstMemory);
+        $this->assertSame('User prefers morning updates.', $firstMemory['content']);
         $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
 
         $this->assertTrue(in_array('calendar_lookup', $toolKeys, true));

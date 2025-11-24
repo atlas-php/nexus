@@ -57,30 +57,63 @@ class ThreadManagerService
             ->orderByRaw("COALESCE({$threadsTable}.last_message_at, {$threadsTable}.updated_at, {$threadsTable}.created_at) DESC");
 
         if ($searchQueries !== [] && ! $userNameSearch) {
-            $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchQueries): void {
-                foreach ($searchQueries as $queryTerm) {
-                    $likeValue = '%'.$queryTerm.'%';
-
-                    $builder->orWhere(function (Builder $clause) use ($threadsTable, $messagesTable, $likeValue): void {
-                        $clause
-                            ->where("{$threadsTable}.title", 'like', $likeValue)
-                            ->orWhere("{$threadsTable}.summary", 'like', $likeValue)
-                            ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.keywords'), '') LIKE ?", [$likeValue])
-                            ->orWhereExists(function (QueryBuilder $messageQuery) use ($messagesTable, $threadsTable, $likeValue): void {
-                                $messageQuery->selectRaw('1')
-                                    ->from($messagesTable)
-                                    ->whereColumn("{$messagesTable}.thread_id", "{$threadsTable}.id")
-                                    ->where("{$messagesTable}.content", 'like', $likeValue);
-                            });
-                    });
-                }
-            });
+            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable);
         }
 
         /** @var LengthAwarePaginator<int, AiThread> $paginator */
         $paginator = $query->paginate(self::PER_PAGE);
 
         return $paginator;
+    }
+
+    /**
+     * Retrieve up to 10 contextual thread summaries for the current assistant and user.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchContextSummaries(ThreadState $state, mixed $search = null): array
+    {
+        $searchQueries = $this->normalizeSearchQueries($search);
+        $userNameSearch = $this->isUserNameSearch($searchQueries, $state);
+        $threadsTable = $this->threadTable();
+        $messagesTable = $this->messageTable();
+
+        $query = $this->threadService->query()
+            ->select([
+                "{$threadsTable}.id",
+                "{$threadsTable}.title",
+                "{$threadsTable}.summary",
+                "{$threadsTable}.metadata",
+                "{$threadsTable}.memories",
+                "{$threadsTable}.last_message_at",
+                "{$threadsTable}.created_at",
+                "{$threadsTable}.updated_at",
+            ])
+            ->where("{$threadsTable}.assistant_key", $state->assistant->key())
+            ->where("{$threadsTable}.user_id", $state->thread->user_id)
+            ->where("{$threadsTable}.id", '!=', $state->thread->getKey())
+            ->orderByRaw("COALESCE({$threadsTable}.last_message_at, {$threadsTable}.updated_at, {$threadsTable}.created_at) DESC")
+            ->limit(self::PER_PAGE);
+
+        if ($searchQueries !== [] && ! $userNameSearch) {
+            $this->applyContextSearchFilters($query, $searchQueries, $threadsTable, $messagesTable);
+        }
+
+        /** @var \Illuminate\Support\Collection<int, AiThread> $threads */
+        $threads = $query->get();
+
+        return $threads
+            ->map(function (AiThread $thread): array {
+                return [
+                    'id' => $thread->id,
+                    'title' => $thread->title,
+                    'summary' => $thread->summary,
+                    'keywords' => $this->keywordsForThread($thread),
+                    'memories' => $this->contextualMemories($thread),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function fetchThread(ThreadState $state, int $threadId): AiThread
@@ -180,6 +213,33 @@ class ThreadManagerService
             'summary' => $updated->summary,
             'keywords' => $this->keywordsForThread($updated),
         ];
+    }
+
+    /**
+     * @param  Builder<AiThread>  $query
+     * @param  array<int, string>  $searchQueries
+     */
+    protected function applyContextSearchFilters(Builder $query, array $searchQueries, string $threadsTable, string $messagesTable): void
+    {
+        $query->where(function (Builder $builder) use ($threadsTable, $messagesTable, $searchQueries): void {
+            foreach ($searchQueries as $queryTerm) {
+                $likeValue = '%'.$queryTerm.'%';
+
+                $builder->orWhere(function (Builder $clause) use ($threadsTable, $messagesTable, $likeValue): void {
+                    $clause
+                        ->where("{$threadsTable}.title", 'like', $likeValue)
+                        ->orWhere("{$threadsTable}.summary", 'like', $likeValue)
+                        ->orWhereRaw("COALESCE(JSON_EXTRACT({$threadsTable}.metadata, '$.keywords'), '') LIKE ?", [$likeValue])
+                        ->orWhere("{$threadsTable}.memories", 'like', $likeValue)
+                        ->orWhereExists(function (QueryBuilder $messageQuery) use ($messagesTable, $threadsTable, $likeValue): void {
+                            $messageQuery->selectRaw('1')
+                                ->from($messagesTable)
+                                ->whereColumn("{$messagesTable}.thread_id", "{$threadsTable}.id")
+                                ->where("{$messagesTable}.content", 'like', $likeValue);
+                        });
+                });
+            }
+        });
     }
 
     protected function threadTable(): string
@@ -312,6 +372,42 @@ class ThreadManagerService
         }
 
         return array_slice($normalized, 0, 12);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function contextualMemories(AiThread $thread, int $limit = 5): array
+    {
+        $memories = $thread->memories;
+
+        if (! is_array($memories) || $memories === []) {
+            return [];
+        }
+
+        $collected = [];
+
+        foreach ($memories as $memory) {
+            $content = $memory['content'] ?? null;
+
+            if (! is_string($content)) {
+                continue;
+            }
+
+            $trimmed = trim($content);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $collected[] = $trimmed;
+
+            if (count($collected) >= $limit) {
+                break;
+            }
+        }
+
+        return $collected;
     }
 
     /**

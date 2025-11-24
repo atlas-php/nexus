@@ -300,6 +300,12 @@ class RunAssistantResponseJobTest extends TestCase
             'status' => AiMessageStatus::PROCESSING->value,
         ]);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('Hi'),
+            new AssistantMessage('Reply'),
+        ]);
+
         $response = new TextResponse(
             steps: collect([]),
             text: 'Reply for memory extraction test.',
@@ -308,10 +314,7 @@ class RunAssistantResponseJobTest extends TestCase
             toolResults: [],
             usage: new Usage(3, 3),
             meta: new Meta('resp-memory', 'gpt-test'),
-            messages: collect([
-                new UserMessage('Hi'),
-                new AssistantMessage('Reply'),
-            ]),
+            messages: $messageObjects,
             additionalContent: [],
         );
 
@@ -353,6 +356,12 @@ class RunAssistantResponseJobTest extends TestCase
             'status' => AiMessageStatus::PROCESSING->value,
         ]);
 
+        /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $configuredMessageObjects */
+        $configuredMessageObjects = collect([
+            new UserMessage('Message 1'),
+            new AssistantMessage('Message 2'),
+        ]);
+
         $response = new TextResponse(
             steps: collect([]),
             text: 'Another reply.',
@@ -361,10 +370,7 @@ class RunAssistantResponseJobTest extends TestCase
             toolResults: [],
             usage: new Usage(3, 4),
             meta: new Meta('resp-memory-config', 'gpt-test'),
-            messages: collect([
-                new UserMessage('Message 1'),
-                new AssistantMessage('Message 2'),
-            ]),
+            messages: $configuredMessageObjects,
             additionalContent: [],
         );
 

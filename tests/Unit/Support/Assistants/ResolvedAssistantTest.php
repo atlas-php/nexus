@@ -60,7 +60,7 @@ class ResolvedAssistantTest extends TestCase
             {
                 return [
                     'memory',
-                    ['key' => 'thread_fetcher', 'config' => ['mode' => 'summary']],
+                    ['key' => 'fetch_more_context', 'config' => ['limit' => 10]],
                 ];
             }
 
@@ -78,10 +78,10 @@ class ResolvedAssistantTest extends TestCase
         $resolved = new ResolvedAssistant($definition);
 
         $this->assertSame(5, $resolved->maxDefaultSteps());
-        $this->assertSame(['mode' => 'summary'], $resolved->toolConfiguration('thread_fetcher'));
+        $this->assertSame(['limit' => 10], $resolved->toolConfiguration('fetch_more_context'));
         $this->assertSame(['vector_store_ids' => ['vs_42']], $resolved->providerToolConfiguration('file_search'));
         $this->assertNull($resolved->toolConfiguration('memory'));
-        $this->assertSame(['thread_fetcher' => ['mode' => 'summary']], $resolved->toolConfigurations());
+        $this->assertSame(['fetch_more_context' => ['limit' => 10]], $resolved->toolConfigurations());
         $this->assertSame(['file_search' => ['vector_store_ids' => ['vs_42']]], $resolved->providerToolConfigurations());
     }
 }

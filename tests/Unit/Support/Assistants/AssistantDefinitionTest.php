@@ -113,11 +113,11 @@ class AssistantDefinitionTest extends TestCase
             public function tools(): array
             {
                 return [
-                    ' memory ',
-                    'thread_fetcher' => ['mode' => 'summary'],
-                    ['key' => 'thread_updater', 'config' => ['fields' => ['title']]],
+                    ' fetch_more_context ',
+                    'calendar_lookup' => ['allowed_calendars' => ['sales']],
+                    ['key' => 'custom_tool', 'config' => ['fields' => ['title']]],
                     '',
-                    'memory',
+                    'fetch_more_context',
                 ];
             }
 
@@ -180,10 +180,10 @@ class AssistantDefinitionTest extends TestCase
         $this->assertSame(6, $assistant['max_default_steps']);
         $this->assertFalse($assistant['is_active']);
         $this->assertTrue($assistant['is_hidden']);
-        $this->assertSame(['memory', 'thread_fetcher', 'thread_updater'], $assistant['tools']);
+        $this->assertSame(['fetch_more_context', 'calendar_lookup', 'custom_tool'], $assistant['tools']);
         $this->assertSame([
-            'thread_fetcher' => ['mode' => 'summary'],
-            'thread_updater' => ['fields' => ['title']],
+            'calendar_lookup' => ['allowed_calendars' => ['sales']],
+            'custom_tool' => ['fields' => ['title']],
         ], $assistant['tool_configuration']);
         $this->assertSame(['web_search', 'file_search'], $assistant['provider_tools']);
         $this->assertSame([

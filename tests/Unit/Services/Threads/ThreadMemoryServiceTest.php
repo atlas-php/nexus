@@ -49,11 +49,15 @@ class ThreadMemoryServiceTest extends TestCase
 
         $updated = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $updated);
-        $this->assertCount(2, $updated->memories);
-        $lastMemory = $updated->memories[1];
+        $memories = $updated->memories ?? [];
+        $this->assertCount(2, $memories);
+        $lastMemory = $memories[1] ?? null;
+        $this->assertIsArray($lastMemory);
 
         $this->assertSame('Enjoys winter hikes', $lastMemory['content']);
-        $this->assertSame($thread->id, $updated->memories[0]['thread_id']);
+        $firstMemory = $memories[0] ?? null;
+        $this->assertIsArray($firstMemory);
+        $this->assertSame($thread->id, $firstMemory['thread_id']);
         $this->assertSame($thread->id, $lastMemory['thread_id']);
         $this->assertSame([3], $lastMemory['source_message_ids']);
     }

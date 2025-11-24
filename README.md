@@ -62,11 +62,12 @@ See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 - Tools are code-defined (`NexusTool` implementations) and registered by key via the `ToolRegistry` service. Resolve the registry from the container to call `register(new ToolDefinition('custom', CustomTool::class))` when adding custom tools.
 - Assistant tool keys determine availability; missing handlers are skipped.
 - Tool runs (`ai_message_tools`) log Prism tool calls with statuses, inputs/outputs, `group_id`, `assistant_key`, and `tool_key`.
+- The built-in `fetch_more_context` tool lets assistants search up to 10 additional threads (title, summary, keywords, memories, and message body) to gather relevant context mid-conversation.
 
 See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
 ## Memories
-- Memories (`ai_memories`) capture facts/preferences/summaries scoped to user, assistant (via `assistant_key`), or org.
+- Thread-level memories (`ai_threads.memories`) capture durable facts/preferences scoped to user + assistant.
 - A background memory extractor assistant reviews unchecked messages based on the configurable threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) and appends durable facts to `ai_threads.memories`, which can be surfaced with `{MEMORY.CONTEXT}`.
 
 See: [PRD — Memories](./docs/PRD/Memories.md)

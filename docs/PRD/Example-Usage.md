@@ -25,6 +25,7 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 public function tools(): array
 {
     return [
+        'fetch_more_context' => ['limit' => 10],
         'calendar_lookup' => [
             'allowed_calendars' => ['sales'],
         ],

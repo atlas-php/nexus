@@ -20,7 +20,7 @@ class SecondaryAssistantDefinition extends ConfigurableAssistantDefinition
             'temperature' => 0.1,
             'top_p' => 0.3,
             'max_output_tokens' => 256,
-            'tools' => ['thread_search'],
+            'tools' => ['fetch_more_context'],
             'provider_tools' => [],
             'metadata' => [],
         ];

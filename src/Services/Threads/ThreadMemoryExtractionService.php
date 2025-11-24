@@ -101,9 +101,9 @@ class ThreadMemoryExtractionService
 
         $messagePayload = $messages
             ->map(function (AiMessage $message): array {
-                $role = $message->role instanceof AiMessageRole
-                    ? $message->role->value
-                    : (string) $message->role;
+                /** @var AiMessageRole $roleEnum */
+                $roleEnum = $message->role;
+                $role = $roleEnum->value;
 
                 return [
                     'id' => $message->getKey(),

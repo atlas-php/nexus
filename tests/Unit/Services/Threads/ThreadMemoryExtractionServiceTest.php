@@ -14,9 +14,9 @@ use Illuminate\Support\Collection;
 use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response as TextResponse;
-use Prism\Prism\ValueObjects\Meta;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\ValueObjects\Meta;
 use Prism\Prism\ValueObjects\Usage;
 use RuntimeException;
 
@@ -77,18 +77,27 @@ class ThreadMemoryExtractionServiceTest extends TestCase
             ],
         ];
 
+        $encodedPayload = json_encode($payload, JSON_PRETTY_PRINT);
+
+        if ($encodedPayload === false) {
+            $this->fail('Failed to encode memory payload.');
+        }
+
+        /** @var Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('payload'),
+            new AssistantMessage('done'),
+        ]);
+
         $response = new TextResponse(
             steps: new Collection,
-            text: json_encode($payload, JSON_PRETTY_PRINT),
+            text: $encodedPayload,
             finishReason: FinishReason::Stop,
             toolCalls: [],
             toolResults: [],
             usage: new Usage(10, 15),
             meta: new Meta('memories-1', 'gpt-memory'),
-            messages: new Collection([
-                new UserMessage('payload'),
-                new AssistantMessage('done'),
-            ]),
+            messages: $messageObjects,
             additionalContent: [],
         );
 
@@ -97,15 +106,24 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $service = $this->app->make(ThreadMemoryExtractionService::class);
         $service->extractFromMessages($thread, collect([$first, $second]));
 
-        $this->assertTrue($first->fresh()->is_memory_checked);
-        $this->assertTrue($second->fresh()->is_memory_checked);
+        $firstFresh = $first->fresh();
+        $secondFresh = $second->fresh();
+        $this->assertInstanceOf(AiMessage::class, $firstFresh);
+        $this->assertInstanceOf(AiMessage::class, $secondFresh);
+        $this->assertTrue($firstFresh->is_memory_checked);
+        $this->assertTrue($secondFresh->is_memory_checked);
 
         $updatedThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $updatedThread);
-        $this->assertCount(1, $updatedThread->memories);
+        $threadMemories = $updatedThread->memories ?? [];
+        $this->assertCount(1, $threadMemories);
+        $firstMemory = $threadMemories[0] ?? null;
+        if (! is_array($firstMemory)) {
+            $this->fail('Expected thread memory array.');
+        }
         $this->assertSame(
             [$first->id, $second->id],
-            $updatedThread->memories[0]['source_message_ids']
+            $firstMemory['source_message_ids']
         );
     }
 
@@ -126,6 +144,9 @@ class ThreadMemoryExtractionServiceTest extends TestCase
             'is_memory_checked' => false,
         ]);
 
+        /** @var Collection<int, \Prism\Prism\Contracts\Message> $emptyMessages */
+        $emptyMessages = collect();
+
         $response = new TextResponse(
             steps: new Collection,
             text: 'not-json',
@@ -134,7 +155,7 @@ class ThreadMemoryExtractionServiceTest extends TestCase
             toolResults: [],
             usage: new Usage(5, 5),
             meta: new Meta('memories-error', 'gpt-memory'),
-            messages: new Collection,
+            messages: $emptyMessages,
             additionalContent: [],
         );
 
@@ -149,7 +170,9 @@ class ThreadMemoryExtractionServiceTest extends TestCase
             $this->assertStringContainsString('Unable to decode memory extraction response', $exception->getMessage());
         }
 
-        $this->assertFalse($message->fresh()->is_memory_checked);
+        $freshMessage = $message->fresh();
+        $this->assertInstanceOf(AiMessage::class, $freshMessage);
+        $this->assertFalse($freshMessage->is_memory_checked);
     }
 
     private function migrationPath(): string

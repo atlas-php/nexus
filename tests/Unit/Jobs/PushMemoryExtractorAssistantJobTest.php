@@ -14,6 +14,8 @@ use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Tests\TestCase;
 use Mockery;
+use Mockery\Expectation;
+use Mockery\MockInterface;
 
 class PushMemoryExtractorAssistantJobTest extends TestCase
 {
@@ -54,14 +56,17 @@ class PushMemoryExtractorAssistantJobTest extends TestCase
             'is_memory_checked' => false,
         ]);
 
+        /** @var ThreadMemoryExtractionService&MockInterface $extraction */
         $extraction = Mockery::mock(ThreadMemoryExtractionService::class);
-        $extraction
-            ->shouldReceive('extractFromMessages')
+        /** @var Expectation $expectation */
+        $expectation = $extraction->shouldReceive('extractFromMessages');
+        $expectation
             ->once()
             ->with(
                 Mockery::on(fn (AiThread $argument): bool => $argument->is($thread)),
                 Mockery::type(\Illuminate\Support\Collection::class)
-            );
+            )
+            ->andReturnNull();
 
         $this->app->instance(ThreadMemoryExtractionService::class, $extraction);
 
@@ -69,12 +74,14 @@ class PushMemoryExtractorAssistantJobTest extends TestCase
         $job->handle(
             $this->app->make(AiThreadService::class),
             $this->app->make(AiMessageService::class),
-            $extraction
+            $this->app->make(ThreadMemoryExtractionService::class)
         );
 
-        $metadata = $thread->fresh()->metadata ?? [];
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
 
-        $this->assertIsArray($metadata);
+        $metadata = $freshThread->metadata ?? [];
+
         $this->assertArrayNotHasKey('memory_job_pending', $metadata);
     }
 
@@ -86,6 +93,7 @@ class PushMemoryExtractorAssistantJobTest extends TestCase
             'metadata' => ['memory_job_pending' => true],
         ]);
 
+        /** @var ThreadMemoryExtractionService&MockInterface $extraction */
         $extraction = Mockery::mock(ThreadMemoryExtractionService::class);
         $extraction->shouldNotReceive('extractFromMessages');
 
@@ -95,12 +103,14 @@ class PushMemoryExtractorAssistantJobTest extends TestCase
         $job->handle(
             $this->app->make(AiThreadService::class),
             $this->app->make(AiMessageService::class),
-            $extraction
+            $this->app->make(ThreadMemoryExtractionService::class)
         );
 
-        $metadata = $thread->fresh()->metadata ?? [];
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
 
-        $this->assertIsArray($metadata);
+        $metadata = $freshThread->metadata ?? [];
+
         $this->assertArrayNotHasKey('memory_job_pending', $metadata);
     }
 

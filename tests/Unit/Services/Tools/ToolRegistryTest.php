@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services\Tools;
 
-use Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool;
-use Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool;
-use Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool;
+use Atlas\Nexus\Integrations\Prism\Tools\FetchMoreContextTool;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Tests\TestCase;
 
@@ -23,8 +21,6 @@ class ToolRegistryTest extends TestCase
 
         $available = $registry->available();
 
-        $this->assertArrayHasKey(ThreadSearchTool::KEY, $available);
-        $this->assertArrayHasKey(ThreadFetcherTool::KEY, $available);
-        $this->assertArrayHasKey(ThreadUpdaterTool::KEY, $available);
+        $this->assertArrayHasKey(FetchMoreContextTool::KEY, $available);
     }
 }

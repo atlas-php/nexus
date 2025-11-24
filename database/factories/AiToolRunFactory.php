@@ -26,7 +26,7 @@ class AiToolRunFactory extends Factory
         $status = $this->faker->randomElement(AiToolRunStatus::cases());
 
         return [
-            'tool_key' => $this->faker->randomElement(['thread_search', 'calendar_lookup']),
+            'tool_key' => $this->faker->randomElement(['fetch_more_context', 'calendar_lookup']),
             'thread_id' => $this->faker->numberBetween(1, 1_000),
             'assistant_key' => 'general-assistant',
             'group_id' => null,

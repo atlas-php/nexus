@@ -27,7 +27,7 @@ Each definition class must implement:
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
 | `reasoning()` | Optional provider-specific reasoning options (e.g., OpenAI `reasoning` payload). Return `null` to disable reasoning. |
 | `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
-| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'calendar_lookup'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |
+| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'calendar_lookup'`) or `['fetch_more_context' => ['limit' => 10]]` to pass options to the tool handler. |
 | `providerTools()` | Provider-native tool declarations with assistant-owned options (e.g., `['web_search' => ['filters' => ['allowed_domains' => ['atlasphp.com']]]]`). Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |
 | `metadata()` | Arbitrary assistant metadata exposed to consumers. |
 
@@ -56,7 +56,7 @@ public function tools(): array
 {
     return [
         'calendar_lookup' => ['allowed_calendars' => ['sales', 'success']],
-        ['key' => 'thread_fetcher', 'mode' => 'summary', 'include_messages' => true],
+        ['key' => 'fetch_more_context', 'limit' => 10],
     ];
 }
 

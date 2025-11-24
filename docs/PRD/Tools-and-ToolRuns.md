@@ -10,12 +10,10 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 - [Services](#services)
 
 ## Tools
-Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `thread_fetcher`), and is registered inside `ToolRegistry`.
+Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `fetch_more_context`), and is registered inside `ToolRegistry`.
 
 - Built-in tools are registered automatically:
-  - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name.
-  - `thread_fetcher` — fetch one or many threads (IDs provided by the search tool or other signals) and return summaries, keywords, and ordered message transcripts.
-  - `thread_updater` — update thread title/summary or auto-generate them from conversation context.
+  - `fetch_more_context` — searches a user’s other threads (title, summary, keywords, memories, and message body) and returns up to 10 summaries so assistants can add context without switching threads.
 - Additional tools can be registered at runtime by resolving `ToolRegistry` from the container and calling `register(new ToolDefinition('custom', CustomTool::class))`.
 - Only tools with resolvable handler classes are exposed to Prism.
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
@@ -27,7 +25,7 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 public function tools(): array
 {
     return [
-        'thread_search',
+        'fetch_more_context',
         'calendar_lookup' => ['allowed_calendars' => ['sales', 'success']],
     ];
 }

@@ -17,8 +17,8 @@ use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
 use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
-use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiMessageService;
+use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
@@ -45,6 +45,7 @@ use Throwable;
 class AssistantResponseService
 {
     private const THREAD_MANAGER_KEY = 'thread-manager';
+
     private const MEMORY_EXTRACTOR_KEY = 'memory-extractor';
 
     /**

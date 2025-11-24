@@ -56,7 +56,7 @@ class HumanAssistant extends AssistantDefinition
     public function tools(): array
     {
         return [
-            'thread_search',
+            'fetch_more_context',
         ];
     }
 
