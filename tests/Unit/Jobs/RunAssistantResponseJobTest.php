@@ -80,6 +80,51 @@ class RunAssistantResponseJobTest extends TestCase
         $this->assertSame(7, $assistantMessage->tokens_out);
     }
 
+    public function test_visible_assistant_does_not_create_audit_thread(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'status' => AiMessageStatus::PROCESSING->value,
+        ]);
+
+        /** @var array<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = [
+            new UserMessage('Log this response.'),
+            new AssistantMessage('Response logged.'),
+        ];
+
+        $response = new TextResponse(
+            steps: collect([]),
+            text: 'Response logged.',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(6, 8),
+            meta: new Meta('resp-log', 'gpt-log'),
+            messages: collect($messageObjects),
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        RunAssistantResponseJob::dispatchSync($assistantMessage->id);
+
+        $logThreadCount = AiThread::query()
+            ->where('assistant_key', $thread->assistant_key)
+            ->where('id', '!=', $thread->id)
+            ->count();
+
+        $this->assertSame(0, $logThreadCount);
+    }
+
     public function test_it_marks_message_failed_when_exception_thrown(): void
     {
         /** @var AiThread $thread */

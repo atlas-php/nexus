@@ -16,6 +16,7 @@ use Atlas\Nexus\Services\NexusPurgeService;
 use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
+use Atlas\Nexus\Services\Threads\AssistantThreadLogger;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Services\Threads\ThreadMemoryService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -62,6 +63,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(PromptVariableService::class);
         $this->app->singleton(ThreadMemoryService::class);
         $this->app->singleton(ThreadMemoryExtractionService::class);
+        $this->app->singleton(AssistantThreadLogger::class);
         $this->app->singleton(ProviderToolRegistry::class);
         $this->app->singleton(ToolRegistry::class);
         $this->app->singleton(ToolRunLogger::class);

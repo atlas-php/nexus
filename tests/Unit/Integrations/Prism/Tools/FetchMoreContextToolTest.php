@@ -104,7 +104,7 @@ class FetchMoreContextToolTest extends TestCase
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => $memoryThread->assistant_key,
+            'assistant_key' => $memoryThread->assistant_key,
             'thread_id' => $memoryThread->id,
             'user_id' => $memoryThread->user_id,
             'content' => 'Prefers remote skiing trips',

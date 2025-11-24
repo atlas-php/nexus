@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Tests\Unit\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
@@ -114,6 +115,49 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $firstMemory = $memories->first();
         $this->assertInstanceOf(AiMemory::class, $firstMemory);
         $this->assertSame('User lives in Portland and enjoys gardening.', $firstMemory->content);
+
+        $logThread = AiThread::query()
+            ->where('assistant_key', 'memory-extractor')
+            ->where('parent_thread_id', $thread->id)
+            ->first();
+
+        $this->assertNotNull($logThread);
+        $this->assertSame(AiThreadType::TOOL, $logThread->type);
+        $this->assertSame($thread->id, $logThread->metadata['source_thread_id'] ?? null);
+        $this->assertSame([$first->id, $second->id], $logThread->metadata['checked_message_ids'] ?? null);
+        $this->assertSame(
+            [
+                [
+                    'content' => 'User lives in Portland and enjoys gardening.',
+                    'source_message_ids' => [],
+                ],
+            ],
+            $logThread->metadata['extracted_memories'] ?? null
+        );
+
+        $logMessages = AiMessage::query()
+            ->where('thread_id', $logThread->id)
+            ->orderBy('sequence')
+            ->get();
+
+        $this->assertCount(2, $logMessages);
+
+        /** @var array{0: AiMessage, 1: AiMessage} $logMessageArray */
+        $logMessageArray = $logMessages->all();
+
+        [$loggedUserMessage, $loggedAssistantMessage] = $logMessageArray;
+
+        $this->assertSame(AiMessageRole::USER, $loggedUserMessage->role);
+        $this->assertSame(AiMessageRole::ASSISTANT, $loggedAssistantMessage->role);
+
+        $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
+        $this->assertIsString($metadataPayload);
+        $this->assertSame($metadataPayload, $loggedUserMessage->content);
+
+        $assistantMetadata = $loggedAssistantMessage->metadata ?? [];
+        $this->assertSame($metadataPayload, $assistantMetadata['memory_extractor_payload'] ?? null);
+        $this->assertSame($logThread->metadata['checked_message_ids'], $assistantMetadata['checked_message_ids'] ?? null);
+        $this->assertSame($logThread->metadata['extracted_memories'], $assistantMetadata['extracted_memories'] ?? null);
     }
 
     public function test_it_throws_when_response_payload_is_invalid(): void

@@ -32,7 +32,8 @@ class ThreadMemoryExtractionService
         private readonly AssistantRegistry $assistantRegistry,
         private readonly ThreadMemoryService $threadMemoryService,
         private readonly TextRequestFactory $textRequestFactory,
-        private readonly AiMessageService $messageService
+        private readonly AiMessageService $messageService,
+        private readonly AssistantThreadLogger $assistantThreadLogger
     ) {}
 
     /**
@@ -65,6 +66,24 @@ class ThreadMemoryExtractionService
         if ($memories !== []) {
             $this->threadMemoryService->appendMemories($thread, $memories);
         }
+
+        $checkedMessageIds = $this->messageIds($messages);
+
+        $metadata = [
+            'memory_extractor_payload' => $payload,
+            'checked_message_ids' => $checkedMessageIds,
+            'extracted_memories' => $memories,
+        ];
+
+        $this->assistantThreadLogger->log(
+            $thread,
+            $assistant,
+            sprintf('Memory extraction for Thread %s', $thread->getKey()),
+            $payload,
+            $response,
+            $metadata,
+            $metadata
+        );
 
         $this->markMessagesChecked($messages);
     }
@@ -225,11 +244,7 @@ class ThreadMemoryExtractionService
      */
     private function markMessagesChecked(Collection $messages): void
     {
-        $ids = $messages
-            ->map(static fn (AiMessage $message): ?int => $message->getKey())
-            ->filter(static fn (?int $id): bool => $id !== null)
-            ->values()
-            ->all();
+        $ids = $this->messageIds($messages);
 
         if ($ids === []) {
             return;
@@ -272,5 +287,18 @@ class ThreadMemoryExtractionService
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    /**
+     * @param  Collection<int, AiMessage>  $messages
+     * @return array<int, int>
+     */
+    private function messageIds(Collection $messages): array
+    {
+        return $messages
+            ->map(static fn (AiMessage $message): ?int => $message->getKey())
+            ->filter(static fn (?int $id): bool => $id !== null)
+            ->values()
+            ->all();
     }
 }

@@ -110,14 +110,14 @@ class ThreadManagerServiceTest extends TestCase
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => $memoryThread->assistant_key,
+            'assistant_key' => $memoryThread->assistant_key,
             'thread_id' => $memoryThread->id,
             'user_id' => $memoryThread->user_id,
             'content' => 'User loves skiing trips',
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => $memoryThread->assistant_key,
+            'assistant_key' => $memoryThread->assistant_key,
             'thread_id' => $memoryThread->id,
             'user_id' => $memoryThread->user_id,
             'content' => 'Enjoys gardening',

@@ -4,25 +4,16 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Threads;
 
-use Atlas\Nexus\Enums\AiMessageContentType;
-use Atlas\Nexus\Enums\AiMessageRole;
-use Atlas\Nexus\Enums\AiMessageStatus;
-use Atlas\Nexus\Enums\AiThreadStatus;
-use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Prism\TextResponseSerializer;
 use Atlas\Nexus\Support\Prompts\PromptVariableContext;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use Prism\Prism\Text\Response;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use RuntimeException;
 
@@ -39,7 +30,7 @@ class ThreadTitleSummaryService
         private readonly TextRequestFactory $textRequestFactory,
         private readonly AiThreadService $threadService,
         private readonly PromptVariableService $promptVariableService,
-        private readonly AiMessageService $messageService,
+        private readonly AssistantThreadLogger $assistantThreadLogger,
         private readonly AssistantRegistry $assistantRegistry
     ) {}
 
@@ -154,14 +145,18 @@ class ThreadTitleSummaryService
             'keywords' => $decoded['keywords'],
         ];
 
-        $this->logThreadManagerConversation(
-            $state,
+        $metadata = [
+            'thread_manager_payload' => $decoded['raw_payload'],
+        ];
+
+        $this->assistantThreadLogger->log(
+            $state->thread,
             $assistant,
-            $promptText,
+            sprintf('Summary for Thread %s', $state->thread->getKey()),
             $conversation,
             $response,
-            $normalized['summary'],
-            $decoded['raw_payload']
+            $metadata,
+            $metadata
         );
 
         return $normalized;
@@ -227,66 +222,6 @@ class ThreadTitleSummaryService
         }
 
         return substr($text, $start, ($end - $start) + 1);
-    }
-
-    protected function logThreadManagerConversation(
-        ThreadState $state,
-        ResolvedAssistant $assistant,
-        string $promptText,
-        string $conversation,
-        Response $response,
-        string $summaryText,
-        string $rawPayload
-    ): void {
-        $summaryThread = $this->threadService->create([
-            'assistant_key' => $assistant->key(),
-            'user_id' => $state->thread->user_id,
-            'group_id' => $state->thread->group_id,
-            'type' => AiThreadType::TOOL->value,
-            'parent_thread_id' => $state->thread->getKey(),
-            'title' => sprintf('Summary for Thread %s', $state->thread->getKey()),
-            'status' => AiThreadStatus::CLOSED->value,
-            'summary' => null,
-            'metadata' => [
-                'source_thread_id' => $state->thread->getKey(),
-                'thread_manager_payload' => $rawPayload,
-            ],
-            'last_message_at' => Carbon::now(),
-        ]);
-
-        $conversationContent = $conversation;
-
-        $this->messageService->create([
-            'thread_id' => $summaryThread->id,
-            'assistant_key' => $assistant->key(),
-            'user_id' => $state->thread->user_id,
-            'group_id' => $state->thread->group_id,
-            'role' => AiMessageRole::USER->value,
-            'content' => $conversationContent,
-            'content_type' => AiMessageContentType::TEXT->value,
-            'sequence' => 1,
-            'status' => AiMessageStatus::COMPLETED->value,
-        ]);
-
-        $this->messageService->create([
-            'thread_id' => $summaryThread->id,
-            'assistant_key' => $assistant->key(),
-            'user_id' => null,
-            'group_id' => $state->thread->group_id,
-            'role' => AiMessageRole::ASSISTANT->value,
-            'content' => $response->text,
-            'content_type' => AiMessageContentType::TEXT->value,
-            'sequence' => 2,
-            'status' => AiMessageStatus::COMPLETED->value,
-            'model' => $response->meta->model ?? $assistant->model(),
-            'tokens_in' => $response->usage->promptTokens,
-            'tokens_out' => $response->usage->completionTokens,
-            'provider_response_id' => $response->meta->id ?? null,
-            'raw_response' => TextResponseSerializer::serialize($response),
-            'metadata' => [
-                'thread_manager_payload' => $rawPayload,
-            ],
-        ]);
     }
 
     protected function conversationText(ThreadState $state, string $promptText): string
