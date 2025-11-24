@@ -17,7 +17,6 @@ use Prism\Prism\ValueObjects\Messages\UserMessage;
 use RuntimeException;
 
 use function json_decode;
-use function json_encode;
 
 /**
  * Class ThreadMemoryExtractionService
@@ -134,20 +133,38 @@ class ThreadMemoryExtractionService
             })
             ->values();
 
-        $payload = [
-            'thread_id' => $thread->getKey(),
-            'existing_memories' => $userMemories->all(),
-            'current_thread_memories' => $threadMemories->all(),
-            'new_messages' => $messagePayload->all(),
-        ];
+        $memories = $userMemories
+            ->merge($threadMemories)
+            ->filter()
+            ->values()
+            ->all();
 
-        $encoded = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $memorySection = $memories === []
+            ? '- None.'
+            : '- '.implode("\n- ", array_map(static fn (string $memory): string => $memory, $memories));
 
-        if (! is_string($encoded)) {
-            throw new RuntimeException('Unable to encode memory extraction payload.');
-        }
+        $conversationLines = $messagePayload
+            ->map(static function (array $message): string {
+                $role = strtoupper((string) $message['role']);
+                $content = (string) $message['content'];
 
-        return "Analyze the payload below and extract new memories as a JSON array of strings.\n".$encoded;
+                return implode("\n", [
+                    sprintf('%s:', $role),
+                    $content,
+                ]);
+            })
+            ->all();
+
+        $conversationText = implode("\n\n", $conversationLines);
+
+        return implode("\n", [
+            'Current memories:',
+            $memorySection,
+            '',
+            'Current conversation thread:',
+            '',
+            $conversationText,
+        ]);
     }
 
     /**

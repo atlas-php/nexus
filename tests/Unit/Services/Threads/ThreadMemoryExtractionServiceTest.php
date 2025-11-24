@@ -152,6 +152,21 @@ class ThreadMemoryExtractionServiceTest extends TestCase
 
         $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
         $this->assertIsString($metadataPayload);
+
+        $expectedPayload = implode("\n", [
+            'Current memories:',
+            '- None.',
+            '',
+            'Current conversation thread:',
+            '',
+            'USER:',
+            'I live in Portland and love gardening.',
+            '',
+            'ASSISTANT:',
+            'Great! What plants do you grow?',
+        ]);
+
+        $this->assertSame($expectedPayload, $metadataPayload);
         $this->assertSame($metadataPayload, $loggedUserMessage->content);
 
         $assistantMetadata = $loggedAssistantMessage->metadata ?? [];
