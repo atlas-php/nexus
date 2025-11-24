@@ -8,7 +8,7 @@ This guide defines the conventions and best practices for contributors working o
 
 ## Purpose
 
-This repository provides **standalone Laravel packages** designed for installation in other Laravel applications. There is **no full Laravel app** in this repo — all logic must remain **framework-integrated but package-isolated**.
+This repository provides **standalone Laravel packages** designed for installation in consumer Laravel applications. All logic must remain **framework-integrated but package-isolated**.
 
 All **Agents** must treat any **Product Requirement Documents (PRDs)** included in the project as the **absolute source of truth** for functionality, naming, structure, and business logic.
 
@@ -47,6 +47,7 @@ Each package should follow this layout:
 package-name/
 ├── composer.json
 ├── src/
+│   ├── Console/Commands/
 │   ├── Providers/
 │   │   └── PackageServiceProvider.php
 │   ├── Models/ (if applicable)
