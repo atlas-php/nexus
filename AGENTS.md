@@ -1,6 +1,6 @@
 # Agents
 
-This guide defines the conventions and best practices for contributors working on this **Laravel package repository**. These rules ensure consistency, clarity, and compatibility for all consumers installing this package via Composer.
+This guide defines the conventions and best practices for all contributors working on this **Laravel package repository**. These rules ensure consistency, clarity, and compatibility for all consumers installing this package via Composer.
 
 > For validation and commit requirements, see **[CONTRIBUTING.md](./.github/CONTRIBUTING.md)**.
 
@@ -8,7 +8,7 @@ This guide defines the conventions and best practices for contributors working o
 
 ## Purpose
 
-This repository provides **standalone Laravel packages** designed for installation in other Laravel applications. There is **no full Laravel app** in this repo — all logic must remain **framework-integrated but package-isolated**.
+This repository provides **standalone Laravel packages** designed for installation in consumer Laravel applications. All logic must remain **framework-integrated but package-isolated**.
 
 All **Agents** must treat any **Product Requirement Documents (PRDs)** included in the project as the **absolute source of truth** for functionality, naming, structure, and business logic.
 
@@ -23,11 +23,10 @@ All **Agents** must treat any **Product Requirement Documents (PRDs)** included 
 3. All code must be **stateless**, **framework-aware**, and **application-agnostic**.
 4. Keep everything **self-contained**: no hard dependencies on a consuming app.
 5. Always reference **PRDs** for functional requirements and naming accuracy.
-6. Write clear, testable, and deterministic code.
-7. Never introduce new logic, naming, or assumptions that conflict with the PRD.
-8. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and expected usage details. These doc blocks are mandatory and intended to help both internal and external consumers understand the class role without reading its internals.
+6. Write clear, testable, and deterministic code. 
+7. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and expected usage details. These doc blocks are mandatory and intended to help both internal and external consumers understand the class role without reading its internals.
 
-Example:
+_Example:_
 
 ```php
 /**
@@ -41,32 +40,41 @@ Example:
 
 ## Structure
 
-Each package should follow this layout:
+Each package must follow this layout:
 
 ```
 package-name/
 ├── composer.json
+├── docs/
+│   ├── Install.md               # consumer friendly install instructions
+│   └── PRD/                     # source of truth to requirements
 ├── src/
+│   ├── Console/Commands/ 
+│   ├── Enums/ 
 │   ├── Providers/
 │   │   └── PackageServiceProvider.php
-│   ├── Models/ (if applicable)
+│   ├── Models/ 
 │   ├── Services/
-│   │   ├── Models/            # per-model services, one model per service
-│   │   └── <Domain>/          # feature/business services grouped by domain (e.g. Contacts/, Tasks/)
-│   ├── Integrations/ (optional)
-│   ├── Contracts/
-│   ├── Exceptions/
-│   ├── Support/
-│   └── Singletons/ (optional)
-├── config/ (optional)
-├── database/ (optional, migrations/factories)
+│   │   ├── Models/              # per-model services, one model per service
+│   │   └── <Domain>/            # feature services grouped by domain
+│   ├── Integrations/            # third-party, APIs, external services
+│   ├── Contracts/ 
+│   ├── Exceptions/ 
+│   └── Support/
+├── config/
+├── database/
+│   ├── factories/
+│   └── migrations/
 ├── tests/
+│   ├── Unit/                    # tests without database, helpers/support
+│   └── Features/<Domain>/       # feature/business tests grouped by domain
+├── AGENTS.md
 └── README.md
 ```
 
-### Service & Integration Organization
+### Service & Integration Rules
 
-To keep `src/Services` organized and avoid a generic dumping ground, follow these rules:
+Keep `src/Services` organized follow these rules:
 
 #### `src/Services/Models`
 
@@ -74,15 +82,14 @@ To keep `src/Services` organized and avoid a generic dumping ground, follow thes
 * Responsibilities:
     * Extend `Atlas\Core\Service\ModelService` from the Atlas Core package.
     * Centralized `create`, `update`, `delete`, and common query helpers for that model.
-    * Normalizing and parsing data before it is persisted.
-    * Applying simple per-model rules (defaults, formatting, basic invariants).
+    * Only normalize and parse data before it is persisted when needed.
 * Must **not**:
     * Orchestrate multi-model workflows.
     * Contain cross-domain business rules.
     * Call external APIs directly.
 * Naming convention examples:
-    * `ContactService` in `Services/Models/ContactService.php`.
-    * `TaskService` in `Services/Models/TaskService.php`.
+    * `ContactModelService` in `Services/Models/ContactModelService.php`.
+    * `TaskModelService` in `Services/Models/TaskModelService.php`.
 
 These services act as the **model-facing layer** and are the preferred entrypoint when only a single model is affected.
 
@@ -96,22 +103,22 @@ These services act as the **model-facing layer** and are the preferred entrypoin
     * Coordinate with integrations (via `Integrations/` clients) and dispatch jobs/events.
 * Must:
     * Be named by intent and follow the `*Service` suffix (e.g. `ScheduleCallWithContactService`).
-    * Use `Services/Models/*` for persistence logic rather than talking to models directly, unless the PRD explicitly states otherwise.
+    * Use `Services/Models/*` for persistence logic rather than talking to models directly.
 
 These services form the **business layer** and should be the primary surface area exposed to consuming applications for higher-level workflows.
 
 #### `src/Integrations`
 
-* Houses low-level, reusable clients for **external systems** (e.g. HTTP APIs, queues, third-party services).
+* Houses low-level, reusable clients for **external systems** (e.g. HTTP APIs, third-party services).
 * Responsibilities:
     * Encapsulate API calls, authentication, and request/response handling.
     * Remain free of package-specific business rules.
     * Wrappers for SDKs, third-party libraries, or other integrations.
-* Example locations:
+* Example:
     * `Integrations/OpenAI/OpenAiClient.php`
     * `Integrations/Stripe/StripeClient.php`
 
-Business services in `Services/<Domain>` may depend on these **integration clients** to fulfill PRD-defined workflows.
+Business services in `Services/<Domain>` may depend on these **integrations**.
 
 ---
 
@@ -119,26 +126,24 @@ Business services in `Services/<Domain>` may depend on these **integration clien
 
 ### Class Naming
 
-* **Service Providers:** PascalCase + `ServiceProvider` suffix.
-* **Services:** PascalCase + `Service` suffix.
-* **Singletons:** PascalCase + `Singleton` suffix (for reusable, shared instances).
-* **Contracts:** Interface files end with `Interface`.
-* **Models:** Singular, PascalCase (if present).
-* **Enums:** PascalCase with clear scope.
-* **Exceptions:** PascalCase + `Exception` suffix.
+All classes should use PascalCase.
+
+* **Service Providers:** `ServiceProvider` suffix.
+* **Services:** `Service` suffix.
+* **Contracts:** Interfaces use `Contract` suffix.
+* **Models:** Singular names.
+* **Exceptions:** use `Exception` suffix.
 
 ### File & Namespace Structure
 
-* All PHP classes must use the package namespace root (e.g. `Vendor\\PackageName\\...`).
-* Group by domain when applicable (`Services/Users/UserService.php`).
-* Avoid mixing unrelated logic within a single directory.
+* All PHP classes must use the package namespace root.
+* Group by domain when applicable (`Services/Users/UserInviteService.php`).
 
 ### Variables & Methods
 
 * Use `camelCase` for variables and methods.
 * Prefix booleans with `is`, `has`, or `can`.
 * Keep methods short, descriptive, and predictable.
-* Avoid ambiguous names (`handleData()` → `parseWebhookPayload()`).
 * Ensure method and service names match **PRD-defined terminology** when applicable.
 
 ---
@@ -148,45 +153,33 @@ Business services in `Services/<Domain>` may depend on these **integration clien
 * Must handle **registration**, **publishing**, and **booting** cleanly.
 * Register bindings, configs, routes, and migrations **only if required**.
 * Use **package auto-discovery**.
-* Keep provider logic minimal and avoid business logic.
+* Keep provider logic minimal and do not include business logic.
 
 ---
 
 ## Code Practices
 
-1. **Business Logic** — belongs in `Services/` or dedicated singleton classes, not controllers or providers. Use `Services/Models/*` for model-focused CRUD and `Services/<Domain>/*` for higher-level workflows that span multiple models or integrations.
+1. **Business Logic** — belongs in `Services/`, not controllers or providers. Use `Services/Models/*` for model-focused CRUD and `Services/<Domain>/*` for higher-level workflows that span multiple models or integrations.
 2. **Configuration** — define publishable config files in `config/`, use sensible defaults.
-3. **Testing** — use PHPUnit or Pest; cover both happy and failure paths.
+3. **Testing** — use PHPUnit; cover both success and failure paths.
 4. **Type Safety** — declare all parameter and return types.
 5. **Error Handling** — use custom exceptions for expected failures.
 6. **Dependencies** — keep minimal; prefer Laravel contracts over concrete bindings.
 7. **PRD Alignment** — always verify that logic, method names, and service behavior align with the PRD before implementation.
-8. **Deviation Handling** — if any PRD rule appears incomplete or conflicting, pause work and flag it for clarification rather than guessing.
-9. **Documentation via Doc Blocks** — every class, interface, and trait must include a top-level PHPDoc block explaining its purpose. This ensures consumers understand intent and maintainability is preserved.
+8. **Documentation via Doc Blocks** — every class, interface/contract, and trait must include a top-level PHPDoc block explaining its purpose. This ensures consumers understand intent and maintainability is preserved.
 
 ---
 
-## Documentation
+## Task Checklist
 
-Each package must include:
+Task is not completed unless the follow checks have been made: 
 
-* `README.md` — Installation, Configuration, Usage, and Examples.
-* `CHANGELOG.md` — Noting versioned updates.
-* `LICENSE` — Open-source license file.
-
----
-
-## Pre-Commit Checklist
-
-Before committing any change:
-
-1. Run Pint for formatting: `composer lint`
-2. Run tests: `composer test`
-3. Run static analysis: `composer analyse`
-4. Verify autoload & discovery: `composer dump-autoload`
-5. Confirm PRD alignment for naming and functionality.
-6. Ensure no temporary debugging or unused imports remain.
-7. Verify that every class includes a valid doc block with purpose and usage context.
+1. Run Pint: `composer lint` (formatted).
+2. Run tests: `composer test` and passed without errors.
+3. Run larastan: `composer analyse` and passed without errors.
+4. Confirm PRD alignment for naming and functionality. 
+5. Ensure no temporary debugging or unused imports remain. 
+6. Verify that every class includes a valid PHPDoc with purpose and usage context.
 
 ---
 
@@ -194,11 +187,11 @@ Before committing any change:
 
 Any contribution that violates these standards or PRD requirements will be rejected or revised before merge.
 
-Every Agent is required to:
+_Every Agent is required to:_
 
-* Follow this guide precisely.
-* Use PRDs as the **single source of truth** for all logic, naming, and intent.
-* Include PHPDoc blocks at the top of every class describing purpose and usage.
-* Seek clarification when a PRD is ambiguous or missing required details.
+1. Follow this guide precisely. 
+2. Use PRDs as the **single source of truth** for all logic, naming, and intent. 
+3. Run through the task checklist before completion. 
+4. Seek clarification when a PRD is ambiguous or missing required details.
 
-> **Failure to follow the PRD or this guide will result in revision or rejection of the contribution.**
+> **Failure to follow this guide will result in rejection of the task.**
