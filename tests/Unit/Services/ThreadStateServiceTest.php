@@ -47,7 +47,7 @@ class ThreadStateServiceTest extends TestCase
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => $thread->assistant_key,
+            'assistant_key' => $thread->assistant_key,
             'thread_id' => $thread->id,
             'user_id' => $thread->user_id,
             'content' => 'User prefers morning updates.',

@@ -52,7 +52,7 @@ class MigrationTest extends TestCase
             'id',
             'group_id',
             'user_id',
-            'assistant_id',
+            'assistant_key',
             'thread_id',
             'content',
             'source_message_ids',

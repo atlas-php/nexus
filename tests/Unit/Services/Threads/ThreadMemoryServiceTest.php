@@ -32,7 +32,7 @@ class ThreadMemoryServiceTest extends TestCase
         $service = $this->app->make(ThreadMemoryService::class);
 
         AiMemory::factory()->create([
-            'assistant_id' => $thread->assistant_key,
+            'assistant_key' => $thread->assistant_key,
             'thread_id' => $thread->id,
             'user_id' => $thread->user_id,
             'content' => 'Existing fact',
@@ -70,19 +70,19 @@ class ThreadMemoryServiceTest extends TestCase
         $userId = 77;
 
         AiMemory::factory()->create([
-            'assistant_id' => 'general-assistant',
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId,
             'content' => 'First memory',
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => 'general-assistant',
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId,
             'content' => 'Second insight',
         ]);
 
         AiMemory::factory()->create([
-            'assistant_id' => 'general-assistant',
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId + 1,
             'content' => 'Other user memory',
         ]);

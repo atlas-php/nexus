@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property int|null $group_id
  * @property int $user_id
- * @property string $assistant_id
+ * @property string $assistant_key
  * @property int|null $thread_id
  * @property string $content
  * @property array<int, int>|null $source_message_ids
@@ -44,7 +44,7 @@ class AiMemory extends AtlasModel
     protected $casts = [
         'group_id' => 'int',
         'user_id' => 'int',
-        'assistant_id' => 'string',
+        'assistant_key' => 'string',
         'thread_id' => 'int',
         'content' => 'string',
         'source_message_ids' => 'array',

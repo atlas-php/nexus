@@ -42,7 +42,7 @@ class ThreadMemoryService
         $query = $this->memoryService->query()
             ->where('user_id', $userId)
             ->when($assistantId !== null, static function ($builder) use ($assistantId): void {
-                $builder->where('assistant_id', $assistantId);
+                $builder->where('assistant_key', $assistantId);
             })
             ->orderBy('created_at');
 
@@ -76,7 +76,7 @@ class ThreadMemoryService
 
             $payload = [
                 'user_id' => $thread->user_id,
-                'assistant_id' => $thread->assistant_key,
+                'assistant_key' => $thread->assistant_key,
                 'thread_id' => $thread->getKey(),
                 'group_id' => $thread->group_id,
                 'content' => $content,
@@ -100,7 +100,7 @@ class ThreadMemoryService
     {
         $memories = $this->memoryService->query()
             ->where('user_id', $thread->user_id)
-            ->where('assistant_id', $thread->assistant_key)
+            ->where('assistant_key', $thread->assistant_key)
             ->get(['content']);
 
         $index = [];
