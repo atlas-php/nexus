@@ -43,6 +43,16 @@ class HumanAssistant extends AssistantDefinition
         return 3;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function reasoning(): ?array
+    {
+        return [
+            'effort' => 'low',
+        ];
+    }
+
     public function tools(): array
     {
         return [
