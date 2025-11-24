@@ -13,9 +13,11 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
 use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
+use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
@@ -43,6 +45,7 @@ use Throwable;
 class AssistantResponseService
 {
     private const THREAD_MANAGER_KEY = 'thread-manager';
+    private const MEMORY_EXTRACTOR_KEY = 'memory-extractor';
 
     /**
      * @var array<string, array<string, mixed>|int|float|string|null>
@@ -52,6 +55,7 @@ class AssistantResponseService
     public function __construct(
         private readonly ThreadStateService $threadStateService,
         private readonly AiMessageService $messageService,
+        private readonly AiThreadService $threadService,
         private readonly AiToolRunService $toolRunService,
         private readonly TextRequestFactory $textRequestFactory,
         private readonly ToolRunLogger $toolRunLogger,
@@ -141,7 +145,6 @@ class AssistantResponseService
                 );
 
                 $metadata = $assistantMessage->metadata ?? [];
-                $metadata['memory_ids'] = $state->memories->pluck('id')->all();
                 $metadata['tool_run_ids'] = $toolRunIds;
 
                 $this->messageService->update($assistantMessage, [
@@ -161,6 +164,7 @@ class AssistantResponseService
             });
 
             $this->dispatchThreadManagerAssistantJob($assistantMessage);
+            $this->dispatchMemoryExtractorAssistantJob($assistantMessage);
         } catch (Throwable $exception) {
             $failedReason = $exception instanceof PrismRateLimitedException
                 ? $this->formatRateLimitedFailure($exception, $state ?? null, $textRequest, $providerKey, $modelKey)
@@ -219,6 +223,58 @@ class AssistantResponseService
         if ($messagesSinceSummary >= $messageInterval) {
             PushThreadManagerAssistantJob::dispatch($thread->getKey());
         }
+    }
+
+    protected function dispatchMemoryExtractorAssistantJob(AiMessage $assistantMessage): void
+    {
+        $thread = $assistantMessage->thread?->fresh();
+
+        if ($thread === null) {
+            return;
+        }
+
+        if (in_array($thread->assistant_key, [self::THREAD_MANAGER_KEY, self::MEMORY_EXTRACTOR_KEY], true)) {
+            return;
+        }
+
+        $pendingCount = $this->messageService->query()
+            ->where('thread_id', $thread->getKey())
+            ->where('status', AiMessageStatus::COMPLETED->value)
+            ->where('is_memory_checked', false)
+            ->count();
+
+        $pendingThreshold = $this->memoryExtractorConfig('pending_message_count', 4);
+
+        if ($pendingCount < $pendingThreshold) {
+            return;
+        }
+
+        $metadata = $thread->metadata ?? [];
+
+        if (! empty($metadata['memory_job_pending'])) {
+            return;
+        }
+
+        $metadata['memory_job_pending'] = true;
+
+        $this->threadService->update($thread, [
+            'metadata' => $metadata,
+        ]);
+
+        PushMemoryExtractorAssistantJob::dispatch($thread->getKey());
+    }
+
+    protected function memoryExtractorConfig(string $key, int $default): int
+    {
+        $configuration = config('atlas-nexus.memory_extractor', []);
+
+        if (! is_array($configuration)) {
+            return $default;
+        }
+
+        $value = (int) ($configuration[$key] ?? $default);
+
+        return $value > 0 ? $value : $default;
     }
 
     protected function threadSummaryConfig(string $key, int $default): int

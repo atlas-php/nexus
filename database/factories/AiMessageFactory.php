@@ -44,6 +44,7 @@ class AiMessageFactory extends Factory
                 ['tone' => 'friendly'],
                 ['tone' => 'formal'],
             ]),
+            'is_memory_checked' => false,
         ];
     }
 }

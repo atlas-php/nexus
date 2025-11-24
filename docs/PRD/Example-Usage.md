@@ -17,7 +17,7 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 3. Reference the assistant by its `key` everywhere else (threads, messages, tool runs, memories).
 
 ## Register Tools
-1. Implement a `NexusTool` handler with a fixed tool key (e.g., `memory`, `calendar_lookup`). Handlers may implement `ConfigurableTool` to accept assistant-level configuration arrays.
+1. Implement a `NexusTool` handler with a fixed tool key (e.g., `calendar_lookup`). Handlers may implement `ConfigurableTool` to accept assistant-level configuration arrays.
 2. Register the tool by resolving `Atlas\Nexus\Services\Tools\ToolRegistry` from the container and calling `register(new ToolDefinition('calendar_lookup', CustomCalendarTool::class))`, or rely on built-ins.
 3. Include the tool key in the assistant definition’s `tools()` return value. Strings work for defaults, or return keyed arrays to attach options per assistant:
 
@@ -25,7 +25,6 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 public function tools(): array
 {
     return [
-        'memory',
         'calendar_lookup' => [
             'allowed_calendars' => ['sales'],
         ],
@@ -63,6 +62,6 @@ public function providerTools(): array
 - Tool run metadata stores Prism `tool_call_id` and `tool_call_result_id` when available.
 
 ## Manage Memories
-- `MemoryTool` allows assistants to add/update/fetch/delete memories via tool calls.
-- `AiMemoryService::saveForThread` stores memory with `group_id` and owner/assistant scope.
-- `ThreadStateService` exposes applicable memories for prompts (use `{MEMORY.CONTEXT}` when desired); assistant message metadata includes `memory_ids`.
+- Every completed message starts with `is_memory_checked = false`. Once four unchecked messages exist, `AssistantResponseService` dispatches `PushMemoryExtractorAssistantJob`.
+- The job sends unchecked messages plus existing memories to the hidden `memory-extractor` assistant. Returned memories are merged via `ThreadMemoryService::appendMemories`, which deduplicates entries and stamps `source_message_ids`.
+- `ThreadStateService` exposes `{MEMORY.CONTEXT}` by reading `ai_threads.memories`, allowing prompts to render the durable context without going through a tool.

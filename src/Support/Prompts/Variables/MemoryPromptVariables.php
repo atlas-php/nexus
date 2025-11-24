@@ -22,26 +22,51 @@ class MemoryPromptVariables implements PromptVariableGroup
     {
         $memories = $context->threadState()->memories;
 
-        if ($memories->isEmpty()) {
+        $formatted = $this->formatContext($memories);
+
+        if ($formatted === null) {
             return [];
         }
 
-        return ['MEMORY.CONTEXT' => $this->formatContext($memories)];
+        return ['MEMORY.CONTEXT' => $formatted];
     }
 
     /**
-     * @param  Collection<int, \Atlas\Nexus\Models\AiMemory>  $memories
+     * @param  Collection<int, array<string, mixed>>  $memories
      */
-    private function formatContext(Collection $memories): string
+    private function formatContext(Collection $memories): ?string
     {
         $lines = $memories
-            ->map(static fn ($memory): string => sprintf(
-                '- (%s) %s',
-                $memory->kind,
-                $memory->content
-            ))
+            ->map(function (array $memory): ?string {
+                $content = $this->stringValue($memory['content'] ?? null);
+
+                if ($content === null) {
+                    return null;
+                }
+
+                $threadId = $memory['thread_id'] ?? null;
+                $prefix = is_int($threadId) ? sprintf('(thread %d) ', $threadId) : '';
+
+                return sprintf('- %s%s', $prefix, $content);
+            })
+            ->filter(static fn (?string $line): bool => $line !== null)
             ->all();
 
+        if ($lines === []) {
+            return null;
+        }
+
         return "Contextual memories:\n".implode("\n", $lines);
+    }
+
+    private function stringValue(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

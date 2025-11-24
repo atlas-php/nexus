@@ -32,6 +32,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property string|null $summary
  * @property \Illuminate\Support\Carbon|null $last_message_at
  * @property int|null $last_summary_message_id
+ * @property array<int, array<string, mixed>>|null $memories
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -61,6 +62,7 @@ class AiThread extends AtlasModel
         'summary' => 'string',
         'last_message_at' => 'datetime',
         'last_summary_message_id' => 'int',
+        'memories' => 'array',
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -139,17 +141,6 @@ class AiThread extends AtlasModel
     {
         /** @var HasMany<AiMessage, self> $relation */
         $relation = $this->hasMany(AiMessage::class, 'thread_id');
-
-        return $relation;
-    }
-
-    /**
-     * @return HasMany<AiMemory, self>
-     */
-    public function memories(): HasMany
-    {
-        /** @var HasMany<AiMemory, self> $relation */
-        $relation = $this->hasMany(AiMemory::class, 'thread_id');
 
         return $relation;
     }

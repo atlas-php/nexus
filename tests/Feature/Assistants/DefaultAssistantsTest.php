@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Tests\Feature\Assistants;
 
 use Atlas\Nexus\Assistants\GeneralAssistant;
 use Atlas\Nexus\Assistants\HumanAssistant;
+use Atlas\Nexus\Assistants\MemoryExtractorAssistant;
 use Atlas\Nexus\Assistants\ThreadManagerAssistant;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Tests\TestCase;
@@ -28,6 +29,7 @@ class DefaultAssistantsTest extends TestCase
             GeneralAssistant::class,
             HumanAssistant::class,
             ThreadManagerAssistant::class,
+            MemoryExtractorAssistant::class,
         ];
 
         $this->assertSame($expected, config('atlas-nexus.assistants'));
@@ -35,7 +37,7 @@ class DefaultAssistantsTest extends TestCase
         $registry = $this->app->make(AssistantRegistry::class);
 
         $this->assertSame(
-            ['general-assistant', 'human-assistant', 'thread-manager'],
+            ['general-assistant', 'human-assistant', 'thread-manager', 'memory-extractor'],
             $registry->keys()
         );
     }

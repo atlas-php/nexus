@@ -41,6 +41,8 @@ class MigrationTest extends TestCase
             'status',
             'summary',
             'last_message_at',
+            'last_summary_message_id',
+            'memories',
             'metadata',
             'deleted_at',
             'created_at',
@@ -58,6 +60,7 @@ class MigrationTest extends TestCase
             'raw_response',
             'sequence',
             'status',
+            'is_memory_checked',
             'failed_reason',
             'model',
             'tokens_in',
@@ -88,21 +91,6 @@ class MigrationTest extends TestCase
             'updated_at',
         ]));
 
-        $this->assertTrue(Schema::hasColumns('ai_memories', [
-            'id',
-            'owner_type',
-            'owner_id',
-            'assistant_key',
-            'thread_id',
-            'source_message_id',
-            'source_tool_run_id',
-            'kind',
-            'content',
-            'metadata',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ]));
     }
 
     public function test_migrations_respect_configured_table_overrides(): void

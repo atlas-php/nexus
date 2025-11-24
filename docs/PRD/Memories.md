@@ -1,61 +1,46 @@
 # PRD — Memories
 
-Defines shared memory storage and access rules across assistants and threads.
+Nexus captures durable user facts as thread-level memories that can be reused across conversations without exposing a mutable table to consuming apps.
 
 ## Table of Contents
-- [Memory Model](#memory-model)
-- [Scopes & Ownership](#scopes--ownership)
-- [Creation Rules](#creation-rules)
-- [Retrieval Rules](#retrieval-rules)
-- [Deletion Rules](#deletion-rules)
-- [Services & Tools](#services--tools)
+- [Thread Memory Payload](#thread-memory-payload)
+- [Extraction Flow](#extraction-flow)
+- [Usage](#usage)
+- [Services](#services)
 
-## Memory Model
-Table: `ai_memories`
+## Thread Memory Payload
+- Stored on `ai_threads.memories` as a JSON array.
+- Each entry contains:
+  - `content` — concise natural-language statement.
+  - `thread_id` — automatically stamped with the owning thread id.
+  - `source_message_ids` — array of message ids that produced the memory.
+  - `created_at` — ISO8601 timestamp indicating when the memory was saved.
+- All writes go through `ThreadMemoryService::appendMemories`, which deduplicates entries by normalized content and ensures IDs/timestamps are set.
 
-| Field                 | Description                                                     |
-|-----------------------|-----------------------------------------------------------------|
-| `id`                  | Primary key                                                     |
-| `group_id`            | Optional tenant/account grouping (inherits from thread)         |
-| `owner_type`          | Enum (`user`,`assistant`,`org`)                                 |
-| `owner_id`            | Owner identifier                                                |
-| `assistant_key`       | Nullable assistant scope                                        |
-| `thread_id`           | Nullable provenance thread id                                   |
-| `source_message_id`   | Nullable message provenance                                     |
-| `source_tool_run_id`  | Nullable tool run provenance                                    |
-| `kind`                | Memory type (fact, preference, summary, task, etc.)             |
-| `content`             | Natural language content                                        |
-| `metadata`            | JSON metadata                                                   |
-| `created_at/updated_at` | Timestamps                                                    |
+## Extraction Flow
+1. Every message defaults to `is_memory_checked = false`.
+2. After each assistant reply, `AssistantResponseService` counts unchecked, completed messages.
+3. When the configured threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) of unchecked messages exists, it dispatches `PushMemoryExtractorAssistantJob` (one at a time per thread; tracked via `thread.metadata.memory_job_pending`).
+4. The job collects all unchecked completed messages, current thread memories, and the user's aggregated memories across threads.
+5. `ThreadMemoryExtractionService` sends this payload to the hidden `memory-extractor` assistant, which must return JSON:
+   ```json
+   {
+     "memories": [
+       {"content": "User prefers morning meetings.", "source_message_ids": [12, 14]}
+     ]
+   }
+   ```
+6. `ThreadMemoryService` appends any new, non-duplicated entries to `ai_threads.memories`.
+7. All processed messages are marked `is_memory_checked = true`.
 
-## Scopes & Ownership
-- `owner_type` + `owner_id` determine who can access the memory:
-  - `user` — tied to thread user
-  - `assistant` — tied to current assistant
-  - `org` — shared across org/tenant (`owner_id` provided by consumer)
-- `assistant_key` nullable: null = global; otherwise limited to the assistant key.
+Failures leave `is_memory_checked` untouched so the next dispatch will retry once the error is resolved.
 
-## Creation Rules
-- `AiMemoryService::saveForThread`:
-  - Resolves `owner_id` based on `owner_type` (thread user for `user`, assistant id for `assistant`, provided id for `org`).
-  - Sets `group_id` from the thread.
-  - Allows optional `metadata`, `source_message_id`, `source_tool_run_id`.
-  - `thread_id` set only when `thread_specific` flag is true.
+## Usage
+- `ThreadStateService` exposes `ThreadMemoryService::memoriesForThread` so prompts can opt into `{MEMORY.CONTEXT}`.
+- `ThreadMemoryService::userMemories($userId)` merges memories across all threads for display or auditing.
+- Clearing a thread via `AiThreadService` automatically removes its stored memories because they live on the thread record.
 
-## Retrieval Rules
-- `AiMemoryService::listForThread` returns memories where:
-  - Owner matches thread user (`user`), assistant (`assistant`), or org (`org`).
-  - `assistant_key` is null or matches the assistant key.
-  - Optional `memory_ids` filter limits to explicit identifiers.
-  - Ordered by `id`.
-- `ThreadStateService` pulls memories for inclusion in LLM context and injects ids into assistant message metadata.
-
-## Deletion Rules
-- `AiMemoryService::removeForThread` validates assistant/user context before deletion.
-- Cascading deletes:
-  - Deleting a thread removes associated memories (`AiThreadService` cascade).
-
-## Services & Tools
-- `AiMemoryService` — CRUD + scoped retrieval and deletion.
-- `MemoryTool` — Built-in tool to save, fetch, and delete memories; attach it to assistants by including `memory` in their `tools()` configuration.
-- `ThreadStateService` — Optionally injects Memory tool into available tool list when active.
+## Services
+- `ThreadMemoryService` — normalizes, deduplicates, and appends thread memories; exposes per-user listings.
+- `ThreadMemoryExtractionService` — orchestrates the `memory-extractor` assistant requests and message flag updates.
+- `PushMemoryExtractorAssistantJob` — queued job that triggers extraction when unchecked message thresholds are met.

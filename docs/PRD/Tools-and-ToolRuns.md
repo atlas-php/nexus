@@ -10,10 +10,9 @@ Defines how Nexus registers code-defined tools, assigns them to assistants, and 
 - [Services](#services)
 
 ## Tools
-Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `memory`, `thread_fetcher`), and is registered inside `ToolRegistry`.
+Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed **key** (e.g., `thread_fetcher`), and is registered inside `ToolRegistry`.
 
 - Built-in tools are registered automatically:
-  - `memory` — add/update/fetch/delete thread-aware memories.
   - `thread_search` — search the assistant/user’s threads by title, summary, long summary, keywords, message body, or the user’s name.
   - `thread_fetcher` — fetch one or many threads (IDs provided by the search tool or other signals) and return summaries, keywords, and ordered message transcripts.
   - `thread_updater` — update thread title/summary or auto-generate them from conversation context.

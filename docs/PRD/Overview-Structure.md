@@ -17,7 +17,10 @@ One conversation session. Supports user-facing threads and tool-internal threads
 - status              string              -- 'open','archived','closed'
 - summary             text nullable       -- rolling summary (short-term memory)
 - last_message_at     datetime nullable
+- last_summary_message_id bigint nullable -- most recent message id summarized
+- memories            text nullable       -- JSON array of durable memories for this thread
 - metadata            json nullable
+- deleted_at          datetime nullable
 - created_at
 - updated_at
 ```
@@ -41,11 +44,14 @@ Every message in a thread.
 - tokens_in            int nullable
 - tokens_out           int nullable
 - provider_response_id string nullable
+- is_memory_checked    boolean            -- false until the memory extractor processes it
 - metadata             json nullable
+- deleted_at           datetime nullable
 - created_at
 - updated_at
 
 -- INDEX(thread_id, sequence)
+-- INDEX(is_memory_checked)
 ```
 
 ### `ai_message_tools`
@@ -71,21 +77,15 @@ Each tool run is related to the assistant message that invoked it and may use it
 - updated_at
 ```
 
-### `ai_memories`
+### Thread Memories
 
-Shared memory items that can be reused across threads.
+Durable memories now live on `ai_threads.memories` as a JSON array. Each entry follows:
 
 ```
-- id                  bigint PK
-- owner_type          string            -- 'user','assistant','org'
-- owner_id            bigint            -- no FK, e.g. users.id when owner_type='user'
-- assistant_key       string nullable   -- which assistant this memory is for (null = global)
-- thread_id           bigint nullable   -- no FK, where it was first observed (provenance)
-- source_message_id   bigint nullable   -- no FK, ai_messages.id that produced this memory
-- source_tool_run_id  bigint nullable   -- no FK, ai_message_tools.id if created from a tool
-- kind                string            -- 'fact','preference','summary','task','constraint', etc.
-- content             text              -- natural-language memory; 1–3 sentences ideally
-- metadata            json nullable     -- tags, domains, app-specific fields
-- created_at
-- updated_at
+- content               string            -- concise natural-language memory
+- thread_id             bigint            -- automatically set to owning thread id
+- source_message_ids    array<int>        -- ids that produced the memory
+- created_at            datetime string   -- ISO8601 timestamp when stored
 ```
+
+Memories are appended by the memory extractor assistant and deduplicated per thread and user.

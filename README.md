@@ -67,7 +67,7 @@ See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
 ## Memories
 - Memories (`ai_memories`) capture facts/preferences/summaries scoped to user, assistant (via `assistant_key`), or org.
-- Built-in `MemoryTool` lets assistants add/update/fetch/delete memories; thread state injects relevant memories into requests.
+- A background memory extractor assistant reviews unchecked messages based on the configurable threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) and appends durable facts to `ai_threads.memories`, which can be surfaced with `{MEMORY.CONTEXT}`.
 
 See: [PRD — Memories](./docs/PRD/Memories.md)
 

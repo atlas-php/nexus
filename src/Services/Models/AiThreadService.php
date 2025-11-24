@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Models;
 
 use Atlas\Core\Services\ModelService;
-use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
@@ -32,7 +31,6 @@ class AiThreadService extends ModelService
             DB::transaction(static function () use ($threadId): void {
                 AiToolRun::query()->where('thread_id', $threadId)->delete();
                 AiMessage::query()->where('thread_id', $threadId)->delete();
-                AiMemory::query()->where('thread_id', $threadId)->delete();
             });
         }
 

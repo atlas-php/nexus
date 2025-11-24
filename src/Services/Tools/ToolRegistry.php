@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Tools;
 
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadFetcherTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadSearchTool;
 use Atlas\Nexus\Integrations\Prism\Tools\ThreadUpdaterTool;
@@ -80,7 +79,6 @@ class ToolRegistry
     private function registerBuiltInTools(): void
     {
         $definitions = [
-            MemoryTool::definition(),
             ThreadSearchTool::definition(),
             ThreadFetcherTool::definition(),
             ThreadUpdaterTool::definition(),

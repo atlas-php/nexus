@@ -9,6 +9,7 @@ Nexus no longer stores assistants or prompts in database tables. Instead, every 
     \Atlas\Nexus\Assistants\GeneralAssistant::class,
     \Atlas\Nexus\Assistants\HumanAssistant::class,
     \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
+    \Atlas\Nexus\Assistants\MemoryExtractorAssistant::class,
     // \App\Nexus\Assistants\CustomAssistant::class,
 ],
 ```
@@ -26,7 +27,7 @@ Each definition class must implement:
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
 | `reasoning()` | Optional provider-specific reasoning options (e.g., OpenAI `reasoning` payload). Return `null` to disable reasoning. |
 | `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
-| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |
+| `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'calendar_lookup'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |
 | `providerTools()` | Provider-native tool declarations with assistant-owned options (e.g., `['web_search' => ['filters' => ['allowed_domains' => ['atlasphp.com']]]]`). Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |
 | `metadata()` | Arbitrary assistant metadata exposed to consumers. |
 
@@ -54,7 +55,6 @@ If the active provider is not OpenAI, the payload is ignored. The bundled `Gener
 public function tools(): array
 {
     return [
-        'memory',
         'calendar_lookup' => ['allowed_calendars' => ['sales', 'success']],
         ['key' => 'thread_fetcher', 'mode' => 'summary', 'include_messages' => true],
     ];
@@ -87,7 +87,6 @@ Because assistants live in code, the other tables simply store an `assistant_key
 | ----- | ------ |
 | `ai_threads` | `assistant_key` |
 | `ai_messages` | `assistant_key` |
-| `ai_memories` | `assistant_key` (nullable) |
 | `ai_message_tools` | `assistant_key` |
 
 Thread creation is now a matter of setting `assistant_key` to one of the configured keys; the rest of the assistant metadata is resolved on demand through `AssistantRegistry`.

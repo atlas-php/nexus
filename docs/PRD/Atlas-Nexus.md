@@ -16,7 +16,7 @@ Nexus orchestrates:
 - **Assistants & Prompts** — define personas and versioned system prompts.
 - **Threads & Messages** — capture conversations and LLM responses.
 - **Tools & Tool Runs** — register callable tools and log executions.
-- **Memories** — persist reusable context across conversations.
+- **Memories** — store reusable context directly on threads for future prompts.
 
 ## Core Data Tables
 All tables support soft deletes unless noted otherwise. Default names are configurable via `config/atlas-nexus.php`.
@@ -26,13 +26,12 @@ All tables support soft deletes unless noted otherwise. Default names are config
 | `ai_threads`      | Conversation containers (user/tool threads)                 |
 | `ai_messages`     | User and assistant messages in a thread                     |
 | `ai_message_tools`    | Execution logs for tool calls                               |
-| `ai_memories`     | Reusable memory items scoped to users/assistants/orgs       |
 
 Each table definition with fields is detailed in the linked PRDs below.
 
 ## Configuration
 - `atlas-nexus.database.connection` — optional connection override for all Nexus tables.
-- `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, memories, assistant snapshots).
+- `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, assistant snapshots).
 - `atlas-nexus.queue` — optional queue name for assistant response jobs.
 - `atlas-nexus.assistants` — list of assistant definition classes.
 - `atlas-nexus.variables` — list of prompt variable providers resolved at runtime.
@@ -47,7 +46,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - Consumers control which assistants exist by registering their definition classes in configuration.
 
 ## Purge & Retention
-- Trashed threads, messages, tool runs, and memories retain their data until explicitly purged.
+- Trashed threads, messages, and tool runs retain their data until explicitly purged.
 - `Atlas\Nexus\Services\NexusPurgeService::purge()` permanently deletes trashed rows in chunked batches.
 - `php artisan atlas:nexus:purge --chunk=500` exposes the purge flow via CLI for scheduled maintenance.
 
@@ -55,7 +54,6 @@ Each table definition with fields is detailed in the linked PRDs below.
 All conversation artifacts carry an optional `group_id` to align with tenant/account scoping:
 - `ai_threads.group_id`
 - `ai_messages.group_id`
-- `ai_memories.group_id`
 - `ai_message_tools.group_id`
 
 Services propagate `group_id` from threads to messages, memories, and tool runs automatically when present.

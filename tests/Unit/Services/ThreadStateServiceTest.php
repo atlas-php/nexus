@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services;
 
-use Atlas\Nexus\Enums\AiMemoryOwnerType;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadType;
-use Atlas\Nexus\Integrations\Prism\Tools\MemoryTool;
-use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
@@ -39,13 +36,19 @@ class ThreadStateServiceTest extends TestCase
     public function test_it_builds_thread_state_with_messages_memories_and_tools(): void
     {
         PrimaryAssistantDefinition::updateConfig([
-            'tools' => ['memory', 'calendar_lookup'],
+            'tools' => ['calendar_lookup'],
             'system_prompt' => 'Stay helpful.',
         ]);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
+            'memories' => [
+                [
+                    'content' => 'User prefers morning updates.',
+                    'created_at' => now()->toAtomString(),
+                ],
+            ],
         ]);
 
         AiMessage::factory()->create([
@@ -57,15 +60,6 @@ class ThreadStateServiceTest extends TestCase
             'status' => AiMessageStatus::COMPLETED->value,
         ]);
 
-        AiMemory::factory()->create([
-            'assistant_key' => $thread->assistant_key,
-            'thread_id' => $thread->id,
-            'owner_type' => AiMemoryOwnerType::USER->value,
-            'owner_id' => $thread->user_id,
-            'kind' => 'fact',
-            'content' => 'User prefers morning updates.',
-        ]);
-
         $freshThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $freshThread);
 
@@ -74,16 +68,16 @@ class ThreadStateServiceTest extends TestCase
         $this->assertNotNull($state->systemPrompt);
         $this->assertCount(1, $state->messages);
         $this->assertCount(1, $state->memories);
+        $this->assertSame('User prefers morning updates.', $state->memories->first()['content']);
         $toolKeys = $state->tools->map(fn ($definition) => $definition->key())->all();
 
         $this->assertTrue(in_array('calendar_lookup', $toolKeys, true));
-        $this->assertTrue(in_array(MemoryTool::KEY, $toolKeys, true));
     }
 
-    public function test_it_excludes_memory_tool_when_not_enabled(): void
+    public function test_it_excludes_tool_when_not_enabled(): void
     {
         PrimaryAssistantDefinition::updateConfig([
-            'tools' => ['calendar_lookup'],
+            'tools' => [],
         ]);
 
         /** @var AiThread $thread */
@@ -96,7 +90,7 @@ class ThreadStateServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($freshThread);
 
-        $this->assertFalse($state->tools->contains(fn ($definition) => $definition->key() === MemoryTool::KEY));
+        $this->assertFalse($state->tools->contains(fn ($definition) => $definition->key() === 'calendar_lookup'));
     }
 
     public function test_it_returns_no_tools_when_assistant_has_none(): void

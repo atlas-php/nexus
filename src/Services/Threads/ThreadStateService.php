@@ -7,7 +7,6 @@ namespace Atlas\Nexus\Services\Threads;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Models\AiMemoryService;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
@@ -29,7 +28,7 @@ class ThreadStateService
 
     public function __construct(
         private readonly AiMessageService $messageService,
-        private readonly AiMemoryService $memoryService,
+        private readonly ThreadMemoryService $threadMemoryService,
         private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
@@ -52,7 +51,7 @@ class ThreadStateService
             ->orderBy('sequence')
             ->get();
 
-        $memories = $this->memoryService->listForThread($assistant, $thread);
+        $memories = $this->threadMemoryService->memoriesForThread($thread);
 
         $tools = $this->resolveTools($assistant);
         $providerTools = $this->resolveProviderTools($assistant);
