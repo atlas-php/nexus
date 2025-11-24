@@ -11,9 +11,7 @@ All coding standards, architecture rules, and naming conventions are defined in 
 
 ## Validation Requirements
 
-All contributions must pass **every** validation check before submission.
-
-Run:
+All contributions must pass **every** validation check before completing their task. Each check must pass without errors.
 
 ```bash
 composer lint

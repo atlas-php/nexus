@@ -96,7 +96,7 @@ Use `sandbox/.env` to set DB + Prism provider keys and adjust `PRISM_MAX_STEPS` 
 - [Example Usage](./docs/PRD/Example-Usage.md)
 
 ## Contributing
-See the [Contributing Guide](./.github/CONTRIBUTING.md).
+See the [Contributing Guide](./.github/CONTRIBUTING.md) and [Agents](./AGENTS.md).
 
 ## License
 MIT — see [LICENSE](./LICENSE).
