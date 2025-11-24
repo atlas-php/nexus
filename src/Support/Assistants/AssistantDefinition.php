@@ -83,6 +83,14 @@ abstract class AssistantDefinition
         return [];
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function reasoning(): ?array
+    {
+        return null;
+    }
+
     public function promptIsActive(): bool
     {
         return true;
@@ -100,6 +108,7 @@ abstract class AssistantDefinition
     {
         [$toolKeys, $toolConfigurations] = $this->normalizeToolDeclarations($this->tools());
         [$providerToolKeys, $providerToolConfigurations] = $this->normalizeToolDeclarations($this->providerTools());
+        $reasoning = $this->reasoning();
 
         return [
             'assistant_key' => $this->key(),
@@ -118,6 +127,7 @@ abstract class AssistantDefinition
             'provider_tools' => $providerToolKeys,
             'provider_tool_configuration' => $providerToolConfigurations,
             'metadata' => $this->normalizeMetadata($this->metadata()),
+            'reasoning' => is_array($reasoning) ? $this->normalizeConfigurationArray($reasoning) : null,
         ];
     }
 

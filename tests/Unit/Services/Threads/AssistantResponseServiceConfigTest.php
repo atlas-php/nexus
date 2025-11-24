@@ -21,6 +21,7 @@ class AssistantResponseServiceConfigTest extends TestCase
         parent::setUp();
 
         ConfigurableStubTool::reset();
+        PrimaryAssistantDefinition::resetConfig();
 
         $this->app->make(ToolRegistry::class)->register(
             new ToolDefinition('configurable_tool', ConfigurableStubTool::class)
@@ -57,6 +58,58 @@ class AssistantResponseServiceConfigTest extends TestCase
             ['mode' => 'summary', 'depth' => 2],
             ConfigurableStubTool::$appliedConfiguration
         );
+    }
+
+    public function test_it_applies_openai_reasoning_options_when_configured(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'reasoning' => [
+                'effort' => 'medium',
+                'budget_tokens' => 512,
+            ],
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($thread->refresh());
+        $service = $this->app->make(AssistantResponseService::class);
+
+        $method = new ReflectionMethod(AssistantResponseService::class, 'resolveProviderOptions');
+        $method->setAccessible(true);
+        $options = $method->invoke($service, $state, 'openai');
+
+        $this->assertSame([
+            'reasoning' => [
+                'effort' => 'medium',
+                'budget_tokens' => 512,
+            ],
+        ], $options);
+    }
+
+    public function test_it_skips_reasoning_options_for_non_openai_providers(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'reasoning' => [
+                'effort' => 'high',
+            ],
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $state = $this->app->make(ThreadStateService::class)->forThread($thread->refresh());
+        $service = $this->app->make(AssistantResponseService::class);
+
+        $method = new ReflectionMethod(AssistantResponseService::class, 'resolveProviderOptions');
+        $method->setAccessible(true);
+        $options = $method->invoke($service, $state, 'anthropic');
+
+        $this->assertSame([], $options);
     }
 
     private function migrationPath(): string

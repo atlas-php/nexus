@@ -120,6 +120,12 @@ class AssistantResponseService
                 $request->withProviderTools($providerTools);
             }
 
+            $providerOptions = $this->resolveProviderOptions($state, $providerKey);
+
+            if ($providerOptions !== []) {
+                $request->withProviderOptions($providerOptions);
+            }
+
             $response = $textRequest->asText();
 
             if ($response === null) {
@@ -464,6 +470,24 @@ class AssistantResponseService
         $configured = (int) config('prism.max_steps', 8);
 
         return $configured > 0 ? $configured : 1;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function resolveProviderOptions(ThreadState $state, string $provider): array
+    {
+        $options = [];
+
+        if (strtolower($provider) === 'openai') {
+            $reasoning = $state->assistant->reasoning();
+
+            if (is_array($reasoning) && $reasoning !== []) {
+                $options['reasoning'] = $reasoning;
+            }
+        }
+
+        return $options;
     }
 
     protected function formatRateLimitedFailure(

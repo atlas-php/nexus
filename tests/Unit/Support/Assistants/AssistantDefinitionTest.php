@@ -141,6 +141,18 @@ class AssistantDefinitionTest extends TestCase
                 return ['tier' => 'pro', '' => 'skip', 'segment' => 'beta'];
             }
 
+            /**
+             * @return array<string, mixed>|null
+             */
+            public function reasoning(): ?array
+            {
+                return [
+                    'effort' => 'high',
+                    '' => 'skip',
+                    'budget_tokens' => 2048,
+                ];
+            }
+
             public function promptIsActive(): bool
             {
                 return $this->promptActive;
@@ -179,6 +191,7 @@ class AssistantDefinitionTest extends TestCase
             'file_search' => ['vector_store_ids' => ['vs_123']],
         ], $assistant['provider_tool_configuration']);
         $this->assertSame(['tier' => 'pro', 'segment' => 'beta'], $assistant['metadata']);
+        $this->assertSame(['effort' => 'high', 'budget_tokens' => 2048], $assistant['reasoning']);
 
         $this->assertSame('System prompt', $prompt['system_prompt']);
         $this->assertFalse($prompt['is_active']);
@@ -219,6 +232,7 @@ class AssistantDefinitionTest extends TestCase
         $this->assertNull($assistant['provider_tools']);
         $this->assertNull($assistant['provider_tool_configuration']);
         $this->assertNull($assistant['metadata']);
+        $this->assertNull($assistant['reasoning']);
         $this->assertNull($assistant['max_default_steps']);
 
         $this->assertSame('Prompt', $prompt['system_prompt']);

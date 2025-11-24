@@ -24,6 +24,7 @@ Each definition class must implement:
 | `systemPrompt()` | Raw system prompt text that `ThreadStateService` renders with prompt variables. |
 | `model()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
+| `reasoning()` | Optional provider-specific reasoning options (e.g., OpenAI `reasoning` payload). Return `null` to disable reasoning. |
 | `isActive()` / `isHidden()` | Toggle availability and optionally hide assistants from user-facing lists. |
 | `tools()` | Array of tool keys or keyed configuration arrays. Each entry may be a simple string (`'memory'`) or `['thread_fetcher' => ['mode' => 'summary']]` to pass options to the tool handler. |
 | `providerTools()` | Provider-native tool declarations with assistant-owned options (e.g., `['web_search' => ['filters' => ['allowed_domains' => ['atlasphp.com']]]]`). Structure mirrors `tools()` so each assistant can supply its own OpenAI/Reka/etc. tool parameters. |

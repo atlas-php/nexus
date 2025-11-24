@@ -36,7 +36,7 @@ class GeneralAssistant extends AssistantDefinition
 
     public function maxOutputTokens(): ?int
     {
-        return 512;
+        return 2048;
     }
 
     public function maxDefaultSteps(): ?int
@@ -49,6 +49,18 @@ class GeneralAssistant extends AssistantDefinition
         return [
             'web_search',
             'code_interpreter',
+        ];
+    }
+
+    /**
+     * Enable medium reasoning effort for OpenAI models.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function reasoning(): ?array
+    {
+        return [
+            'effort' => 'low',
         ];
     }
 

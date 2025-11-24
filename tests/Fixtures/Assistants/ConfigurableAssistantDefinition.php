@@ -127,6 +127,16 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
         return $this->data('metadata', []);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function reasoning(): ?array
+    {
+        $options = $this->data('reasoning');
+
+        return is_array($options) ? $options : null;
+    }
+
     public function promptIsActive(): bool
     {
         return (bool) $this->data('prompt_is_active', true);

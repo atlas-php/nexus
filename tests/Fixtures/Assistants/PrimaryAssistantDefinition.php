@@ -24,6 +24,7 @@ class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
             'tools' => ['memory', 'thread_search'],
             'provider_tools' => [],
             'metadata' => [],
+            'reasoning' => null,
         ];
     }
 }

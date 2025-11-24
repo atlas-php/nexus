@@ -56,6 +56,11 @@ class ResolvedAssistant
      */
     private ?array $metadata;
 
+    /**
+     * @var array<string, mixed>|null
+     */
+    private ?array $reasoningOptions;
+
     public function __construct(private readonly AssistantDefinition $definition)
     {
         $attributes = $definition->assistantAttributes();
@@ -77,6 +82,7 @@ class ResolvedAssistant
         $this->toolConfigurations = $this->normalizeConfigurationMap($attributes['tool_configuration'] ?? null);
         $this->providerToolConfigurations = $this->normalizeConfigurationMap($attributes['provider_tool_configuration'] ?? null);
         $this->metadata = $this->normalizeMetadata($attributes['metadata'] ?? null);
+        $this->reasoningOptions = $this->normalizeConfigurationArray($attributes['reasoning'] ?? null);
     }
 
     public function definition(): AssistantDefinition
@@ -194,6 +200,14 @@ class ResolvedAssistant
         return $this->metadata;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function reasoning(): ?array
+    {
+        return $this->reasoningOptions;
+    }
+
     public function systemPrompt(): string
     {
         return $this->definition->systemPrompt();
@@ -302,5 +316,34 @@ class ResolvedAssistant
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $config
+     * @return array<string, mixed>|null
+     */
+    private function normalizeConfigurationArray(?array $config): ?array
+    {
+        if ($config === null) {
+            return null;
+        }
+
+        $normalized = [];
+
+        foreach ($config as $key => $value) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            $trimmed = trim($key);
+
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $normalized[$trimmed] = $value;
+        }
+
+        return $normalized === [] ? null : $normalized;
     }
 }
