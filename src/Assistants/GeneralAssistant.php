@@ -52,18 +52,6 @@ class GeneralAssistant extends AssistantDefinition
         ];
     }
 
-    /**
-     * Enable medium reasoning effort for OpenAI models.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function reasoning(): ?array
-    {
-        return [
-            'effort' => 'low',
-        ];
-    }
-
     public function systemPrompt(): string
     {
         return <<<'PROMPT'
