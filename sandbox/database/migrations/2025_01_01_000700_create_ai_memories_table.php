@@ -16,20 +16,13 @@ return new class extends Migration
         $this->schema()->create($tableName, function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('group_id')->nullable()->index();
-            $table->string('owner_type');
-            $table->unsignedBigInteger('owner_id');
-            $table->string('assistant_key')->nullable()->index();
+            $table->unsignedBigInteger('user_id')->index();
+            $table->string('assistant_id')->index();
             $table->unsignedBigInteger('thread_id')->nullable()->index();
-            $table->unsignedBigInteger('source_message_id')->nullable()->index();
-            $table->unsignedBigInteger('source_tool_run_id')->nullable()->index();
-            $table->string('kind');
-            $table->text('content');
-            $table->json('metadata')->nullable();
+            $table->string('content', 255);
+            $table->json('source_message_ids')->nullable();
             $table->timestamps();
             $table->softDeletes();
-
-            $table->index(['owner_type', 'owner_id']);
-            $table->index('kind');
         });
     }
 

@@ -22,10 +22,15 @@ return [
         'message_interval' => (int) env('ATLAS_NEXUS_THREAD_SUMMARY_MESSAGE_INTERVAL', 10),
     ],
 
+    'memory_extractor' => [
+        'pending_message_count' => (int) env('ATLAS_NEXUS_MEMORY_EXTRACTOR_PENDING_COUNT', 4),
+    ],
+
     'assistants' => [
         \Atlas\Nexus\Assistants\GeneralAssistant::class,
         \Atlas\Nexus\Assistants\HumanAssistant::class,
         \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
+        \Atlas\Nexus\Assistants\MemoryExtractorAssistant::class,
         // Additional consumer-defined assistants go here.
     ],
 
