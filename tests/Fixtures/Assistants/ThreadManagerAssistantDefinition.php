@@ -15,6 +15,7 @@ class ThreadManagerAssistantDefinition extends ConfigurableAssistantDefinition
             'key' => 'thread-manager',
             'name' => 'Thread Manager',
             'description' => 'Generates thread titles and summaries.',
+            'is_hidden' => true,
             'system_prompt' => <<<'PROMPT'
 ## Role
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Support\Chat;
 
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
@@ -16,7 +17,7 @@ use function collect;
  * Aggregates the contextual information available to a thread, including prompts, memories, tool access, and chat history.
  *
  * @property Collection<int, AiMessage> $messages
- * @property Collection<int, array<string, mixed>> $memories
+ * @property Collection<int, AiMemory> $memories
  * @property Collection<int, ToolDefinition> $tools
  * @property Collection<int, \Atlas\Nexus\Support\Tools\ProviderToolDefinition> $providerTools
  * @property string|null $systemPrompt
@@ -28,7 +29,7 @@ class ThreadState
 
     /**
      * @param  Collection<int, AiMessage>  $messages
-     * @param  Collection<int, array<string, mixed>>  $memories
+     * @param  Collection<int, AiMemory>  $memories
      * @param  Collection<int, ToolDefinition>  $tools
      * @param  Collection<int, \Atlas\Nexus\Support\Tools\ProviderToolDefinition>  $providerTools
      */

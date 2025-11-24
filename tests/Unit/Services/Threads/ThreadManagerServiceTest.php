@@ -6,9 +6,11 @@ namespace Atlas\Nexus\Tests\Unit\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadManagerService;
+use Atlas\Nexus\Services\Threads\ThreadMemoryService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -104,12 +106,25 @@ class ThreadManagerServiceTest extends TestCase
         $memoryThread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => $activeThread->user_id,
-            'memories' => [
-                ['content' => 'User loves skiing trips'],
-                ['content' => 'Enjoys gardening'],
-            ],
             'last_message_at' => Carbon::now()->subMinutes(1),
         ]);
+
+        AiMemory::factory()->create([
+            'assistant_key' => $memoryThread->assistant_key,
+            'thread_id' => $memoryThread->id,
+            'user_id' => $memoryThread->user_id,
+            'content' => 'User loves skiing trips',
+        ]);
+
+        AiMemory::factory()->create([
+            'assistant_key' => $memoryThread->assistant_key,
+            'thread_id' => $memoryThread->id,
+            'user_id' => $memoryThread->user_id,
+            'content' => 'Enjoys gardening',
+        ]);
+
+        $threadMemories = $this->app->make(ThreadMemoryService::class)->memoriesForThread($memoryThread);
+        $this->assertCount(2, $threadMemories);
 
         AiMessage::factory()->create([
             'thread_id' => $memoryThread->id,

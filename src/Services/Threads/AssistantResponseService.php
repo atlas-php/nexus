@@ -15,6 +15,7 @@ use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
 use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiMessageService;
@@ -23,6 +24,7 @@ use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
 use Atlas\Nexus\Support\Chat\ChatThreadLog;
 use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Support\Chat\ToolInvocation;
 use Atlas\Nexus\Support\Prism\TextResponseSerializer;
 use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
@@ -36,6 +38,8 @@ use Prism\Prism\ValueObjects\ToolCall;
 use Prism\Prism\ValueObjects\ToolResult;
 use RuntimeException;
 use Throwable;
+
+use function json_encode;
 
 /**
  * Class AssistantResponseService
@@ -60,6 +64,7 @@ class AssistantResponseService
         private readonly AiToolRunService $toolRunService,
         private readonly TextRequestFactory $textRequestFactory,
         private readonly ToolRunLogger $toolRunLogger,
+        private readonly AssistantThreadLogger $assistantThreadLogger,
         private readonly OpenAiRateLimitClient $openAiRateLimitClient,
     ) {}
 
@@ -87,6 +92,7 @@ class AssistantResponseService
             $textRequest = $this->textRequestFactory->make($chatLog);
             $providerKey = $this->resolveProvider();
             $modelKey = $this->resolveModel($state);
+            $toolRunIds = [];
 
             $request = $textRequest
                 ->using($providerKey, $modelKey)
@@ -137,7 +143,7 @@ class AssistantResponseService
                 throw new RuntimeException('Prism did not return a response for the assistant message.');
             }
 
-            DB::transaction(function () use ($assistantMessage, $response, $toolContext, $state): void {
+            DB::transaction(function () use ($assistantMessage, $response, $toolContext, $state, &$toolRunIds): void {
                 $toolRunIds = $this->recordToolResults(
                     $response->toolCalls,
                     $response->toolResults,
@@ -163,6 +169,20 @@ class AssistantResponseService
                     'metadata' => $metadata,
                 ]);
             });
+
+            $assistantMessage->refresh();
+
+            if ($state->assistant->isHidden()) {
+                $this->logAssistantRun(
+                    $state,
+                    $assistantMessage,
+                    $response,
+                    $chatLog,
+                    $toolRunIds,
+                    $providerKey,
+                    $modelKey
+                );
+            }
 
             $this->dispatchThreadManagerAssistantJob($assistantMessage);
             $this->dispatchMemoryExtractorAssistantJob($assistantMessage);
@@ -263,6 +283,186 @@ class AssistantResponseService
         ]);
 
         PushMemoryExtractorAssistantJob::dispatch($thread->getKey());
+    }
+
+    /**
+     * @param  array<int, int>  $toolRunIds
+     */
+    protected function logAssistantRun(
+        ThreadState $state,
+        AiMessage $assistantMessage,
+        \Prism\Prism\Text\Response $response,
+        ChatThreadLog $chatThreadLog,
+        array $toolRunIds,
+        string $providerKey,
+        string $modelKey
+    ): void {
+        $payload = $this->buildAssistantRunPayload($state, $assistantMessage, $chatThreadLog, $providerKey, $modelKey);
+
+        $metadata = [
+            'assistant_run_payload' => $payload,
+            'tool_invocations' => $this->normalizeToolInvocations($chatThreadLog),
+            'tool_run_ids' => $toolRunIds,
+            'assistant_message_id' => $assistantMessage->getKey(),
+        ];
+
+        $this->assistantThreadLogger->log(
+            $state->thread,
+            $state->assistant,
+            sprintf('Assistant response for Thread %s message %s', $state->thread->getKey(), $assistantMessage->getKey()),
+            $payload,
+            $response,
+            $metadata,
+            $metadata
+        );
+    }
+
+    protected function buildAssistantRunPayload(
+        ThreadState $state,
+        AiMessage $assistantMessage,
+        ChatThreadLog $chatThreadLog,
+        string $providerKey,
+        string $modelKey
+    ): string {
+        $payload = [
+            'thread_id' => $state->thread->getKey(),
+            'assistant_key' => $state->assistant->key(),
+            'assistant_message_id' => $assistantMessage->getKey(),
+            'provider' => $providerKey,
+            'requested_model' => $modelKey,
+            'system_prompt' => $state->systemPrompt,
+            'messages' => $this->normalizeStateMessages($state),
+            'memories' => $this->normalizeStateMemories($state),
+            'tools' => $this->normalizeToolDefinitions($state),
+            'provider_tools' => $this->normalizeProviderToolDefinitions($state),
+            'chat_log' => [
+                'messages' => $this->normalizeChatLogMessages($chatThreadLog),
+                'tool_invocations' => $this->normalizeToolInvocations($chatThreadLog),
+            ],
+        ];
+
+        return $this->encodeAssistantRunPayload($payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function encodeAssistantRunPayload(array $payload): string
+    {
+        $encoded = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if (! is_string($encoded)) {
+            throw new RuntimeException('Unable to encode assistant run payload.');
+        }
+
+        return $encoded;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function normalizeStateMessages(ThreadState $state): array
+    {
+        return $state->messages
+            ->map(function (AiMessage $message): array {
+                /** @var AiMessageRole $role */
+                $role = $message->role;
+
+                /** @var AiMessageStatus $status */
+                $status = $message->status;
+
+                return [
+                    'id' => $message->getKey(),
+                    'role' => $role->value,
+                    'content' => $message->content,
+                    'sequence' => $message->sequence,
+                    'status' => $status->value,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function normalizeStateMemories(ThreadState $state): array
+    {
+        return $state->memories
+            ->map(static function (AiMemory $memory): array {
+                return [
+                    'id' => $memory->getKey(),
+                    'content' => (string) $memory->content,
+                    'source_message_ids' => $memory->source_message_ids ?? [],
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    protected function normalizeToolDefinitions(ThreadState $state): array
+    {
+        return $state->tools
+            ->map(static function (ToolDefinition $definition): array {
+                return [
+                    'key' => $definition->key(),
+                    'handler' => $definition->handlerClass(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function normalizeProviderToolDefinitions(ThreadState $state): array
+    {
+        return $state->providerTools
+            ->map(static function (\Atlas\Nexus\Support\Tools\ProviderToolDefinition $definition): array {
+                return [
+                    'key' => $definition->key(),
+                    'options' => $definition->options(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    protected function normalizeChatLogMessages(ChatThreadLog $chatThreadLog): array
+    {
+        return collect($chatThreadLog->messages())
+            ->map(static function (\Atlas\Nexus\Support\Chat\ChatMessage $message): array {
+                return [
+                    'role' => $message->role(),
+                    'content' => $message->content(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function normalizeToolInvocations(ChatThreadLog $chatThreadLog): array
+    {
+        return collect($chatThreadLog->toolInvocations())
+            ->map(static function (ToolInvocation $invocation): array {
+                return [
+                    'tool' => $invocation->toolName(),
+                    'arguments' => $invocation->arguments(),
+                    'result' => $invocation->result(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     protected function memoryExtractorConfig(string $key, int $default): int

@@ -6,6 +6,7 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
@@ -16,7 +17,6 @@ use Prism\Prism\ValueObjects\Messages\UserMessage;
 use RuntimeException;
 
 use function json_decode;
-use function json_encode;
 
 /**
  * Class ThreadMemoryExtractionService
@@ -31,7 +31,8 @@ class ThreadMemoryExtractionService
         private readonly AssistantRegistry $assistantRegistry,
         private readonly ThreadMemoryService $threadMemoryService,
         private readonly TextRequestFactory $textRequestFactory,
-        private readonly AiMessageService $messageService
+        private readonly AiMessageService $messageService,
+        private readonly AssistantThreadLogger $assistantThreadLogger
     ) {}
 
     /**
@@ -65,6 +66,24 @@ class ThreadMemoryExtractionService
             $this->threadMemoryService->appendMemories($thread, $memories);
         }
 
+        $checkedMessageIds = $this->messageIds($messages);
+
+        $metadata = [
+            'memory_extractor_payload' => $payload,
+            'checked_message_ids' => $checkedMessageIds,
+            'extracted_memories' => $memories,
+        ];
+
+        $this->assistantThreadLogger->log(
+            $thread,
+            $assistant,
+            sprintf('Memory extraction for Thread %s', $thread->getKey()),
+            $payload,
+            $response,
+            $metadata,
+            $metadata
+        );
+
         $this->markMessagesChecked($messages);
     }
 
@@ -88,14 +107,14 @@ class ThreadMemoryExtractionService
     private function buildPayload(AiThread $thread, Collection $messages): string
     {
         $userMemories = $this->threadMemoryService
-            ->userMemories($thread->user_id)
-            ->map(fn (array $memory): string => (string) ($memory['content'] ?? ''))
+            ->userMemories($thread->user_id, $thread->assistant_key)
+            ->map(fn (AiMemory $memory): string => (string) $memory->content)
             ->filter(static fn (string $content): bool => $content !== '')
             ->values();
 
         $threadMemories = $this->threadMemoryService
             ->memoriesForThread($thread)
-            ->map(fn (array $memory): string => (string) ($memory['content'] ?? ''))
+            ->map(fn (AiMemory $memory): string => (string) $memory->content)
             ->filter(static fn (string $content): bool => $content !== '')
             ->values();
 
@@ -114,20 +133,38 @@ class ThreadMemoryExtractionService
             })
             ->values();
 
-        $payload = [
-            'thread_id' => $thread->getKey(),
-            'existing_memories' => $userMemories->all(),
-            'current_thread_memories' => $threadMemories->all(),
-            'new_messages' => $messagePayload->all(),
-        ];
+        $memories = $userMemories
+            ->merge($threadMemories)
+            ->filter()
+            ->values()
+            ->all();
 
-        $encoded = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $memorySection = $memories === []
+            ? '- None.'
+            : '- '.implode("\n- ", array_map(static fn (string $memory): string => $memory, $memories));
 
-        if (! is_string($encoded)) {
-            throw new RuntimeException('Unable to encode memory extraction payload.');
-        }
+        $conversationLines = $messagePayload
+            ->map(static function (array $message): string {
+                $role = strtoupper((string) $message['role']);
+                $content = (string) $message['content'];
 
-        return "Analyze the payload below and extract new memories.\n".$encoded;
+                return implode("\n", [
+                    sprintf('%s:', $role),
+                    $content,
+                ]);
+            })
+            ->all();
+
+        $conversationText = implode("\n\n", $conversationLines);
+
+        return implode("\n", [
+            'Current memories:',
+            $memorySection,
+            '',
+            'Current conversation thread:',
+            '',
+            $conversationText,
+        ]);
     }
 
     /**
@@ -158,16 +195,19 @@ class ThreadMemoryExtractionService
             throw new RuntimeException('Unable to decode memory extraction response.');
         }
 
-        $memories = $decoded['memories'] ?? [];
-
-        if (! is_array($memories)) {
-            return [];
-        }
-
+        $payload = $this->resolveMemoryPayload($decoded);
         $normalized = [];
 
-        foreach ($memories as $memory) {
-            $content = $this->stringValue($memory['content'] ?? null);
+        foreach ($payload as $memory) {
+            if (is_string($memory)) {
+                $content = $this->stringValue($memory);
+                $sourceIds = [];
+            } elseif (is_array($memory)) {
+                $content = $this->stringValue($memory['content'] ?? null);
+                $sourceIds = $this->normalizeMessageIds($memory['source_message_ids'] ?? []);
+            } else {
+                continue;
+            }
 
             if ($content === null) {
                 continue;
@@ -175,11 +215,34 @@ class ThreadMemoryExtractionService
 
             $normalized[] = [
                 'content' => $content,
-                'source_message_ids' => $this->normalizeMessageIds($memory['source_message_ids'] ?? []),
+                'source_message_ids' => $sourceIds,
             ];
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param  array<mixed>  $decoded
+     * @return array<int, mixed>
+     */
+    private function resolveMemoryPayload(array $decoded): array
+    {
+        if ($decoded === []) {
+            return [];
+        }
+
+        if (array_is_list($decoded)) {
+            return $decoded;
+        }
+
+        $memories = $decoded['memories'] ?? null;
+
+        if (is_array($memories)) {
+            return $memories;
+        }
+
+        throw new RuntimeException('Unable to decode memory extraction response.');
     }
 
     private function extractJson(string $text): ?string
@@ -198,11 +261,7 @@ class ThreadMemoryExtractionService
      */
     private function markMessagesChecked(Collection $messages): void
     {
-        $ids = $messages
-            ->map(static fn (AiMessage $message): ?int => $message->getKey())
-            ->filter(static fn (?int $id): bool => $id !== null)
-            ->values()
-            ->all();
+        $ids = $this->messageIds($messages);
 
         if ($ids === []) {
             return;
@@ -245,5 +304,18 @@ class ThreadMemoryExtractionService
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    /**
+     * @param  Collection<int, AiMessage>  $messages
+     * @return array<int, int>
+     */
+    private function messageIds(Collection $messages): array
+    {
+        return $messages
+            ->map(static fn (AiMessage $message): ?int => $message->getKey())
+            ->filter(static fn (?int $id): bool => $id !== null)
+            ->values()
+            ->all();
     }
 }

@@ -4,54 +4,62 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Threads;
 
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Models\AiMemoryService;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 /**
  * Class ThreadMemoryService
  *
- * Manages thread-scoped memory storage using the ai_threads.memories column and exposes helpers to read
- * merged user memories across all threads.
+ * Manages assistant memory storage using the dedicated ai_memories table and exposes helpers to read
+ * merged user memories across threads for a given assistant.
  */
 class ThreadMemoryService
 {
-    public function __construct(private readonly AiThreadService $threadService) {}
+    public function __construct(private readonly AiMemoryService $memoryService) {}
 
     /**
-     * @return Collection<int, array<string, mixed>>
+     * @return EloquentCollection<int, AiMemory>
      */
-    public function memoriesForThread(AiThread $thread): Collection
+    public function memoriesForThread(AiThread $thread): EloquentCollection
     {
-        return collect($this->normalizeEntries($thread, $thread->memories ?? []));
+        /** @var EloquentCollection<int, AiMemory> $memories */
+        $memories = $this->memoryService->query()
+            ->where('thread_id', $thread->getKey())
+            ->orderBy('created_at')
+            ->get();
+
+        return $memories;
     }
 
     /**
-     * @return Collection<int, array<string, mixed>>
+     * @return EloquentCollection<int, AiMemory>
      */
-    public function userMemories(int $userId): Collection
+    public function userMemories(int $userId, ?string $assistantId = null): EloquentCollection
     {
-        $threads = AiThread::query()
+        $query = $this->memoryService->query()
             ->where('user_id', $userId)
-            ->whereNotNull('memories')
-            ->get(['id', 'memories']);
-
-        return $threads
-            ->flatMap(function (AiThread $thread): array {
-                return $this->normalizeEntries($thread, $thread->memories ?? []);
+            ->when($assistantId !== null, static function ($builder) use ($assistantId): void {
+                $builder->where('assistant_key', $assistantId);
             })
-            ->values();
+            ->orderBy('created_at');
+
+        /** @var EloquentCollection<int, AiMemory> $memories */
+        $memories = $query->get();
+
+        return $memories;
     }
 
     /**
      * @param  array<int, array<string, mixed>>  $memories
+     * @return EloquentCollection<int, AiMemory>
      */
-    public function appendMemories(AiThread $thread, array $memories): AiThread
+    public function appendMemories(AiThread $thread, array $memories): EloquentCollection
     {
-        $existing = $this->memoriesForThread($thread)->all();
-        $index = $this->indexByContent($existing);
-        $hasChanges = false;
+        $existing = $this->existingMemoryIndex($thread);
+        $created = new EloquentCollection;
 
         foreach ($memories as $memory) {
             $content = $this->stringValue($memory['content'] ?? null);
@@ -62,81 +70,43 @@ class ThreadMemoryService
 
             $normalized = $this->normalizeContent($content);
 
-            if ($normalized === null || isset($index[$normalized])) {
+            if ($normalized === null || isset($existing[$normalized])) {
                 continue;
             }
 
-            $entry = [
-                'content' => $content,
+            $payload = [
+                'user_id' => $thread->user_id,
+                'assistant_key' => $thread->assistant_key,
                 'thread_id' => $thread->getKey(),
+                'group_id' => $thread->group_id,
+                'content' => $content,
                 'source_message_ids' => $this->normalizeMessageIds($memory['source_message_ids'] ?? []),
-                'created_at' => Carbon::now()->toAtomString(),
+                'created_at' => Carbon::now(),
             ];
 
-            $existing[] = $entry;
-            $index[$normalized] = true;
-            $hasChanges = true;
+            /** @var AiMemory $saved */
+            $saved = $this->memoryService->create($payload);
+            $created->push($saved);
+            $existing[$normalized] = true;
         }
 
-        if (! $hasChanges) {
-            return $thread;
-        }
-
-        return $this->threadService->update($thread, [
-            'memories' => array_values($existing),
-        ]);
+        return $created;
     }
 
     /**
-     * @param  array<int, array<string, mixed>>|null  $entries
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalizeEntries(AiThread $thread, ?array $entries): array
-    {
-        if (! is_array($entries) || $entries === []) {
-            return [];
-        }
-
-        $normalized = [];
-        $seen = [];
-
-        foreach ($entries as $entry) {
-            $content = $this->stringValue($entry['content'] ?? null);
-
-            if ($content === null) {
-                continue;
-            }
-
-            $normalizedKey = $this->normalizeContent($content);
-
-            if ($normalizedKey === null || isset($seen[$normalizedKey])) {
-                continue;
-            }
-
-            $target = [
-                'content' => $content,
-                'thread_id' => $thread->getKey(),
-                'source_message_ids' => $this->normalizeMessageIds($entry['source_message_ids'] ?? []),
-                'created_at' => $this->stringValue($entry['created_at'] ?? null) ?? Carbon::now()->toAtomString(),
-            ];
-
-            $normalized[] = $target;
-            $seen[$normalizedKey] = true;
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $entries
      * @return array<string, bool>
      */
-    private function indexByContent(array $entries): array
+    private function existingMemoryIndex(AiThread $thread): array
     {
+        $memories = $this->memoryService->query()
+            ->where('user_id', $thread->user_id)
+            ->where('assistant_key', $thread->assistant_key)
+            ->get(['content']);
+
         $index = [];
 
-        foreach ($entries as $entry) {
-            $hash = $this->normalizeContent($entry['content'] ?? null);
+        foreach ($memories as $memory) {
+            $hash = $this->normalizeContent($memory->content ?? null);
 
             if ($hash !== null) {
                 $index[$hash] = true;

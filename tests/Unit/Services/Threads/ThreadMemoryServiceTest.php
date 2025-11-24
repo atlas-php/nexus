@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services\Threads;
 
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMemoryService;
 use Atlas\Nexus\Tests\TestCase;
@@ -25,16 +26,18 @@ class ThreadMemoryServiceTest extends TestCase
     {
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'memories' => [
-                [
-                    'content' => 'Existing fact',
-                    'source_message_ids' => [1],
-                    'created_at' => now()->subDay()->toAtomString(),
-                ],
-            ],
+            'assistant_key' => 'general-assistant',
         ]);
 
         $service = $this->app->make(ThreadMemoryService::class);
+
+        AiMemory::factory()->create([
+            'assistant_key' => $thread->assistant_key,
+            'thread_id' => $thread->id,
+            'user_id' => $thread->user_id,
+            'content' => 'Existing fact',
+            'source_message_ids' => [1],
+        ]);
 
         $service->appendMemories($thread, [
             [
@@ -47,53 +50,50 @@ class ThreadMemoryServiceTest extends TestCase
             ],
         ]);
 
-        $updated = $thread->fresh();
-        $this->assertInstanceOf(AiThread::class, $updated);
-        $memories = $updated->memories ?? [];
+        $memories = AiMemory::query()->where('thread_id', $thread->id)->orderBy('id')->get();
         $this->assertCount(2, $memories);
-        $lastMemory = $memories[1] ?? null;
-        $this->assertIsArray($lastMemory);
 
-        $this->assertSame('Enjoys winter hikes', $lastMemory['content']);
-        $firstMemory = $memories[0] ?? null;
-        $this->assertIsArray($firstMemory);
-        $this->assertSame($thread->id, $firstMemory['thread_id']);
-        $this->assertSame($thread->id, $lastMemory['thread_id']);
-        $this->assertSame([3], $lastMemory['source_message_ids']);
+        /** @var AiMemory $firstMemory */
+        $firstMemory = $memories->first();
+        $this->assertInstanceOf(AiMemory::class, $firstMemory);
+        $this->assertSame($thread->id, $firstMemory->thread_id);
+
+        /** @var AiMemory $lastMemory */
+        $lastMemory = $memories->last();
+        $this->assertInstanceOf(AiMemory::class, $lastMemory);
+        $this->assertSame('Enjoys winter hikes', $lastMemory->content);
+        $this->assertSame([3], $lastMemory->source_message_ids);
     }
 
     public function test_it_merges_user_memories(): void
     {
         $userId = 77;
 
-        AiThread::factory()->create([
+        AiMemory::factory()->create([
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId,
-            'memories' => [
-                ['content' => 'First memory', 'created_at' => now()->subDays(2)->toAtomString()],
-            ],
+            'content' => 'First memory',
         ]);
 
-        AiThread::factory()->create([
+        AiMemory::factory()->create([
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId,
-            'memories' => [
-                ['content' => 'Second insight', 'created_at' => now()->toAtomString()],
-            ],
+            'content' => 'Second insight',
         ]);
 
-        AiThread::factory()->create([
+        AiMemory::factory()->create([
+            'assistant_key' => 'general-assistant',
             'user_id' => $userId + 1,
-            'memories' => [
-                ['content' => 'Other user memory', 'created_at' => now()->toAtomString()],
-            ],
+            'content' => 'Other user memory',
         ]);
 
         $service = $this->app->make(ThreadMemoryService::class);
 
-        $memories = $service->userMemories($userId);
+        $memories = $service->userMemories($userId, 'general-assistant');
 
         $this->assertCount(2, $memories);
-        $this->assertTrue($memories->contains(fn (array $memory): bool => $memory['content'] === 'First memory'));
-        $this->assertTrue($memories->contains(fn (array $memory): bool => $memory['content'] === 'Second insight'));
+        $this->assertTrue($memories->contains(fn (AiMemory $memory): bool => $memory->content === 'First memory'));
+        $this->assertTrue($memories->contains(fn (AiMemory $memory): bool => $memory->content === 'Second insight'));
     }
 
     private function migrationPath(): string
