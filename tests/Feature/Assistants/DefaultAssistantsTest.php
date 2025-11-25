@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Feature\Assistants;
 
-use Atlas\Nexus\Assistants\GeneralAssistant;
-use Atlas\Nexus\Assistants\HumanAssistant;
-use Atlas\Nexus\Assistants\MemoryAssistant;
-use Atlas\Nexus\Assistants\ThreadManagerAssistant;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant;
+use Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant;
+use Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant;
+use Atlas\Nexus\Services\Assistants\Definitions\ThreadManagerAssistant;
 use Atlas\Nexus\Tests\TestCase;
 
 /**

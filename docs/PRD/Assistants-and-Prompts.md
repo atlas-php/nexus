@@ -6,15 +6,15 @@ Nexus no longer stores assistants or prompts in database tables. Instead, every 
 
 ```php
 'assistants' => [
-    \Atlas\Nexus\Assistants\GeneralAssistant::class,
-    \Atlas\Nexus\Assistants\HumanAssistant::class,
-    \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
-    \Atlas\Nexus\Assistants\MemoryAssistant::class,
+    \Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant::class,
+    \Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant::class,
+    \Atlas\Nexus\Services\Assistants\Definitions\ThreadManagerAssistant::class,
+    \Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant::class,
     // \App\Nexus\Assistants\CustomAssistant::class,
 ],
 ```
 
-Nexus ships with the three `Atlas\Nexus\Assistants\*` defaults shown above so every installation has a working conversational, human-style, and summarization assistant immediately. Consumers may remove or replace any of them by editing the array and pointing to their own `AssistantDefinition` implementations.
+Nexus ships with the three `Atlas\Nexus\Services\Assistants\Definitions\*` defaults shown above so every installation has a working conversational, human-style, and summarization assistant immediately. Consumers may remove or replace any of them by editing the array and pointing to their own `AssistantDefinition` implementations.
 
 Each definition class must implement:
 

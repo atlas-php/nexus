@@ -33,10 +33,10 @@ return [
     ],
 
     'assistants' => [
-        \Atlas\Nexus\Assistants\GeneralAssistant::class,
-        \Atlas\Nexus\Assistants\HumanAssistant::class,
-        \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
-        \Atlas\Nexus\Assistants\MemoryAssistant::class,
+        \Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant::class,
+        \Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant::class,
+        \Atlas\Nexus\Services\Assistants\Definitions\ThreadManagerAssistant::class,
+        \Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant::class,
         // Additional consumer-defined assistants go here.
     ],
 
