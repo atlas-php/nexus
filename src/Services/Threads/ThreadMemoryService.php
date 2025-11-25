@@ -37,6 +37,49 @@ class ThreadMemoryService
     /**
      * @return EloquentCollection<int, AiMemory>
      */
+    public function orderedThreadMemories(AiThread $thread): EloquentCollection
+    {
+        $memories = $this->memoriesForThread($thread);
+
+        $sorted = $memories
+            ->sort(function (AiMemory $a, AiMemory $b): int {
+                $importanceA = (int) ($a->importance ?? 0);
+                $importanceB = (int) ($b->importance ?? 0);
+
+                if ($importanceA !== $importanceB) {
+                    return $importanceB <=> $importanceA;
+                }
+
+                $timestampA = $a->created_at?->getTimestamp() ?? 0;
+                $timestampB = $b->created_at?->getTimestamp() ?? 0;
+
+                if ($timestampA !== $timestampB) {
+                    return $timestampB <=> $timestampA;
+                }
+
+                return $b->getKey() <=> $a->getKey();
+            })
+            ->values();
+
+        return new EloquentCollection($sorted->all());
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function contextualMemoryStrings(AiThread $thread, int $limit = 25): array
+    {
+        return $this->orderedThreadMemories($thread)
+            ->map(fn (AiMemory $memory): ?string => $this->stringValue($memory->content))
+            ->filter(static fn (?string $value): bool => $value !== null)
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return EloquentCollection<int, AiMemory>
+     */
     public function userMemories(int $userId, ?string $assistantId = null): EloquentCollection
     {
         $query = $this->memoryService->query()

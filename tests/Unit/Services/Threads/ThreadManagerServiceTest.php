@@ -109,11 +109,16 @@ class ThreadManagerServiceTest extends TestCase
             'last_message_at' => Carbon::now()->subMinutes(1),
         ]);
 
+        $now = Carbon::now();
+
         AiMemory::factory()->create([
             'assistant_key' => $memoryThread->assistant_key,
             'thread_id' => $memoryThread->id,
             'user_id' => $memoryThread->user_id,
             'content' => 'User loves skiing trips',
+            'importance' => 5,
+            'created_at' => $now->copy()->subMinutes(3),
+            'updated_at' => $now->copy()->subMinutes(3),
         ]);
 
         AiMemory::factory()->create([
@@ -121,6 +126,9 @@ class ThreadManagerServiceTest extends TestCase
             'thread_id' => $memoryThread->id,
             'user_id' => $memoryThread->user_id,
             'content' => 'Enjoys gardening',
+            'importance' => 3,
+            'created_at' => $now->copy()->subMinutes(1),
+            'updated_at' => $now->copy()->subMinutes(1),
         ]);
 
         $threadMemories = $this->app->make(ThreadMemoryService::class)->memoriesForThread($memoryThread);
@@ -160,6 +168,88 @@ class ThreadManagerServiceTest extends TestCase
         $messageResults = $this->manager->fetchContextSummaries($state, ['gardening']);
         $this->assertNotEmpty($messageResults);
         $this->assertContains($messageThread->id, array_column($messageResults, 'id'));
+    }
+
+    public function test_fetch_context_memories_prioritize_importance_and_limit(): void
+    {
+        /** @var AiThread $activeThread */
+        $activeThread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 200,
+            'last_message_at' => Carbon::now(),
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $activeThread->id,
+            'assistant_key' => $activeThread->assistant_key,
+            'user_id' => $activeThread->user_id,
+            'role' => AiMessageRole::USER->value,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var AiThread $memoryThread */
+        $memoryThread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => $activeThread->user_id,
+            'last_message_at' => Carbon::now()->subMinutes(1),
+        ]);
+
+        $now = Carbon::now();
+
+        $highRecent = 'High priority recent focus';
+        $highOlder = 'High priority older focus';
+        $mediumRecent = 'Medium priority recent focus';
+
+        foreach ([
+            ['content' => $highRecent, 'importance' => 5, 'timestamp' => $now],
+            ['content' => $highOlder, 'importance' => 5, 'timestamp' => $now->copy()->subMinutes(3)],
+            ['content' => $mediumRecent, 'importance' => 3, 'timestamp' => $now->copy()->subMinutes(1)],
+        ] as $memory) {
+            AiMemory::factory()->create([
+                'assistant_key' => $memoryThread->assistant_key,
+                'thread_id' => $memoryThread->id,
+                'user_id' => $memoryThread->user_id,
+                'content' => $memory['content'],
+                'importance' => $memory['importance'],
+                'created_at' => $memory['timestamp'],
+                'updated_at' => $memory['timestamp'],
+            ]);
+        }
+
+        foreach (range(1, 27) as $index) {
+            $timestamp = $now->copy()->subMinutes(10 + $index);
+
+            AiMemory::factory()->create([
+                'assistant_key' => $memoryThread->assistant_key,
+                'thread_id' => $memoryThread->id,
+                'user_id' => $memoryThread->user_id,
+                'content' => "Low priority memory {$index}",
+                'importance' => 1,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]);
+        }
+
+        AiMessage::factory()->create([
+            'thread_id' => $memoryThread->id,
+            'assistant_key' => $memoryThread->assistant_key,
+            'user_id' => $memoryThread->user_id,
+            'role' => AiMessageRole::USER->value,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'content' => 'Discussed focus planning.',
+        ]);
+
+        $state = $this->stateService->forThread($activeThread);
+        $results = $this->manager->fetchContextSummaries($state, ['focus']);
+
+        $this->assertCount(1, $results);
+        $memories = $results[0]['memories'];
+
+        $this->assertCount(25, $memories);
+        $this->assertSame($highRecent, $memories[0]);
+        $this->assertSame($highOlder, $memories[1]);
+        $this->assertSame($mediumRecent, $memories[2]);
+        $this->assertStringContainsString('Low priority memory', $memories[24]);
     }
 
     private function migrationPath(): string

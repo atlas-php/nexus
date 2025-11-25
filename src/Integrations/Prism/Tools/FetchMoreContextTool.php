@@ -109,9 +109,7 @@ class FetchMoreContextTool extends AbstractTool implements ThreadStateAwareTool
         $blocks = [];
 
         foreach ($threads as $thread) {
-            $lines = [
-                'Thread Id: '.$thread['id'],
-            ];
+            $lines = [];
 
             $title = $this->stringValue($thread['title'] ?? null);
             $summary = $this->stringValue($thread['summary'] ?? null);
@@ -122,6 +120,10 @@ class FetchMoreContextTool extends AbstractTool implements ThreadStateAwareTool
 
             if ($summary !== null) {
                 $lines[] = 'Summary: '.$summary;
+            }
+
+            if ($lines === []) {
+                $lines[] = 'Summary: None available.';
             }
 
             $memories = $thread['memories'] ?? [];

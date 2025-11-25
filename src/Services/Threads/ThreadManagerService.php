@@ -392,27 +392,9 @@ class ThreadManagerService
     /**
      * @return array<int, string>
      */
-    protected function contextualMemories(AiThread $thread, int $limit = 5): array
+    protected function contextualMemories(AiThread $thread, int $limit = 25): array
     {
-        $memories = $this->threadMemoryService->memoriesForThread($thread);
-
-        return $memories
-            ->map(fn (\Atlas\Nexus\Models\AiMemory $memory): ?string => $this->stringValue($memory->content))
-            ->filter(static fn (?string $value): bool => $value !== null)
-            ->take($limit)
-            ->values()
-            ->all();
-    }
-
-    private function stringValue(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-
-        return $trimmed === '' ? null : $trimmed;
+        return $this->threadMemoryService->contextualMemoryStrings($thread, $limit);
     }
 
     /**

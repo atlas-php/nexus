@@ -206,6 +206,64 @@ class ThreadMemoryServiceTest extends TestCase
         $this->assertSame('Keep this memory', AiMemory::query()->first()?->content);
     }
 
+    public function test_contextual_memory_strings_order_and_limit(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2025-02-01 12:00:00'));
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $highRecent = 'High priority recent';
+        $highOlder = 'High priority older';
+        $mediumRecent = 'Medium priority recent';
+
+        foreach ([
+            ['content' => $highRecent, 'importance' => 5, 'timestamp' => Carbon::now()],
+            ['content' => $highOlder, 'importance' => 5, 'timestamp' => Carbon::now()->subMinutes(10)],
+            ['content' => $mediumRecent, 'importance' => 3, 'timestamp' => Carbon::now()->subMinutes(5)],
+        ] as $memory) {
+            AiMemory::factory()->create([
+                'assistant_key' => $thread->assistant_key,
+                'thread_id' => $thread->id,
+                'user_id' => $thread->user_id,
+                'content' => $memory['content'],
+                'importance' => $memory['importance'],
+                'created_at' => $memory['timestamp'],
+                'updated_at' => $memory['timestamp'],
+            ]);
+        }
+
+        foreach (range(1, 30) as $index) {
+            $timestamp = Carbon::now()->subMinutes(20 + $index);
+
+            AiMemory::factory()->create([
+                'assistant_key' => $thread->assistant_key,
+                'thread_id' => $thread->id,
+                'user_id' => $thread->user_id,
+                'content' => "Low priority memory {$index}",
+                'importance' => 1,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]);
+        }
+
+        $service = $this->app->make(ThreadMemoryService::class);
+
+        $strings = $service->contextualMemoryStrings($thread);
+
+        $this->assertCount(25, $strings);
+        $this->assertSame($highRecent, $strings[0]);
+        $this->assertSame($highOlder, $strings[1]);
+        $this->assertSame($mediumRecent, $strings[2]);
+        $this->assertStringContainsString('Low priority memory', $strings[24]);
+
+        $limited = $service->contextualMemoryStrings($thread, 2);
+        $this->assertCount(2, $limited);
+        $this->assertSame([$highRecent, $highOlder], $limited);
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../../database/migrations';

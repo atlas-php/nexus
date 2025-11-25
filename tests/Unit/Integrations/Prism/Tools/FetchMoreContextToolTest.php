@@ -76,7 +76,8 @@ class FetchMoreContextToolTest extends TestCase
         $response = $tool->handle([]);
 
         $this->assertCount(10, $response->meta()['result']['threads']);
-        $this->assertStringContainsString('Thread Id:', $response->message());
+        $this->assertStringNotContainsString('Thread Id:', $response->message());
+        $this->assertNotSame('', trim($response->message()));
     }
 
     public function test_it_filters_threads_by_memories(): void
