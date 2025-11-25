@@ -47,7 +47,7 @@ class ThreadMemoryExtractionService
 
         $assistant = $this->assistantRegistry->require(self::MEMORY_EXTRACTOR_KEY);
         $contextualMessages = $this->contextualMessages($thread, $messages);
-        $payload = $this->buildPayload($thread, $contextualMessages, $assistant->systemPrompt());
+        $payload = $this->buildPayload($thread, $contextualMessages);
 
         $request = $this->textRequestFactory->make()
             ->using($this->provider(), $this->model($assistant))
@@ -144,7 +144,7 @@ class ThreadMemoryExtractionService
     /**
      * @param  Collection<int, AiMessage>  $messages
      */
-    private function buildPayload(AiThread $thread, Collection $messages, string $systemPrompt): string
+    private function buildPayload(AiThread $thread, Collection $messages): string
     {
         $userMemories = $this->threadMemoryService
             ->userMemories($thread->user_id, $thread->assistant_key)
@@ -192,8 +192,6 @@ class ThreadMemoryExtractionService
         $conversationText = implode("\n\n", $conversationLines);
 
         return implode("\n", [
-            $systemPrompt !== '' ? $systemPrompt : '[not provided]',
-            '',
             '# Current memories:',
             $memorySection,
             '',

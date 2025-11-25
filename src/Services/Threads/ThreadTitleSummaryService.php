@@ -109,7 +109,7 @@ class ThreadTitleSummaryService
 
         $promptContext = new PromptVariableContext($state, $assistant, $prompt);
         $promptText = $this->promptVariableService->apply($prompt, $promptContext);
-        $conversation = $this->conversationText($state, $promptText);
+        $conversation = $this->conversationText($state);
 
         $provider = $this->provider();
         $model = $this->model($assistant->model());
@@ -224,7 +224,7 @@ class ThreadTitleSummaryService
         return substr($text, $start, ($end - $start) + 1);
     }
 
-    protected function conversationText(ThreadState $state, string $promptText): string
+    protected function conversationText(ThreadState $state): string
     {
         $messages = $state->messages;
         $lastSummaryId = $state->thread->last_summary_message_id;
@@ -258,7 +258,6 @@ class ThreadTitleSummaryService
             ? '- None.'
             : '- '.implode("\n- ", $existingKeywords);
 
-        $promptSection = "{$promptText}";
         $context = implode("\n", [
             '# Current thread summary:',
             $summaryText,
@@ -266,13 +265,15 @@ class ThreadTitleSummaryService
             '# Current keywords:',
             $keywordsSection,
             '',
-            '# Recent messages:',
+            '# Recent messages from thread:',
             '',
             $recentText,
         ]);
         $limitedContext = Str::limit($context, 7000, '...');
 
-        return "{$promptSection}\n{$limitedContext}";
+        return implode("\n", [
+            $limitedContext,
+        ]);
     }
 
     protected function trimValue(?string $value): ?string

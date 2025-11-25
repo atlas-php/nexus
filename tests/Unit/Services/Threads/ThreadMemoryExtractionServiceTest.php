@@ -162,8 +162,10 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
         $this->assertIsString($metadataPayload);
 
+        $instructions = 'Use the memory assistant system prompt already provided for this request (thread prompt snapshot). Do not restate it; apply those instructions to the context below.';
+
         $expectedPayload = implode("\n", [
-            $assistant->systemPrompt(),
+            $instructions,
             '',
             '# Current memories:',
             '- None.',
@@ -286,8 +288,10 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
         $this->assertIsString($metadataPayload);
 
+        $instructions = 'Use the memory assistant system prompt already provided for this request (thread prompt snapshot). Do not restate it; apply those instructions to the context below.';
+
         $expectedPayload = implode("\n", [
-            $assistant->systemPrompt(),
+            $instructions,
             '',
             '# Current memories:',
             '- None.',
@@ -415,8 +419,10 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $payload = $logThread->metadata['memory_extractor_payload'] ?? null;
         $this->assertIsString($payload);
 
+        $instructions = 'Use the memory assistant system prompt already provided for this request (thread prompt snapshot). Do not restate it; apply those instructions to the context below.';
+
         $expectedPayload = implode("\n", [
-            $assistant->systemPrompt(),
+            $instructions,
             '',
             '# Current memories:',
             '- Loves to read.',
