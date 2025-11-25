@@ -53,7 +53,7 @@ class TextRequest
     }
 
     /**
-     * @param  callable(PendingRequest|null, Collection<int,\Prism\Prism\Contracts\Message>, Response):void  $callback
+     * @param  callable(?PendingRequest, Collection<int, Message>, Response):void  $callback
      */
     public function onComplete(callable $callback): self
     {

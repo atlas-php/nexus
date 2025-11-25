@@ -1,4 +1,5 @@
 includes:
+    - ./phpstan.preload.neon
     - ./vendor/larastan/larastan/extension.neon
 
 parameters:
@@ -6,11 +7,9 @@ parameters:
         - src
         - tests
     level: 8
-    bootstrapFiles:
-        - vendor/autoload.php
     scanDirectories:
-        - %currentWorkingDirectory%/src
-        - %currentWorkingDirectory%/tests
+        - src
+        - tests
     parallel:
         maximumNumberOfProcesses: 0
         processTimeout: 0.0
