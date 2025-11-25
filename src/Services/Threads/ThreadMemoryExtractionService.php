@@ -158,7 +158,6 @@ class ThreadMemoryExtractionService
         $conversationText = implode("\n\n", $conversationLines);
 
         return implode("\n", [
-            'System prompt:',
             $systemPrompt !== '' ? $systemPrompt : '[not provided]',
             '',
             'Current memories:',
