@@ -83,7 +83,7 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
         $this->assertSame(1, $contextMessage->sequence);
         $this->assertTrue($contextMessage->role === AiMessageRole::ASSISTANT);
-        $this->assertStringContainsString('Here is some recent context for this user.', $contextMessage->content);
+        $this->assertStringContainsString('Recent known context for this user.', $contextMessage->content);
         $this->assertStringContainsString('Here is the latest summary captured for the user.', $contextMessage->content);
 
         $this->assertSame('Hello Nexus', $result['user']->content);
@@ -178,9 +178,9 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertInstanceOf(AiMessage::class, $contextMessage);
         $this->assertSame(1, $contextMessage->sequence);
         $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
-        $this->assertStringContainsString('No summary captured yet.', $contextMessage->content);
-        $this->assertStringContainsString('latest memories:', $contextMessage->content);
-        $this->assertStringContainsString('None recorded yet.', $contextMessage->content);
+        $this->assertStringContainsString('No summary', $contextMessage->content);
+        $this->assertStringContainsString('latest memories for this user:', $contextMessage->content);
+        $this->assertStringContainsString('- None.', $contextMessage->content);
     }
 
     public function test_it_includes_memories_when_available_without_summary(): void
@@ -213,8 +213,8 @@ class ThreadMessageServiceTest extends TestCase
 
         $this->assertInstanceOf(AiMessage::class, $contextMessage);
         $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
-        $this->assertStringContainsString('No summary captured yet.', $contextMessage->content);
-        $this->assertStringContainsString('latest memories:', $contextMessage->content);
+        $this->assertStringContainsString('No summary', $contextMessage->content);
+        $this->assertStringContainsString('latest memories for this user:', $contextMessage->content);
         $this->assertStringContainsString('User prefers concise updates.', $contextMessage->content);
     }
 

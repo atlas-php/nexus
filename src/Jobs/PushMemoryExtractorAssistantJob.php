@@ -55,6 +55,7 @@ class PushMemoryExtractorAssistantJob implements ShouldQueue
             ->where('thread_id', $thread->id)
             ->where('status', AiMessageStatus::COMPLETED->value)
             ->where('is_memory_checked', false)
+            ->where('is_context_prompt', false)
             ->orderBy('sequence')
             ->get();
 

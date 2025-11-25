@@ -114,6 +114,59 @@ class PushMemoryExtractorAssistantJobTest extends TestCase
         $this->assertArrayNotHasKey('memory_job_pending', $metadata);
     }
 
+    public function test_it_ignores_context_prompt_messages_during_extraction(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'metadata' => ['memory_job_pending' => true],
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+            'is_context_prompt' => true,
+        ]);
+
+        /** @var AiMessage $userMessage */
+        $userMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+        ]);
+
+        /** @var ThreadMemoryExtractionService&MockInterface $extraction */
+        $extraction = Mockery::mock(ThreadMemoryExtractionService::class);
+        /** @var Expectation $secondExpectation */
+        $secondExpectation = $extraction->shouldReceive('extractFromMessages');
+        $secondExpectation
+            ->once()
+            ->with(
+                Mockery::on(fn (AiThread $argument): bool => $argument->is($thread)),
+                Mockery::on(function ($messages) use ($userMessage): bool {
+                    return $messages instanceof \Illuminate\Support\Collection
+                        && $messages->count() === 1
+                        && $messages->first()->is($userMessage);
+                })
+            );
+
+        $this->app->instance(ThreadMemoryExtractionService::class, $extraction);
+
+        $job = new PushMemoryExtractorAssistantJob($thread->id);
+        $job->handle(
+            $this->app->make(AiThreadService::class),
+            $this->app->make(AiMessageService::class),
+            $this->app->make(ThreadMemoryExtractionService::class)
+        );
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';

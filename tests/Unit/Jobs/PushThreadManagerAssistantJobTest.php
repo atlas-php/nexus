@@ -12,6 +12,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadTitleSummaryService;
 use Atlas\Nexus\Tests\TestCase;
 use Mockery;
+use Mockery\Expectation;
 use Mockery\MockInterface;
 
 /**
@@ -58,14 +59,14 @@ class PushThreadManagerAssistantJobTest extends TestCase
 
         /** @var ThreadTitleSummaryService&MockInterface $summaryService */
         $summaryService = Mockery::mock(ThreadTitleSummaryService::class);
-        /** @phpstan-ignore-next-line dynamic expectation helper */
-        $summaryService->shouldReceive('generateAndSave')
-            ->andReturn([
-                'thread' => $thread,
-                'title' => 'Conversation',
-                'summary' => 'Quick summary.',
-                'keywords' => ['conversation'],
-            ]);
+        /** @var Expectation $expectation */
+        $expectation = $summaryService->shouldReceive('generateAndSave');
+        $expectation->andReturn([
+            'thread' => $thread,
+            'title' => 'Conversation',
+            'summary' => 'Quick summary.',
+            'keywords' => ['conversation'],
+        ]);
 
         $this->app->instance(ThreadTitleSummaryService::class, $summaryService);
 
@@ -73,6 +74,50 @@ class PushThreadManagerAssistantJobTest extends TestCase
 
         $thread->refresh();
         $this->assertSame($message->id, $thread->last_summary_message_id);
+    }
+
+    public function test_it_skips_context_prompt_messages_when_summarizing(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_context_prompt' => true,
+        ]);
+
+        /** @var AiMessage $userMessage */
+        $userMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+        ]);
+
+        /** @var ThreadTitleSummaryService&MockInterface $summaryService */
+        $summaryService = Mockery::mock(ThreadTitleSummaryService::class);
+        /** @var Expectation $secondExpectation */
+        $secondExpectation = $summaryService->shouldReceive('generateAndSave');
+        $secondExpectation->andReturn([
+            'thread' => $thread,
+            'title' => 'Conversation',
+            'summary' => 'Updated summary.',
+            'keywords' => ['conversation'],
+        ]);
+
+        $this->app->instance(ThreadTitleSummaryService::class, $summaryService);
+
+        PushThreadManagerAssistantJob::dispatchSync($thread->id);
+
+        $thread->refresh();
+        $this->assertSame($userMessage->id, $thread->last_summary_message_id);
     }
 
     private function migrationPath(): string
