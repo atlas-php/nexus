@@ -10,6 +10,7 @@ use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Collection;
@@ -153,10 +154,17 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertSame(AiMessageRole::USER, $loggedUserMessage->role);
         $this->assertSame(AiMessageRole::ASSISTANT, $loggedAssistantMessage->role);
 
+        /** @var AssistantRegistry $registry */
+        $registry = $this->app->make(AssistantRegistry::class);
+        $assistant = $registry->require('memory-assistant');
+
         $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
         $this->assertIsString($metadataPayload);
 
         $expectedPayload = implode("\n", [
+            'System prompt:',
+            $assistant->systemPrompt(),
+            '',
             'Current memories:',
             '- None.',
             '',
