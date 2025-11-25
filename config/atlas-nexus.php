@@ -28,6 +28,10 @@ return [
         'pending_message_count' => 4,
     ],
 
+    'threads' => [
+        'snapshot_prompts' => true,
+    ],
+
     'assistants' => [
         \Atlas\Nexus\Assistants\GeneralAssistant::class,
         \Atlas\Nexus\Assistants\HumanAssistant::class,

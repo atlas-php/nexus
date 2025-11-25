@@ -16,6 +16,7 @@ One conversation session. Supports user-facing threads and tool-internal threads
 - title               string nullable
 - status              string              -- 'open','archived','closed'
 - summary             text nullable       -- rolling summary (short-term memory)
+- prompt_snapshot     text nullable       -- frozen assistant system prompt for the thread
 - last_message_at     datetime nullable
 - last_summary_message_id bigint nullable -- most recent message id summarized
 - memories            text nullable       -- JSON array of durable memories for this thread

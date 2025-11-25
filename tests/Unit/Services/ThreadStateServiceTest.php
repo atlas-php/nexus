@@ -195,6 +195,78 @@ class ThreadStateServiceTest extends TestCase
         );
     }
 
+    public function test_it_snapshots_prompt_on_first_state_build(): void
+    {
+        PrimaryAssistantDefinition::updateConfig([
+            'system_prompt' => 'Original instructions.',
+        ]);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+        ]);
+
+        $service = $this->app->make(ThreadStateService::class);
+
+        $freshThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $freshThread);
+        $initialState = $service->forThread($freshThread);
+
+        $this->assertSame('Original instructions.', $initialState->prompt);
+
+        $snapshot = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $snapshot);
+        $this->assertSame('Original instructions.', $snapshot->prompt_snapshot);
+
+        PrimaryAssistantDefinition::updateConfig([
+            'system_prompt' => 'Updated instructions mid-thread.',
+        ]);
+
+        $refreshedThread = $thread->fresh();
+        $this->assertInstanceOf(AiThread::class, $refreshedThread);
+        $subsequentState = $service->forThread($refreshedThread);
+
+        $this->assertSame('Original instructions.', $subsequentState->prompt);
+    }
+
+    public function test_it_can_disable_prompt_snapshotting_with_config(): void
+    {
+        config()->set('atlas-nexus.threads.snapshot_prompts', false);
+
+        try {
+            PrimaryAssistantDefinition::updateConfig([
+                'system_prompt' => 'Unlocked instructions.',
+            ]);
+
+            /** @var AiThread $thread */
+            $thread = AiThread::factory()->create([
+                'assistant_key' => 'general-assistant',
+            ]);
+
+            $service = $this->app->make(ThreadStateService::class);
+
+            $initialThread = $thread->fresh();
+            $this->assertInstanceOf(AiThread::class, $initialThread);
+            $initialState = $service->forThread($initialThread);
+
+            $this->assertSame('Unlocked instructions.', $initialState->prompt);
+            $this->assertNull($thread->fresh()?->prompt_snapshot);
+
+            PrimaryAssistantDefinition::updateConfig([
+                'system_prompt' => 'New unlocked instructions.',
+            ]);
+
+            $refreshedThread = $thread->fresh();
+            $this->assertInstanceOf(AiThread::class, $refreshedThread);
+            $updatedState = $service->forThread($refreshedThread);
+
+            $this->assertSame('New unlocked instructions.', $updatedState->prompt);
+            $this->assertNull($thread->fresh()?->prompt_snapshot);
+        } finally {
+            config()->set('atlas-nexus.threads.snapshot_prompts', true);
+        }
+    }
+
     private function migrationPath(): string
     {
         return __DIR__.'/../../../database/migrations';

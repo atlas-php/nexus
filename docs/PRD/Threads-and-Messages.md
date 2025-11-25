@@ -24,6 +24,7 @@ Table: `ai_threads`
 | `title`               | Optional title                                                    |
 | `status`              | Enum (`open`, `archived`, `closed`)                               |
 | `summary`             | Optional rolling summary                                          |
+| `prompt_snapshot`     | Locked copy of the assistant system prompt used for this thread   |
 | `last_message_at`     | Nullable timestamp                                                |
 | `last_summary_message_id` | Nullable FK-less pointer to the last summarized message      |
 | `memories`            | JSON text storing durable thread-specific memories                |
@@ -60,6 +61,7 @@ Indexes: `thread_id, sequence`; `thread_id`; `user_id`.
 - `ThreadMessageService::sendUserMessage` ensures no other assistant message is `processing` before accepting a new user message.
 - `AiMessageService::markStatus` sets `failed_reason` when status becomes `FAILED`.
 - Messages remain `is_memory_checked = false` until the memory assistant processes them (runs every time four unchecked completed messages accumulate).
+- When `atlas-nexus.threads.snapshot_prompts` is enabled (default), the first assistant response copies the assistant definition prompt into `ai_threads.prompt_snapshot` so all subsequent responses ignore prompt changes until the thread closes.
 
 ## Assistant Response Flow
 1. User message recorded (`status=completed`), assistant placeholder created (`status=processing`).

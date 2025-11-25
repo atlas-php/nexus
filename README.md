@@ -52,9 +52,10 @@ See: [PRD — Assistants](./docs/PRD/Assistants-and-Prompts.md)
 - When invoking `PromptVariableService::apply`, you can merge inline overrides: `['ORG.NAME' => 'Atlas HQ']`.
 
 ## Threads & Messages
-- Threads (`ai_threads`) hold `group_id`, `assistant_key`, `user_id`, status, and metadata.
+- Threads (`ai_threads`) hold `group_id`, `assistant_key`, `user_id`, status, metadata, and `prompt_snapshot` when prompt locking is enabled.
 - Messages (`ai_messages`) store `assistant_key`, role, content type, sequence, status, tokens, and provider ids.
 - `ThreadMessageService::sendUserMessage` records user + assistant placeholder and runs responses inline or queued.
+- Existing threads reuse the prompt stored in `ai_threads.prompt_snapshot`; disable this guard via `atlas-nexus.threads.snapshot_prompts` if prompt updates should immediately apply mid-thread.
 
 See: [PRD — Threads & Messages](./docs/PRD/Threads-and-Messages.md)
 

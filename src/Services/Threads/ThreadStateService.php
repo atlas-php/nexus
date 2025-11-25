@@ -8,6 +8,7 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
+use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
@@ -32,7 +33,8 @@ class ThreadStateService
         private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
-        private readonly AssistantRegistry $assistantRegistry
+        private readonly AssistantRegistry $assistantRegistry,
+        private readonly AiThreadService $threadService
     ) {}
 
     public function forThread(AiThread $thread): ThreadState
@@ -44,7 +46,7 @@ class ThreadStateService
         }
 
         $assistant = $this->assistantRegistry->require($assistantKey);
-        $prompt = $assistant->systemPrompt();
+        $prompt = $this->resolvePrompt($thread, $assistant);
         $messages = $this->messageService->query()
             ->where('thread_id', $thread->id)
             ->where('status', AiMessageStatus::COMPLETED->value)
@@ -152,5 +154,51 @@ class ThreadStateService
         $loadedParent = $state->thread->parentThread()->first();
 
         return $loadedParent instanceof AiThread ? $loadedParent : $state->thread;
+    }
+
+    protected function resolvePrompt(AiThread $thread, ResolvedAssistant $assistant): ?string
+    {
+        $prompt = $this->normalizePrompt($assistant->systemPrompt());
+
+        if (! $this->promptSnapshotsEnabled()) {
+            return $prompt;
+        }
+
+        $snapshot = $this->normalizePrompt($thread->prompt_snapshot ?? null);
+
+        if ($snapshot !== null) {
+            return $snapshot;
+        }
+
+        if ($prompt === null) {
+            return null;
+        }
+
+        $this->capturePromptSnapshot($thread, $prompt);
+
+        return $prompt;
+    }
+
+    protected function capturePromptSnapshot(AiThread $thread, string $prompt): void
+    {
+        $updated = $this->threadService->update($thread, [
+            'prompt_snapshot' => $prompt,
+        ]);
+
+        $thread->prompt_snapshot = $updated->prompt_snapshot;
+    }
+
+    protected function promptSnapshotsEnabled(): bool
+    {
+        return (bool) config('atlas-nexus.threads.snapshot_prompts', true);
+    }
+
+    protected function normalizePrompt(?string $prompt): ?string
+    {
+        if ($prompt === null) {
+            return null;
+        }
+
+        return $prompt === '' ? null : $prompt;
     }
 }

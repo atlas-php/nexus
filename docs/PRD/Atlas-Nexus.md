@@ -33,6 +33,7 @@ Each table definition with fields is detailed in the linked PRDs below.
 - `atlas-nexus.database.connection` — optional connection override for all Nexus tables.
 - `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, assistant snapshots).
 - `atlas-nexus.queue` — optional queue name for assistant response jobs.
+- `atlas-nexus.threads.snapshot_prompts` — toggle whether running threads lock the assistant prompt on first response (enabled by default).
 - `atlas-nexus.assistants` — list of assistant definition classes.
 - `atlas-nexus.variables` — list of prompt variable providers resolved at runtime.
 

@@ -30,6 +30,7 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property string|null $title
  * @property AiThreadStatus $status
  * @property string|null $summary
+ * @property string|null $prompt_snapshot
  * @property \Illuminate\Support\Carbon|null $last_message_at
  * @property int|null $last_summary_message_id
  * @property array<string, mixed>|null $metadata
@@ -59,6 +60,7 @@ class AiThread extends AtlasModel
         'type' => AiThreadType::class,
         'status' => AiThreadStatus::class,
         'summary' => 'string',
+        'prompt_snapshot' => 'string',
         'last_message_at' => 'datetime',
         'last_summary_message_id' => 'int',
         'metadata' => 'array',
