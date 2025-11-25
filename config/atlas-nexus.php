@@ -40,6 +40,8 @@ return [
         // Additional consumer-defined assistants go here.
     ],
 
+    'context_prompt' => \Atlas\Nexus\Support\Prompts\ContextPrompt::class,
+
     'variables' => [
         \Atlas\Nexus\Support\Prompts\Variables\ThreadPromptVariables::class,
         \Atlas\Nexus\Support\Prompts\Variables\UserPromptVariables::class,

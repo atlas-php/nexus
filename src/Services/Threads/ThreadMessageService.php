@@ -7,16 +7,20 @@ namespace Atlas\Nexus\Services\Threads;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Prompts\ContextPromptService;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Carbon;
 use RuntimeException;
+
+use function trim;
 
 /**
  * Class ThreadMessageService
@@ -30,11 +34,12 @@ class ThreadMessageService
         private readonly AiThreadService $threadService,
         private readonly AssistantResponseService $assistantResponseService,
         private readonly AssistantRegistry $assistantRegistry,
+        private readonly ContextPromptService $contextPromptService,
         private readonly ConfigRepository $config
     ) {}
 
     /**
-     * @return array{user: AiMessage, assistant: AiMessage}
+     * @return array{user: AiMessage, assistant: AiMessage, context_prompt: AiMessage|null}
      */
     public function sendUserMessage(
         AiThread $thread,
@@ -47,6 +52,7 @@ class ThreadMessageService
         $assistant = $this->resolveAssistant($thread);
 
         $userId = $userId ?? $thread->user_id;
+        $contextMessage = $this->maybeCreateContextMessage($thread, $assistant);
         $sequence = $this->nextSequence($thread);
 
         /** @var AiMessage $userMessage */
@@ -93,6 +99,7 @@ class ThreadMessageService
         return [
             'user' => $userMessage,
             'assistant' => $assistantMessage,
+            'context_prompt' => $contextMessage,
         ];
     }
 
@@ -134,5 +141,65 @@ class ThreadMessageService
         $queue = $this->config->get('atlas-nexus.queue');
 
         return is_string($queue) && $queue !== '' ? $queue : null;
+    }
+
+    protected function maybeCreateContextMessage(AiThread $thread, ResolvedAssistant $assistant): ?AiMessage
+    {
+        if ($this->threadHasMessages($thread) || ! $this->isUserThread($thread)) {
+            return null;
+        }
+
+        if (! $this->contextPromptConfigured()) {
+            return null;
+        }
+
+        $content = $this->contextPromptService->buildForThread($thread, $assistant);
+
+        if (! is_string($content) || trim($content) === '') {
+            return null;
+        }
+
+        /** @var AiMessage $message */
+        $message = $this->messageService->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $assistant->key(),
+            'user_id' => null,
+            'group_id' => $thread->group_id,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => $content,
+            'content_type' => AiMessageContentType::TEXT->value,
+            'sequence' => $this->nextSequence($thread),
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_context_prompt' => true,
+        ]);
+
+        return $message;
+    }
+
+    protected function threadHasMessages(AiThread $thread): bool
+    {
+        return $this->messageService->query()
+            ->where('thread_id', $thread->id)
+            ->exists();
+    }
+
+    protected function isUserThread(AiThread $thread): bool
+    {
+        $typeValue = $thread->getAttribute('type');
+
+        if ($typeValue instanceof AiThreadType) {
+            $typeValue = $typeValue->value;
+        } elseif (! is_string($typeValue)) {
+            $typeValue = (string) $typeValue;
+        }
+
+        return $typeValue === AiThreadType::USER->value;
+    }
+
+    protected function contextPromptConfigured(): bool
+    {
+        $configured = $this->config->get('atlas-nexus.context_prompt');
+
+        return is_string($configured) && $configured !== '';
     }
 }

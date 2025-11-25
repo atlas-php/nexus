@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedInteger('sequence');
             $table->string('status')->default('completed');
             $table->boolean('is_memory_checked')->default(false)->index();
+            $table->boolean('is_context_prompt')->default(false);
             $table->text('failed_reason')->nullable();
             $table->string('model')->nullable();
             $table->unsignedInteger('tokens_in')->nullable();

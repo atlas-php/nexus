@@ -28,6 +28,10 @@ return [
         'pending_message_count' => 4,
     ],
 
+    'threads' => [
+        'snapshot_prompts' => true,
+    ],
+
     'assistants' => [
         \Atlas\Nexus\Assistants\GeneralAssistant::class,
         \Atlas\Nexus\Assistants\HumanAssistant::class,
@@ -35,6 +39,8 @@ return [
         \Atlas\Nexus\Assistants\MemoryAssistant::class,
         // Additional consumer-defined assistants go here.
     ],
+
+    'context_prompt' => \Atlas\Nexus\Support\Prompts\ContextPrompt::class,
 
     'variables' => [
         \Atlas\Nexus\Support\Prompts\Variables\ThreadPromptVariables::class,

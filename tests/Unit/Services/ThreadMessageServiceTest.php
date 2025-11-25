@@ -7,14 +7,18 @@ namespace Atlas\Nexus\Tests\Unit\Services;
 use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
+use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
+use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Prompts\CustomContextPrompt;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Queue;
 use Prism\Prism\Enums\FinishReason;
@@ -41,27 +45,52 @@ class ThreadMessageServiceTest extends TestCase
             '--path' => $this->migrationPath(),
             '--realpath' => true,
         ])->run();
+
+        App::forgetInstance(ThreadMessageService::class);
+        App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
     }
 
     public function test_it_dispatches_response_job_after_recording_messages(): void
     {
         Queue::fake();
 
+        AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 321,
+            'type' => AiThreadType::USER->value,
+            'summary' => 'Here is the latest summary captured for the user.',
+            'last_message_at' => Carbon::now()->subMinutes(10),
+        ]);
+
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => 321,
+            'type' => AiThreadType::USER->value,
+            'summary' => null,
         ]);
 
         $service = $this->app->make(ThreadMessageService::class);
 
         $result = $service->sendUserMessage($thread, 'Hello Nexus', 654);
 
+        $contextMessage = AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->first();
+
+        $this->assertInstanceOf(AiMessage::class, $contextMessage);
+        $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
+        $this->assertSame(1, $contextMessage->sequence);
+        $this->assertTrue($contextMessage->role === AiMessageRole::ASSISTANT);
+        $this->assertStringContainsString('Here is some recent context for this user.', $contextMessage->content);
+        $this->assertStringContainsString('Here is the latest summary captured for the user.', $contextMessage->content);
+
         $this->assertSame('Hello Nexus', $result['user']->content);
         $this->assertTrue($result['user']->status === AiMessageStatus::COMPLETED);
         $this->assertTrue($result['assistant']->status === AiMessageStatus::PROCESSING);
-        $this->assertSame(1, $result['user']->sequence);
-        $this->assertSame(2, $result['assistant']->sequence);
+        $this->assertSame(2, $result['user']->sequence);
+        $this->assertSame(3, $result['assistant']->sequence);
         $freshThread = $thread->fresh();
         $this->assertInstanceOf(AiThread::class, $freshThread);
         $this->assertNotNull($freshThread->last_message_at);
@@ -69,6 +98,160 @@ class ThreadMessageServiceTest extends TestCase
         Queue::assertPushed(RunAssistantResponseJob::class, function (RunAssistantResponseJob $job) use ($result): bool {
             return $job->assistantMessageId === $result['assistant']->id;
         });
+    }
+
+    public function test_it_skips_context_prompt_for_tool_threads(): void
+    {
+        Queue::fake();
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 444,
+            'type' => AiThreadType::TOOL->value,
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+
+        $result = $service->sendUserMessage($thread, 'Hello tools', $thread->user_id);
+
+        $this->assertSame(1, $result['user']->sequence);
+        $this->assertSame(2, $result['assistant']->sequence);
+        $this->assertNull($result['context_prompt']);
+        $this->assertSame(0, AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->count());
+    }
+
+    public function test_it_skips_context_prompt_when_not_configured(): void
+    {
+        Queue::fake();
+        config()->set('atlas-nexus.context_prompt', null);
+        App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
+        App::forgetInstance(ThreadMessageService::class);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 222,
+            'type' => AiThreadType::USER->value,
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+
+        $result = $service->sendUserMessage($thread, 'Hello configuration', $thread->user_id);
+
+        $this->assertSame(1, $result['user']->sequence);
+        $this->assertSame(2, $result['assistant']->sequence);
+        $this->assertNull($result['context_prompt']);
+        $this->assertSame(0, AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->count());
+    }
+
+    public function test_it_creates_context_prompt_when_no_summary_or_memories_exist(): void
+    {
+        Queue::fake();
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 333,
+            'type' => AiThreadType::USER->value,
+            'summary' => null,
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+
+        $result = $service->sendUserMessage($thread, 'Hello blank context', $thread->user_id);
+
+        $this->assertSame(2, $result['user']->sequence);
+        $this->assertSame(3, $result['assistant']->sequence);
+
+        $contextMessage = AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->first();
+
+        $this->assertInstanceOf(AiMessage::class, $contextMessage);
+        $this->assertSame(1, $contextMessage->sequence);
+        $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
+        $this->assertStringContainsString('No summary captured yet.', $contextMessage->content);
+        $this->assertStringContainsString('latest memories:', $contextMessage->content);
+        $this->assertStringContainsString('None recorded yet.', $contextMessage->content);
+    }
+
+    public function test_it_includes_memories_when_available_without_summary(): void
+    {
+        Queue::fake();
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 111,
+            'type' => AiThreadType::USER->value,
+            'summary' => null,
+        ]);
+
+        AiMemory::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'user_id' => $thread->user_id,
+            'content' => 'User prefers concise updates.',
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+
+        $result = $service->sendUserMessage($thread, 'Hello memory driven', $thread->user_id);
+
+        $contextMessage = AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->first();
+
+        $this->assertInstanceOf(AiMessage::class, $contextMessage);
+        $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
+        $this->assertStringContainsString('No summary captured yet.', $contextMessage->content);
+        $this->assertStringContainsString('latest memories:', $contextMessage->content);
+        $this->assertStringContainsString('User prefers concise updates.', $contextMessage->content);
+    }
+
+    public function test_it_honors_custom_prompt_template_with_variables(): void
+    {
+        Queue::fake();
+        config()->set('atlas-nexus.context_prompt', CustomContextPrompt::class);
+
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 973,
+            'type' => AiThreadType::USER->value,
+            'summary' => 'Focus on Q3 revenue analysis.',
+        ]);
+
+        AiMemory::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'user_id' => $thread->user_id,
+            'content' => 'Highlight customer growth before budget details.',
+        ]);
+
+        $service = $this->app->make(ThreadMessageService::class);
+        $result = $service->sendUserMessage($thread, 'Custom template please', $thread->user_id);
+
+        $contextMessage = AiMessage::query()
+            ->where('thread_id', $thread->id)
+            ->where('is_context_prompt', true)
+            ->first();
+
+        $this->assertInstanceOf(AiMessage::class, $contextMessage);
+        $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
+        $this->assertSame(
+            'Summary:Focus on Q3 revenue analysis.|Memories:Highlight customer growth before budget details.',
+            $contextMessage->content
+        );
     }
 
     public function test_it_blocks_new_messages_when_assistant_still_processing(): void
@@ -79,6 +262,7 @@ class ThreadMessageServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => 999,
+            'type' => AiThreadType::USER->value,
         ]);
 
         AiMessage::factory()->create([
@@ -107,6 +291,7 @@ class ThreadMessageServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => 555,
+            'type' => AiThreadType::USER->value,
         ]);
 
         $service = $this->app->make(ThreadMessageService::class);
@@ -129,6 +314,7 @@ class ThreadMessageServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => 777,
+            'type' => AiThreadType::USER->value,
         ]);
 
         /** @var \Illuminate\Support\Collection<int, \Prism\Prism\Contracts\Message> $messages */
@@ -174,6 +360,7 @@ class ThreadMessageServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'user_id' => 888,
+            'type' => AiThreadType::USER->value,
         ]);
 
         App::instance(\Atlas\Nexus\Integrations\Prism\TextRequestFactory::class, new ThrowingTextRequestFactory);

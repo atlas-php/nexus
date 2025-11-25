@@ -71,6 +71,7 @@ class AiMessage extends AtlasModel
         'raw_response' => 'array',
         'metadata' => 'array',
         'is_memory_checked' => 'bool',
+        'is_context_prompt' => 'bool',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
