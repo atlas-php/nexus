@@ -149,10 +149,6 @@ class ThreadMessageService
             return null;
         }
 
-        if (! $this->contextPromptConfigured()) {
-            return null;
-        }
-
         $content = $this->contextPromptService->buildForThread($thread, $assistant);
 
         if (! is_string($content) || trim($content) === '') {
@@ -194,12 +190,5 @@ class ThreadMessageService
         }
 
         return $typeValue === AiThreadType::USER->value;
-    }
-
-    protected function contextPromptConfigured(): bool
-    {
-        $configured = $this->config->get('atlas-nexus.context_prompt');
-
-        return is_string($configured) && $configured !== '';
     }
 }

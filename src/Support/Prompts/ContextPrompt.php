@@ -36,9 +36,18 @@ class ContextPrompt
         private readonly AiThreadService $threadService
     ) {}
 
-    public function compose(AiThread $thread, ResolvedAssistant $assistant): ?string
-    {
+    public function compose(
+        AiThread $thread,
+        ResolvedAssistant $assistant,
+        string $template
+    ): ?ContextPromptPayload {
         if (! $this->shouldAttach($thread)) {
+            return null;
+        }
+
+        $resolvedTemplate = $this->normalizeTemplate($template);
+
+        if ($resolvedTemplate === null) {
             return null;
         }
 
@@ -52,12 +61,18 @@ class ContextPrompt
         $state = $this->threadState($thread, $assistant, $memories);
         $context = new PromptVariableContext($state);
         $customVariables = $this->customVariables($summary, $memoryStrings);
-        $template = $this->promptTemplate();
-
-        $rendered = $this->promptVariableService->apply($template, $context, $customVariables);
+        $rendered = $this->promptVariableService->apply($resolvedTemplate, $context, $customVariables);
         $normalized = trim((string) preg_replace("/\n{3,}/", "\n\n", $rendered));
 
-        return $normalized === '' ? null : $normalized;
+        if ($normalized === '') {
+            return null;
+        }
+
+        return new ContextPromptPayload(
+            $normalized,
+            $summary,
+            $memoryStrings
+        );
     }
 
     protected function shouldAttach(AiThread $thread): bool
@@ -135,15 +150,11 @@ class ContextPrompt
         return sprintf("Last thread summary:\n%s", $summary);
     }
 
-    protected function promptTemplate(): string
+    private function normalizeTemplate(string $template): ?string
     {
-        return <<<'PROMPT'
-Recent known context for this user.
+        $trimmed = trim($template);
 
-{CONTEXT_PROMPT.LAST_SUMMARY_SECTION}
-
-{CONTEXT_PROMPT.MEMORIES_SECTION}
-PROMPT;
+        return $trimmed === '' ? null : $template;
     }
 
     /**

@@ -78,4 +78,23 @@ You are a helpful AI assistant focused on educating and supporting the user. You
 Use **markdown** format.
 PROMPT;
     }
+
+    public function contextPrompt(): ?string
+    {
+        return <<<'PROMPT'
+Recent known context for this user.
+
+{CONTEXT_PROMPT.LAST_SUMMARY_SECTION}
+
+{CONTEXT_PROMPT.MEMORIES_SECTION}
+PROMPT;
+    }
+
+    /**
+     * @param  array<int, string>  $memories
+     */
+    public function isContextAvailable(?string $summary, array $memories): bool
+    {
+        return $summary !== null || $memories !== [];
+    }
 }

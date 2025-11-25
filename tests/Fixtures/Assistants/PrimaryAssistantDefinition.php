@@ -25,6 +25,27 @@ class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
             'provider_tools' => [],
             'metadata' => [],
             'reasoning' => null,
+            'context_prompt' => <<<'PROMPT'
+Recent known context for this user.
+
+{CONTEXT_PROMPT.LAST_SUMMARY_SECTION}
+
+{CONTEXT_PROMPT.MEMORIES_SECTION}
+PROMPT,
         ];
+    }
+
+    /**
+     * @param  array<int, string>  $memories
+     */
+    public function isContextAvailable(?string $summary, array $memories): bool
+    {
+        $configured = $this->data('context_available');
+
+        if (is_bool($configured)) {
+            return $configured;
+        }
+
+        return $summary !== null || $memories !== [];
     }
 }

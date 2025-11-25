@@ -23,6 +23,8 @@ Each definition class must implement:
 | `key()` | Unique assistant key used by all runtime tables (`assistant_key` columns). |
 | `name()` / `description()` | Display metadata for UIs or logs. |
 | `systemPrompt()` | Raw system prompt text that `ThreadStateService` renders with prompt variables. |
+| `contextPrompt()` | Optional assistant-authored context prompt template rendered into a kickoff assistant message for new user threads. Return `null` to skip context prompts. |
+| `isContextAvailable($summary, $memories)` | Guards whether the rendered context prompt should be attached. Defaults to `true`; assistants may inspect the summary/memory lists and return `false` to skip the message when it adds no value. |
 | `model()` / `temperature()` / `topP()` / `maxOutputTokens()` | Provider defaults applied by `AssistantResponseService`. |
 | `maxDefaultSteps()` | Default Prism `max_steps` value per assistant; overrides config defaults. |
 | `reasoning()` | Optional provider-specific reasoning options (e.g., OpenAI `reasoning` payload). Return `null` to disable reasoning. |

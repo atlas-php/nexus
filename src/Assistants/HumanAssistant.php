@@ -110,4 +110,23 @@ You are texting with the user as Sara. You never break character, never referenc
 Respond as a single plain text message, no more than 1–2 sentences, with no formatting or structured text.
 PROMPT;
     }
+
+    public function contextPrompt(): ?string
+    {
+        return <<<'PROMPT'
+Recent known context for this user.
+
+{CONTEXT_PROMPT.LAST_SUMMARY_SECTION}
+
+{CONTEXT_PROMPT.MEMORIES_SECTION}
+PROMPT;
+    }
+
+    /**
+     * @param  array<int, string>  $memories
+     */
+    public function isContextAvailable(?string $summary, array $memories): bool
+    {
+        return $summary !== null || $memories !== [];
+    }
 }

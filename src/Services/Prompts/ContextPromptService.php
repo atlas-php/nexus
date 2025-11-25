@@ -7,57 +7,38 @@ namespace Atlas\Nexus\Services\Prompts;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Support\Prompts\ContextPrompt;
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
-use Illuminate\Contracts\Foundation\Application;
 
 /**
  * Class ContextPromptService
  *
- * Resolves the configured context prompt builder and renders its content for a given thread.
+ * Generates the assistant-owned context prompt message using the shared builder.
  */
 class ContextPromptService
 {
-    private bool $resolved = false;
-
-    private ?ContextPrompt $contextPrompt = null;
-
     public function __construct(
-        private readonly Application $app,
-        private readonly ConfigRepository $config
+        private readonly ContextPrompt $contextPrompt
     ) {}
 
     public function buildForThread(AiThread $thread, ResolvedAssistant $assistant): ?string
     {
-        $prompt = $this->prompt();
+        $template = $assistant->contextPrompt();
 
-        if ($prompt === null) {
+        if ($template === null) {
             return null;
         }
 
-        return $prompt->compose($thread, $assistant);
-    }
+        $payload = $this->contextPrompt->compose($thread, $assistant, $template);
 
-    private function prompt(): ?ContextPrompt
-    {
-        if ($this->resolved) {
-            return $this->contextPrompt;
-        }
-
-        $this->resolved = true;
-        $class = $this->config->get('atlas-nexus.context_prompt');
-
-        if (! is_string($class) || $class === '') {
+        if ($payload === null) {
             return null;
         }
 
-        $instance = $this->app->make($class);
+        $definition = $assistant->definition();
 
-        if (! $instance instanceof ContextPrompt) {
+        if (! $definition->isContextAvailable($payload->summary(), $payload->memories())) {
             return null;
         }
 
-        $this->contextPrompt = $instance;
-
-        return $this->contextPrompt;
+        return $payload->content();
     }
 }

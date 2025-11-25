@@ -15,7 +15,6 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Prompts\CustomContextPrompt;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -124,10 +123,12 @@ class ThreadMessageServiceTest extends TestCase
             ->count());
     }
 
-    public function test_it_skips_context_prompt_when_not_configured(): void
+    public function test_it_skips_context_prompt_when_assistant_has_no_template(): void
     {
         Queue::fake();
-        config()->set('atlas-nexus.context_prompt', null);
+        PrimaryAssistantDefinition::updateConfig([
+            'context_prompt' => null,
+        ]);
         App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
         App::forgetInstance(ThreadMessageService::class);
 
@@ -151,7 +152,7 @@ class ThreadMessageServiceTest extends TestCase
             ->count());
     }
 
-    public function test_it_creates_context_prompt_when_no_summary_or_memories_exist(): void
+    public function test_it_skips_context_prompt_when_no_summary_or_memories_exist(): void
     {
         Queue::fake();
 
@@ -167,20 +168,13 @@ class ThreadMessageServiceTest extends TestCase
 
         $result = $service->sendUserMessage($thread, 'Hello blank context', $thread->user_id);
 
-        $this->assertSame(2, $result['user']->sequence);
-        $this->assertSame(3, $result['assistant']->sequence);
-
-        $contextMessage = AiMessage::query()
+        $this->assertSame(1, $result['user']->sequence);
+        $this->assertSame(2, $result['assistant']->sequence);
+        $this->assertNull($result['context_prompt']);
+        $this->assertSame(0, AiMessage::query()
             ->where('thread_id', $thread->id)
             ->where('is_context_prompt', true)
-            ->first();
-
-        $this->assertInstanceOf(AiMessage::class, $contextMessage);
-        $this->assertSame(1, $contextMessage->sequence);
-        $this->assertSame($contextMessage->id, $result['context_prompt']?->id);
-        $this->assertStringContainsString('No summary', $contextMessage->content);
-        $this->assertStringContainsString('latest memories for this user:', $contextMessage->content);
-        $this->assertStringContainsString('- None.', $contextMessage->content);
+            ->count());
     }
 
     public function test_it_includes_memories_when_available_without_summary(): void
@@ -221,7 +215,11 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_honors_custom_prompt_template_with_variables(): void
     {
         Queue::fake();
-        config()->set('atlas-nexus.context_prompt', CustomContextPrompt::class);
+        PrimaryAssistantDefinition::updateConfig([
+            'context_prompt' => 'Summary:{CONTEXT_PROMPT.LAST_SUMMARY}|Memories:{CONTEXT_PROMPT.MEMORIES}',
+        ]);
+        App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
+        App::forgetInstance(ThreadMessageService::class);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([

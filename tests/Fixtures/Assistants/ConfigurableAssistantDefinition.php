@@ -63,6 +63,23 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
         return $this->data('description');
     }
 
+    public function contextPrompt(): ?string
+    {
+        $template = $this->data('context_prompt');
+
+        return is_string($template) ? $template : null;
+    }
+
+    /**
+     * @param  array<int, string>  $memories
+     */
+    public function isContextAvailable(?string $summary, array $memories): bool
+    {
+        $available = $this->data('context_available');
+
+        return $available !== false;
+    }
+
     public function systemPrompt(): string
     {
         return (string) $this->data('system_prompt', 'You are a test assistant.');

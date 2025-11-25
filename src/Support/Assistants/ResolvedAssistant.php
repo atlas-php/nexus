@@ -17,6 +17,8 @@ class ResolvedAssistant
 
     private ?string $description;
 
+    private ?string $contextPrompt;
+
     private ?string $model;
 
     private ?float $temperature;
@@ -70,6 +72,7 @@ class ResolvedAssistant
         $this->key = is_string($key) && $key !== '' ? strtolower($key) : strtolower($definition->key());
         $this->name = (string) ($attributes['name'] ?? $definition->name());
         $this->description = $this->normalizeNullableString($attributes['description'] ?? null);
+        $this->contextPrompt = $this->normalizeNullableString($attributes['context_prompt'] ?? $definition->contextPrompt());
         $this->model = $this->normalizeNullableString($attributes['default_model'] ?? null);
         $this->temperature = $this->normalizeNullableFloat($attributes['temperature'] ?? null);
         $this->topP = $this->normalizeNullableFloat($attributes['top_p'] ?? null);
@@ -103,6 +106,11 @@ class ResolvedAssistant
     public function description(): ?string
     {
         return $this->description;
+    }
+
+    public function contextPrompt(): ?string
+    {
+        return $this->contextPrompt;
     }
 
     public function model(): ?string

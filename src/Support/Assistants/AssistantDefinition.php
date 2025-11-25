@@ -24,6 +24,11 @@ abstract class AssistantDefinition
         return null;
     }
 
+    public function contextPrompt(): ?string
+    {
+        return null;
+    }
+
     public function model(): ?string
     {
         return null;
@@ -102,6 +107,14 @@ abstract class AssistantDefinition
     }
 
     /**
+     * @param  array<int, string>  $memories
+     */
+    public function isContextAvailable(?string $summary, array $memories): bool
+    {
+        return true;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     final public function assistantAttributes(): array
@@ -115,6 +128,7 @@ abstract class AssistantDefinition
             'key' => $this->key(),
             'name' => $this->name(),
             'description' => $this->description(),
+            'context_prompt' => $this->contextPrompt(),
             'default_model' => $this->model(),
             'temperature' => $this->temperature(),
             'top_p' => $this->topP(),
