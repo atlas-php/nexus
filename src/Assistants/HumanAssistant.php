@@ -40,7 +40,7 @@ class HumanAssistant extends AssistantDefinition
 
     public function maxDefaultSteps(): ?int
     {
-        return 3;
+        return 4;
     }
 
     /**
