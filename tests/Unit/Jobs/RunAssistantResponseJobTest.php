@@ -302,7 +302,7 @@ class RunAssistantResponseJobTest extends TestCase
     {
         Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 10);
-        config()->set('atlas-nexus.memory_extractor.pending_message_count', 4);
+        config()->set('atlas-nexus.memory.pending_message_count', 4);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -376,7 +376,7 @@ class RunAssistantResponseJobTest extends TestCase
     {
         Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 10);
-        config()->set('atlas-nexus.memory_extractor.pending_message_count', 2);
+        config()->set('atlas-nexus.memory.pending_message_count', 2);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([

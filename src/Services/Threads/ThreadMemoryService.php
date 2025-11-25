@@ -49,7 +49,21 @@ class ThreadMemoryService
         /** @var EloquentCollection<int, AiMemory> $memories */
         $memories = $query->get();
 
-        return $memories;
+        $sorted = $memories->sort(function (AiMemory $a, AiMemory $b): int {
+            $scoreA = $this->effectiveImportance($a);
+            $scoreB = $this->effectiveImportance($b);
+
+            if ($scoreA === $scoreB) {
+                $timeA = $a->created_at?->getTimestamp() ?? 0;
+                $timeB = $b->created_at?->getTimestamp() ?? 0;
+
+                return $timeB <=> $timeA;
+            }
+
+            return $scoreB <=> $scoreA;
+        })->values();
+
+        return new EloquentCollection($sorted->all());
     }
 
     /**
@@ -81,6 +95,7 @@ class ThreadMemoryService
                 'group_id' => $thread->group_id,
                 'content' => $content,
                 'source_message_ids' => $this->normalizeMessageIds($memory['source_message_ids'] ?? []),
+                'importance' => $this->resolveImportance($memory),
                 'created_at' => Carbon::now(),
             ];
 
@@ -162,5 +177,60 @@ class ThreadMemoryService
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    /**
+     * @param  array<int, string>  $contents
+     */
+    public function removeMemories(AiThread $thread, array $contents): int
+    {
+        $normalized = [];
+
+        foreach ($contents as $content) {
+            $value = $this->stringValue($content);
+
+            if ($value !== null) {
+                $normalized[] = $value;
+            }
+        }
+
+        if ($normalized === []) {
+            return 0;
+        }
+
+        return (int) $this->memoryService->query()
+            ->where('assistant_key', $thread->assistant_key)
+            ->where('user_id', $thread->user_id)
+            ->whereIn('content', $normalized)
+            ->delete();
+    }
+
+    /**
+     * @param  array<string, mixed>  $memory
+     */
+    private function resolveImportance(array $memory): int
+    {
+        $value = $memory['importance'] ?? config('atlas-nexus.memory.default_importance', 3);
+        $intValue = (int) $value;
+
+        return max(1, min(5, $intValue));
+    }
+
+    private function effectiveImportance(AiMemory $memory): float
+    {
+        $base = (int) ($memory->importance ?? $this->resolveImportance([]));
+        $createdAt = $memory->created_at ?? $memory->updated_at;
+        $ageDays = $createdAt === null ? 0 : $createdAt->diffInDays(Carbon::now());
+        $decayDays = $this->decayDays();
+        $decaySteps = (int) floor($ageDays / $decayDays);
+
+        return max(0, $base - $decaySteps);
+    }
+
+    private function decayDays(): int
+    {
+        $days = (int) config('atlas-nexus.memory.decay_days', 30);
+
+        return $days > 0 ? $days : 30;
     }
 }

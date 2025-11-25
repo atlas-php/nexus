@@ -20,9 +20,9 @@ Nexus captures durable user facts as thread-level memories that can be reused ac
 ## Extraction Flow
 1. Every message defaults to `is_memory_checked = false`.
 2. After each assistant reply, `AssistantResponseService` counts unchecked, completed messages.
-3. When the configured threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) of unchecked messages exists, it dispatches `PushMemoryExtractorAssistantJob` (one at a time per thread; tracked via `thread.metadata.memory_job_pending`).
+3. When the configured threshold (`atlas-nexus.memory.pending_message_count`, default `4`) of unchecked messages exists, it dispatches `PushMemoryExtractorAssistantJob` (one at a time per thread; tracked via `thread.metadata.memory_job_pending`).
 4. The job collects all unchecked completed messages, current thread memories, and the user's aggregated memories across threads.
-5. `ThreadMemoryExtractionService` sends this payload to the hidden `memory-extractor` assistant, which must return JSON:
+5. `ThreadMemoryExtractionService` sends this payload to the hidden `memory assistant`, which must return JSON:
    ```json
    {
      "memories": [
@@ -42,5 +42,5 @@ Failures leave `is_memory_checked` untouched so the next dispatch will retry onc
 
 ## Services
 - `ThreadMemoryService` — normalizes, deduplicates, and appends thread memories; exposes per-user listings.
-- `ThreadMemoryExtractionService` — orchestrates the `memory-extractor` assistant requests and message flag updates.
+- `ThreadMemoryExtractionService` — orchestrates the `memory assistant` requests and message flag updates.
 - `PushMemoryExtractorAssistantJob` — queued job that triggers extraction when unchecked message thresholds are met.

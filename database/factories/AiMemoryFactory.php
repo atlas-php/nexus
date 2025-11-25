@@ -23,10 +23,11 @@ class AiMemoryFactory extends Factory
         return [
             'group_id' => $this->faker->optional()->numberBetween(1, 50),
             'user_id' => $this->faker->numberBetween(1, 5_000),
-            'assistant_key' => $this->faker->randomElement(['general-assistant', 'thread-manager', 'memory-extractor']),
+            'assistant_key' => $this->faker->randomElement(['general-assistant', 'thread-manager', 'memory-assistant']),
             'thread_id' => $this->faker->optional()->numberBetween(1, 1_000),
             'content' => $this->faker->sentence(8),
             'source_message_ids' => $this->faker->optional()->randomElements(range(1, 20), 2),
+            'importance' => 3,
         ];
     }
 }

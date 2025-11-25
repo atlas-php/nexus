@@ -68,7 +68,7 @@ See: [PRD — Tools & Tool Runs](./docs/PRD/Tools-and-ToolRuns.md)
 
 ## Memories
 - Thread-level memories (`ai_threads.memories`) capture durable facts/preferences scoped to user + assistant.
-- A background memory extractor assistant reviews unchecked messages based on the configurable threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) and appends durable facts to `ai_threads.memories`, which can be surfaced with `{MEMORY.CONTEXT}`.
+- A background memory extractor assistant reviews unchecked messages based on the configurable threshold (`atlas-nexus.memory.pending_message_count`, default `4`) and appends durable facts to `ai_threads.memories`, which can be surfaced with `{MEMORY.CONTEXT}`.
 
 See: [PRD — Memories](./docs/PRD/Memories.md)
 

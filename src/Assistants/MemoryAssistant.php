@@ -7,20 +7,20 @@ namespace Atlas\Nexus\Assistants;
 use Atlas\Nexus\Support\Assistants\AssistantDefinition;
 
 /**
- * Class MemoryExtractorAssistant
+ * Class MemoryAssistant
  *
  * Reviews unprocessed thread messages alongside known memories to capture new, non-duplicated facts.
  */
-class MemoryExtractorAssistant extends AssistantDefinition
+class MemoryAssistant extends AssistantDefinition
 {
     public function key(): string
     {
-        return 'memory-extractor';
+        return 'memory-assistant';
     }
 
     public function name(): string
     {
-        return 'Memory Extractor';
+        return 'Memory Assistant';
     }
 
     public function description(): ?string
@@ -62,16 +62,21 @@ You review the **current segment of the conversation** along with the **existing
 # Instructions
 
 1. Extract **new** meaningful memories that do not already exist in the stored memory list.
-2. Output all newly discovered memories as a **JSON array of strings** where each entry is a concise factual statement.
+2. Output all newly discovered memories as a **JSON array** where each entry is an object containing:
+   * `content` — a concise factual statement.
+   * `importance` — an integer between **1 and 5**, where:
+     * **1** = minimally relevant, weak preference, lightweight fact.
+     * **3** = moderately relevant, recurring preference or notable personal detail.
+     * **5** = highly durable, identity‑level fact that significantly affects personalization.
+   * Importance must reflect how long-term, impactful, and user-defining the fact is.
 3. If **no** new memories exist, return an **empty JSON array**: `[]`.
 4. Only extract memories that are:
-
    * Stable, recurring, or explicitly stated traits, interests, preferences, or motivations.
    * Concrete facts, not interpretations.
    * Meaningful enough to be useful for personalization.
 5. Do **not** return or rewrite the entire memory list—only the newly found memories.
 6. Avoid fluff, emotional wording, speculation, or assumptions.
-7. Output **only** the JSON array, with no labels or commentary.
+7. Output **only** the JSON array with no labels, commentary, or surrounding text.
 
 # Constraints
 
@@ -81,24 +86,37 @@ You review the **current segment of the conversation** along with the **existing
 
 # Output Format
 
-Return:
+Return either:
 
-* A JSON array of new memories, **or**
-* `[]` if no new memory exists.
+* `[]` if no new memory exists, or
+* A JSON array where each entry is an object with "content" and "importance" level.
 
 # Example Output
 
 ## When new memories are found
 
+```
 [
-    "Prefers premium-quality products",
-    "Interested in items with long-term durability",
-    "Lives in Charlotte, NC"
+  {
+    "content": "Prefers premium-quality products.",
+    "importance": 4
+  },
+  {
+    "content": "Interested in items with long-term durability.",
+    "importance": 3
+  },
+  {
+    "content": "Lives in Charlotte, NC.",
+    "importance": 5
+  }
 ]
+```
 
 ## When no new memories exist
 
+```
 []
+```
 
 ```
 PROMPT;

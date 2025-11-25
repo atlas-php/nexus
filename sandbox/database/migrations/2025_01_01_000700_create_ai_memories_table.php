@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->index();
             $table->string('assistant_key')->index();
             $table->unsignedBigInteger('thread_id')->nullable()->index();
+            $table->unsignedTinyInteger('importance')->default(3);
             $table->string('content', 255);
             $table->json('source_message_ids')->nullable();
             $table->timestamps();

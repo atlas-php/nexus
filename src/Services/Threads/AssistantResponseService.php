@@ -50,7 +50,7 @@ class AssistantResponseService
 {
     private const THREAD_MANAGER_KEY = 'thread-manager';
 
-    private const MEMORY_EXTRACTOR_KEY = 'memory-extractor';
+    private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
 
     /**
      * @var array<string, array<string, mixed>|int|float|string|null>
@@ -467,7 +467,7 @@ class AssistantResponseService
 
     protected function memoryExtractorConfig(string $key, int $default): int
     {
-        $configuration = config('atlas-nexus.memory_extractor', []);
+        $configuration = config('atlas-nexus.memory', []);
 
         if (! is_array($configuration)) {
             return $default;

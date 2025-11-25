@@ -25,7 +25,7 @@ use function json_decode;
  */
 class ThreadMemoryExtractionService
 {
-    private const MEMORY_EXTRACTOR_KEY = 'memory-extractor';
+    private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
 
     public function __construct(
         private readonly AssistantRegistry $assistantRegistry,
@@ -202,9 +202,11 @@ class ThreadMemoryExtractionService
             if (is_string($memory)) {
                 $content = $this->stringValue($memory);
                 $sourceIds = [];
+                $importance = null;
             } elseif (is_array($memory)) {
                 $content = $this->stringValue($memory['content'] ?? null);
                 $sourceIds = $this->normalizeMessageIds($memory['source_message_ids'] ?? []);
+                $importance = $this->importanceValue($memory['importance'] ?? null);
             } else {
                 continue;
             }
@@ -216,6 +218,7 @@ class ThreadMemoryExtractionService
             $normalized[] = [
                 'content' => $content,
                 'source_message_ids' => $sourceIds,
+                'importance' => $importance,
             ];
         }
 
@@ -304,6 +307,27 @@ class ThreadMemoryExtractionService
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    private function importanceValue(mixed $value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value) && ctype_digit($value)) {
+            $value = (int) $value;
+        }
+
+        if (! is_int($value)) {
+            return null;
+        }
+
+        if ($value < 1 || $value > 5) {
+            return null;
+        }
+
+        return $value;
     }
 
     /**

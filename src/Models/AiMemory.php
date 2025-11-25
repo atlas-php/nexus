@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $assistant_key
  * @property int|null $thread_id
  * @property string $content
+ * @property int $importance
  * @property array<int, int>|null $source_message_ids
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -47,6 +48,7 @@ class AiMemory extends AtlasModel
         'assistant_key' => 'string',
         'thread_id' => 'int',
         'content' => 'string',
+        'importance' => 'int',
         'source_message_ids' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

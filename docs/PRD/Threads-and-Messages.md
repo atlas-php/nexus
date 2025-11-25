@@ -59,7 +59,7 @@ Indexes: `thread_id, sequence`; `thread_id`; `user_id`.
 - Assistant messages are created in `processing` status and transition to `completed` or `failed`.
 - `ThreadMessageService::sendUserMessage` ensures no other assistant message is `processing` before accepting a new user message.
 - `AiMessageService::markStatus` sets `failed_reason` when status becomes `FAILED`.
-- Messages remain `is_memory_checked = false` until the memory extractor assistant processes them (runs every time four unchecked completed messages accumulate).
+- Messages remain `is_memory_checked = false` until the memory assistant processes them (runs every time four unchecked completed messages accumulate).
 
 ## Assistant Response Flow
 1. User message recorded (`status=completed`), assistant placeholder created (`status=processing`).
@@ -72,7 +72,7 @@ Indexes: `thread_id, sequence`; `thread_id`; `user_id`.
    - Marks failures as `FAILED` with a reason; job `failed()` also marks failures.
 4. After persistence, `AssistantResponseService`:
    - Evaluates whether the thread summary assistant should run (unchanged behavior).
-   - Counts unchecked (`is_memory_checked = false`) completed messages and dispatches `PushMemoryExtractorAssistantJob` whenever the configured threshold (`atlas-nexus.memory_extractor.pending_message_count`, default `4`) is reached; the job sends the new messages plus existing memories to the dedicated `memory-extractor` assistant, deduplicates outputs, and appends them to `ai_threads.memories`.
+   - Counts unchecked (`is_memory_checked = false`) completed messages and dispatches `PushMemoryExtractorAssistantJob` whenever the configured threshold (`atlas-nexus.memory.pending_message_count`, default `4`) is reached; the job sends the new messages plus existing memories to the dedicated `memory assistant`, deduplicates outputs, and appends them to `ai_threads.memories`.
 
 ## Services
 - `AiThreadService` — CRUD and cascade delete of messages/tool runs.

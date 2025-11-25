@@ -9,7 +9,7 @@ Nexus no longer stores assistants or prompts in database tables. Instead, every 
     \Atlas\Nexus\Assistants\GeneralAssistant::class,
     \Atlas\Nexus\Assistants\HumanAssistant::class,
     \Atlas\Nexus\Assistants\ThreadManagerAssistant::class,
-    \Atlas\Nexus\Assistants\MemoryExtractorAssistant::class,
+    \Atlas\Nexus\Assistants\MemoryAssistant::class,
     // \App\Nexus\Assistants\CustomAssistant::class,
 ],
 ```

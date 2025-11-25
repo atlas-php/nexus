@@ -71,7 +71,10 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         ]);
 
         $payload = [
-            'User lives in Portland and enjoys gardening.',
+            [
+                'content' => 'User lives in Portland and enjoys gardening.',
+                'importance' => 4,
+            ],
         ];
 
         $encodedPayload = json_encode($payload, JSON_PRETTY_PRINT);
@@ -117,7 +120,7 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertSame('User lives in Portland and enjoys gardening.', $firstMemory->content);
 
         $logThread = AiThread::query()
-            ->where('assistant_key', 'memory-extractor')
+            ->where('assistant_key', 'memory-assistant')
             ->where('parent_thread_id', $thread->id)
             ->first();
 
@@ -130,6 +133,7 @@ class ThreadMemoryExtractionServiceTest extends TestCase
                 [
                     'content' => 'User lives in Portland and enjoys gardening.',
                     'source_message_ids' => [],
+                    'importance' => 4,
                 ],
             ],
             $logThread->metadata['extracted_memories'] ?? null
