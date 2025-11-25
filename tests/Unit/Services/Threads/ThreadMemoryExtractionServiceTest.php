@@ -132,7 +132,6 @@ class ThreadMemoryExtractionServiceTest extends TestCase
             [
                 [
                     'content' => 'User lives in Portland and enjoys gardening.',
-                    'source_message_ids' => [],
                     'importance' => 4,
                 ],
             ],
