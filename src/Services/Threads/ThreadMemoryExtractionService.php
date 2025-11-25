@@ -194,10 +194,10 @@ class ThreadMemoryExtractionService
         return implode("\n", [
             $systemPrompt !== '' ? $systemPrompt : '[not provided]',
             '',
-            'Current memories:',
+            '# Current memories:',
             $memorySection,
             '',
-            'Current conversation thread:',
+            '# Recent messages from thread:',
             '',
             $conversationText,
         ]);

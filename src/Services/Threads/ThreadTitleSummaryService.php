@@ -252,9 +252,24 @@ class ThreadTitleSummaryService
 
         $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
         $recentText = $joined === '' ? 'None' : $joined;
+        $existingKeywords = $this->existingKeywords($state->thread);
+
+        $keywordsSection = $existingKeywords === []
+            ? '- None.'
+            : '- '.implode("\n- ", $existingKeywords);
 
         $promptSection = "{$promptText}";
-        $context = "# Current thread summary:\n{$summaryText}\n# Recent messages:\n{$recentText}";
+        $context = implode("\n", [
+            '# Current thread summary:',
+            $summaryText,
+            '',
+            '# Current keywords:',
+            $keywordsSection,
+            '',
+            '# Recent messages:',
+            '',
+            $recentText,
+        ]);
         $limitedContext = Str::limit($context, 7000, '...');
 
         return "{$promptSection}\n{$limitedContext}";
@@ -297,6 +312,16 @@ class ThreadTitleSummaryService
         }
 
         return array_slice($keywords, 0, 12);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function existingKeywords(AiThread $thread): array
+    {
+        $metadata = $thread->metadata ?? [];
+
+        return $this->normalizeKeywords($metadata['keywords'] ?? null);
     }
 
     protected function provider(): string

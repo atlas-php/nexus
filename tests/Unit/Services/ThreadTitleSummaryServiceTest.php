@@ -139,6 +139,9 @@ class ThreadTitleSummaryServiceTest extends TestCase
         $thread = AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
             'summary' => $existingSummary,
+            'metadata' => [
+                'keywords' => ['Planning', 'Updates'],
+            ],
         ]);
 
         /** @var AiMessage $oldUser */
@@ -231,6 +234,7 @@ class ThreadTitleSummaryServiceTest extends TestCase
 
             $this->assertStringContainsString('Current thread summary:', $text);
             $this->assertStringContainsString($existingSummary, $text);
+            $this->assertStringContainsString("Current keywords:\n- Planning\n- Updates", $text);
             $this->assertStringContainsString('Recent messages:', $text);
             $this->assertStringContainsString("USER:\n".$newUser->content, $text);
             $this->assertStringNotContainsString("USER:\n".$oldUser->content, $text);
