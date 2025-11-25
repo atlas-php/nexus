@@ -37,17 +37,14 @@ class ThreadMemoryServiceTest extends TestCase
             'thread_id' => $thread->id,
             'user_id' => $thread->user_id,
             'content' => 'Existing fact',
-            'source_message_ids' => [1],
         ]);
 
         $service->appendMemories($thread, [
             [
                 'content' => 'Existing fact',
-                'source_message_ids' => [2],
             ],
             [
                 'content' => 'Enjoys winter hikes',
-                'source_message_ids' => ['3', 'abc'],
             ],
         ]);
 
@@ -63,7 +60,6 @@ class ThreadMemoryServiceTest extends TestCase
         $lastMemory = $memories->last();
         $this->assertInstanceOf(AiMemory::class, $lastMemory);
         $this->assertSame('Enjoys winter hikes', $lastMemory->content);
-        $this->assertSame([3], $lastMemory->source_message_ids);
         $this->assertSame(3, $lastMemory->importance);
     }
 

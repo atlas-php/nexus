@@ -55,7 +55,6 @@ class MigrationTest extends TestCase
             'assistant_key',
             'thread_id',
             'content',
-            'source_message_ids',
             'deleted_at',
             'created_at',
             'updated_at',

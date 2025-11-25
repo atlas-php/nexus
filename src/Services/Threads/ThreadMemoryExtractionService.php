@@ -201,11 +201,9 @@ class ThreadMemoryExtractionService
         foreach ($payload as $memory) {
             if (is_string($memory)) {
                 $content = $this->stringValue($memory);
-                $sourceIds = [];
                 $importance = null;
             } elseif (is_array($memory)) {
                 $content = $this->stringValue($memory['content'] ?? null);
-                $sourceIds = $this->normalizeMessageIds($memory['source_message_ids'] ?? []);
                 $importance = $this->importanceValue($memory['importance'] ?? null);
             } else {
                 continue;
@@ -217,7 +215,6 @@ class ThreadMemoryExtractionService
 
             $normalized[] = [
                 'content' => $content,
-                'source_message_ids' => $sourceIds,
                 'importance' => $importance,
             ];
         }
@@ -284,29 +281,6 @@ class ThreadMemoryExtractionService
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
-    }
-
-    /**
-     * @param  mixed  $ids
-     * @return array<int, int>
-     */
-    private function normalizeMessageIds($ids): array
-    {
-        if (! is_array($ids)) {
-            return [];
-        }
-
-        $normalized = [];
-
-        foreach ($ids as $id) {
-            if (is_int($id)) {
-                $normalized[] = $id;
-            } elseif (is_string($id) && ctype_digit($id)) {
-                $normalized[] = (int) $id;
-            }
-        }
-
-        return array_values(array_unique($normalized));
     }
 
     private function importanceValue(mixed $value): ?int

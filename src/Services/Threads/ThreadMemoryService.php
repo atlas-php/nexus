@@ -94,7 +94,6 @@ class ThreadMemoryService
                 'thread_id' => $thread->getKey(),
                 'group_id' => $thread->group_id,
                 'content' => $content,
-                'source_message_ids' => $this->normalizeMessageIds($memory['source_message_ids'] ?? []),
                 'importance' => $this->resolveImportance($memory),
                 'created_at' => Carbon::now(),
             ];
@@ -154,29 +153,6 @@ class ThreadMemoryService
         $trimmed = trim($value);
 
         return $trimmed === '' ? null : $trimmed;
-    }
-
-    /**
-     * @param  mixed  $ids
-     * @return array<int, int>
-     */
-    private function normalizeMessageIds($ids): array
-    {
-        if (! is_array($ids)) {
-            return [];
-        }
-
-        $normalized = [];
-
-        foreach ($ids as $id) {
-            if (is_int($id)) {
-                $normalized[] = $id;
-            } elseif (is_string($id) && ctype_digit($id)) {
-                $normalized[] = (int) $id;
-            }
-        }
-
-        return array_values(array_unique($normalized));
     }
 
     /**

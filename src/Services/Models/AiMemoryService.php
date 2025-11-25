@@ -49,20 +49,6 @@ class AiMemoryService extends ModelService
             $data['content'] = $trimmed === '' ? null : Str::limit($trimmed, 255, '');
         }
 
-        if (array_key_exists('source_message_ids', $data) && is_array($data['source_message_ids'])) {
-            $ids = [];
-
-            foreach ($data['source_message_ids'] as $id) {
-                if (is_int($id)) {
-                    $ids[] = $id;
-                } elseif (is_string($id) && ctype_digit($id)) {
-                    $ids[] = (int) $id;
-                }
-            }
-
-            $data['source_message_ids'] = array_values(array_unique($ids));
-        }
-
         return $data;
     }
 }

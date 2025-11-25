@@ -393,7 +393,6 @@ class AssistantResponseService
                 return [
                     'id' => $memory->getKey(),
                     'content' => (string) $memory->content,
-                    'source_message_ids' => $memory->source_message_ids ?? [],
                 ];
             })
             ->values()

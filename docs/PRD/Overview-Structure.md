@@ -84,7 +84,7 @@ Durable memories now live on `ai_threads.memories` as a JSON array. Each entry f
 ```
 - content               string            -- concise natural-language memory
 - thread_id             bigint            -- automatically set to owning thread id
-- source_message_ids    array<int>        -- ids that produced the memory
+- (removed) `source_message_ids`
 - created_at            datetime string   -- ISO8601 timestamp when stored
 ```
 

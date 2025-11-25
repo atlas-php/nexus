@@ -64,5 +64,5 @@ public function providerTools(): array
 
 ## Manage Memories
 - Every completed message starts with `is_memory_checked = false`. Once four unchecked messages exist, `AssistantResponseService` dispatches `PushMemoryExtractorAssistantJob`.
-- The job sends unchecked messages plus existing memories to the hidden `memory assistant`. Returned memories are merged via `ThreadMemoryService::appendMemories`, which deduplicates entries and stamps `source_message_ids`.
+- The job sends unchecked messages plus existing memories to the hidden `memory assistant`. Returned memories are merged via `ThreadMemoryService::appendMemories`, which deduplicates entries and persists them for future prompts.
 - `ThreadStateService` exposes `{MEMORY.CONTEXT}` by reading `ai_threads.memories`, allowing prompts to render the durable context without going through a tool.

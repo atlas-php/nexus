@@ -13,7 +13,6 @@ Nexus captures durable user facts as thread-level memories that can be reused ac
 - Each entry contains:
   - `content` — concise natural-language statement.
   - `thread_id` — automatically stamped with the owning thread id.
-  - `source_message_ids` — array of message ids that produced the memory.
   - `created_at` — ISO8601 timestamp indicating when the memory was saved.
 - All writes go through `ThreadMemoryService::appendMemories`, which deduplicates entries by normalized content and ensures IDs/timestamps are set.
 
@@ -22,14 +21,7 @@ Nexus captures durable user facts as thread-level memories that can be reused ac
 2. After each assistant reply, `AssistantResponseService` counts unchecked, completed messages.
 3. When the configured threshold (`atlas-nexus.memory.pending_message_count`, default `4`) of unchecked messages exists, it dispatches `PushMemoryExtractorAssistantJob` (one at a time per thread; tracked via `thread.metadata.memory_job_pending`).
 4. The job collects all unchecked completed messages, current thread memories, and the user's aggregated memories across threads.
-5. `ThreadMemoryExtractionService` sends this payload to the hidden `memory assistant`, which must return JSON:
-   ```json
-   {
-     "memories": [
-       {"content": "User prefers morning meetings.", "source_message_ids": [12, 14]}
-     ]
-   }
-   ```
+5. `ThreadMemoryExtractionService` sends this payload to the hidden `memory assistant`, which must return JSON containing each new memory object with `content` (and optional `importance`).
 6. `ThreadMemoryService` appends any new, non-duplicated entries to `ai_threads.memories`.
 7. All processed messages are marked `is_memory_checked = true`.
 

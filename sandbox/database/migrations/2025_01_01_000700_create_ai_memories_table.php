@@ -21,7 +21,6 @@ return new class extends Migration
             $table->unsignedBigInteger('thread_id')->nullable()->index();
             $table->unsignedTinyInteger('importance')->default(3);
             $table->string('content', 255);
-            $table->json('source_message_ids')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
