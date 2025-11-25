@@ -235,7 +235,7 @@ class ThreadTitleSummaryServiceTest extends TestCase
             $this->assertStringContainsString('Current thread summary:', $text);
             $this->assertStringContainsString($existingSummary, $text);
             $this->assertStringContainsString("Current keywords:\n- Planning\n- Updates", $text);
-            $this->assertStringContainsString('Recent messages:', $text);
+            $this->assertStringContainsString('# Recent messages from thread:', $text);
             $this->assertStringContainsString("USER:\n".$newUser->content, $text);
             $this->assertStringNotContainsString("USER:\n".$oldUser->content, $text);
         });
