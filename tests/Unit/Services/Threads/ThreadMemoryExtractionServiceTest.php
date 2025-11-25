@@ -13,6 +13,7 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Tests\TestCase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
@@ -162,7 +163,6 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertIsString($metadataPayload);
 
         $expectedPayload = implode("\n", [
-            'System prompt:',
             $assistant->systemPrompt(),
             '',
             'Current memories:',
@@ -184,6 +184,256 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertSame($metadataPayload, $assistantMetadata['memory_extractor_payload'] ?? null);
         $this->assertSame($logThread->metadata['checked_message_ids'], $assistantMetadata['checked_message_ids'] ?? null);
         $this->assertSame($logThread->metadata['extracted_memories'], $assistantMetadata['extracted_memories'] ?? null);
+    }
+
+    public function test_it_includes_two_prior_messages_in_payload_for_context(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 99,
+        ]);
+
+        AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'Earlier history that should be excluded.',
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => true,
+        ]);
+
+        /** @var AiMessage $firstContext */
+        $firstContext = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => 'Assistant asked about travel preferences.',
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => true,
+        ]);
+
+        /** @var AiMessage $secondContext */
+        $secondContext = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'User said they enjoy Mediterranean climates.',
+            'sequence' => 3,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => true,
+        ]);
+
+        /** @var AiMessage $pendingUser */
+        $pendingUser = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'I visit Spain every summer for the food festivals.',
+            'sequence' => 4,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+        ]);
+
+        /** @var AiMessage $pendingAssistant */
+        $pendingAssistant = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => 'That sounds amazing! What city do you enjoy most?',
+            'sequence' => 5,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+        ]);
+
+        /** @var Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('payload'),
+            new AssistantMessage('done'),
+        ]);
+
+        $response = new TextResponse(
+            steps: new Collection,
+            text: '[]',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(5, 5),
+            meta: new Meta('memories-context', 'gpt-memory'),
+            messages: $messageObjects,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        $service = $this->app->make(ThreadMemoryExtractionService::class);
+        $service->extractFromMessages($thread, collect([$pendingUser, $pendingAssistant]));
+
+        /** @var AssistantRegistry $registry */
+        $registry = $this->app->make(AssistantRegistry::class);
+        $assistant = $registry->require('memory-assistant');
+
+        $logThread = AiThread::query()
+            ->where('assistant_key', 'memory-assistant')
+            ->where('parent_thread_id', $thread->id)
+            ->first();
+
+        $this->assertNotNull($logThread);
+        $this->assertSame([$pendingUser->id, $pendingAssistant->id], $logThread->metadata['checked_message_ids'] ?? null);
+
+        $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
+        $this->assertIsString($metadataPayload);
+
+        $expectedPayload = implode("\n", [
+            $assistant->systemPrompt(),
+            '',
+            'Current memories:',
+            '- None.',
+            '',
+            'Current conversation thread:',
+            '',
+            'ASSISTANT:',
+            'Assistant asked about travel preferences.',
+            '',
+            'USER:',
+            'User said they enjoy Mediterranean climates.',
+            '',
+            'USER:',
+            'I visit Spain every summer for the food festivals.',
+            '',
+            'ASSISTANT:',
+            'That sounds amazing! What city do you enjoy most?',
+        ]);
+
+        $this->assertSame($expectedPayload, $metadataPayload);
+        $this->assertStringNotContainsString('Earlier history that should be excluded.', $metadataPayload);
+
+        $pendingUserFresh = $pendingUser->fresh();
+        $pendingAssistantFresh = $pendingAssistant->fresh();
+        $firstContextFresh = $firstContext->fresh();
+        $secondContextFresh = $secondContext->fresh();
+
+        $this->assertInstanceOf(AiMessage::class, $pendingUserFresh);
+        $this->assertInstanceOf(AiMessage::class, $pendingAssistantFresh);
+        $this->assertInstanceOf(AiMessage::class, $firstContextFresh);
+        $this->assertInstanceOf(AiMessage::class, $secondContextFresh);
+
+        $this->assertTrue($pendingUserFresh->is_memory_checked);
+        $this->assertTrue($pendingAssistantFresh->is_memory_checked);
+        $this->assertTrue($firstContextFresh->is_memory_checked);
+        $this->assertTrue($secondContextFresh->is_memory_checked);
+    }
+
+    public function test_memory_payload_lists_user_memories_without_duplicates(): void
+    {
+        /** @var AiThread $thread */
+        $thread = AiThread::factory()->create([
+            'assistant_key' => 'general-assistant',
+            'user_id' => 77,
+        ]);
+
+        $texasTimestamp = Carbon::now()->subMinutes(5);
+
+        AiMemory::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'user_id' => $thread->user_id,
+            'content' => 'Is currently in Texas for the week.',
+            'created_at' => $texasTimestamp,
+            'updated_at' => $texasTimestamp,
+        ]);
+
+        $readingTimestamp = Carbon::now();
+
+        AiMemory::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'user_id' => $thread->user_id,
+            'content' => 'Loves to read.',
+            'created_at' => $readingTimestamp,
+            'updated_at' => $readingTimestamp,
+        ]);
+
+        /** @var AiMessage $userMessage */
+        $userMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::USER->value,
+            'content' => 'Need to update you on upcoming travel plans.',
+            'sequence' => 1,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+        ]);
+
+        /** @var AiMessage $assistantMessage */
+        $assistantMessage = AiMessage::factory()->create([
+            'thread_id' => $thread->id,
+            'assistant_key' => $thread->assistant_key,
+            'role' => AiMessageRole::ASSISTANT->value,
+            'content' => 'Sure, what details should I know?',
+            'sequence' => 2,
+            'status' => AiMessageStatus::COMPLETED->value,
+            'is_memory_checked' => false,
+        ]);
+
+        /** @var Collection<int, \Prism\Prism\Contracts\Message> $messageObjects */
+        $messageObjects = collect([
+            new UserMessage('payload'),
+            new AssistantMessage('done'),
+        ]);
+
+        $response = new TextResponse(
+            steps: new Collection,
+            text: '[]',
+            finishReason: FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new Usage(5, 5),
+            meta: new Meta('memories-unique', 'gpt-memory'),
+            messages: $messageObjects,
+            additionalContent: [],
+        );
+
+        Prism::fake([$response]);
+
+        $service = $this->app->make(ThreadMemoryExtractionService::class);
+        $service->extractFromMessages($thread, collect([$userMessage, $assistantMessage]));
+
+        /** @var AssistantRegistry $registry */
+        $registry = $this->app->make(AssistantRegistry::class);
+        $assistant = $registry->require('memory-assistant');
+
+        $logThread = AiThread::query()
+            ->where('assistant_key', 'memory-assistant')
+            ->where('parent_thread_id', $thread->id)
+            ->first();
+
+        $this->assertNotNull($logThread);
+
+        $payload = $logThread->metadata['memory_extractor_payload'] ?? null;
+        $this->assertIsString($payload);
+
+        $expectedPayload = implode("\n", [
+            $assistant->systemPrompt(),
+            '',
+            'Current memories:',
+            '- Loves to read.',
+            '- Is currently in Texas for the week.',
+            '',
+            'Current conversation thread:',
+            '',
+            'USER:',
+            'Need to update you on upcoming travel plans.',
+            '',
+            'ASSISTANT:',
+            'Sure, what details should I know?',
+        ]);
+
+        $this->assertSame($expectedPayload, $payload);
+        $this->assertSame(1, substr_count($payload, 'Loves to read.'));
+        $this->assertSame(1, substr_count($payload, 'Is currently in Texas for the week.'));
     }
 
     public function test_it_throws_when_response_payload_is_invalid(): void

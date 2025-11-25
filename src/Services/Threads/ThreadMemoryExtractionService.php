@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageRole;
+use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
@@ -45,7 +46,8 @@ class ThreadMemoryExtractionService
         }
 
         $assistant = $this->assistantRegistry->require(self::MEMORY_EXTRACTOR_KEY);
-        $payload = $this->buildPayload($thread, $messages, $assistant->systemPrompt());
+        $contextualMessages = $this->contextualMessages($thread, $messages);
+        $payload = $this->buildPayload($thread, $contextualMessages, $assistant->systemPrompt());
 
         $request = $this->textRequestFactory->make()
             ->using($this->provider(), $this->model($assistant))
@@ -87,6 +89,44 @@ class ThreadMemoryExtractionService
         $this->markMessagesChecked($messages);
     }
 
+    /**
+     * @param  Collection<int, AiMessage>  $messages
+     * @return Collection<int, AiMessage>
+     */
+    private function contextualMessages(AiThread $thread, Collection $messages): Collection
+    {
+        if ($messages->isEmpty()) {
+            return $messages;
+        }
+
+        /** @var int|null $firstSequence */
+        $firstSequence = $messages
+            ->map(static fn (AiMessage $message): int => $message->sequence)
+            ->min();
+
+        if ($firstSequence === null) {
+            return $messages->values();
+        }
+
+        $priorMessages = $this->messageService->query()
+            ->where('thread_id', $thread->id)
+            ->where('status', AiMessageStatus::COMPLETED->value)
+            ->where('sequence', '<', $firstSequence)
+            ->orderByDesc('sequence')
+            ->limit(2)
+            ->get()
+            ->sortBy('sequence')
+            ->values();
+
+        if ($priorMessages->isEmpty()) {
+            return $messages->values();
+        }
+
+        return $priorMessages
+            ->concat($messages)
+            ->values();
+    }
+
     private function provider(): string
     {
         $provider = config('prism.default_provider', 'openai');
@@ -112,12 +152,6 @@ class ThreadMemoryExtractionService
             ->filter(static fn (string $content): bool => $content !== '')
             ->values();
 
-        $threadMemories = $this->threadMemoryService
-            ->memoriesForThread($thread)
-            ->map(fn (AiMemory $memory): string => (string) $memory->content)
-            ->filter(static fn (string $content): bool => $content !== '')
-            ->values();
-
         $messagePayload = $messages
             ->map(function (AiMessage $message): array {
                 /** @var AiMessageRole $roleEnum */
@@ -134,8 +168,8 @@ class ThreadMemoryExtractionService
             ->values();
 
         $memories = $userMemories
-            ->merge($threadMemories)
             ->filter()
+            ->unique()
             ->values()
             ->all();
 
