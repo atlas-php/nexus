@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Fixtures\Assistants;
 
+use Atlas\Nexus\Models\AiThread;
+
 class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
 {
     /**
@@ -35,17 +37,10 @@ PROMPT,
         ];
     }
 
-    /**
-     * @param  array<int, string>  $memories
-     */
-    public function isContextAvailable(?string $summary, array $memories): bool
+    public function isContextAvailable(AiThread $thread): bool
     {
         $configured = $this->data('context_available');
 
-        if (is_bool($configured)) {
-            return $configured;
-        }
-
-        return $summary !== null || $memories !== [];
+        return is_bool($configured) ? $configured : false;
     }
 }

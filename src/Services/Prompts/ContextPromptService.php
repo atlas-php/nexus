@@ -27,15 +27,15 @@ class ContextPromptService
             return null;
         }
 
-        $payload = $this->contextPrompt->compose($thread, $assistant, $template);
+        $definition = $assistant->definition();
 
-        if ($payload === null) {
+        if (! $definition->isContextAvailable($thread)) {
             return null;
         }
 
-        $definition = $assistant->definition();
+        $payload = $this->contextPrompt->compose($thread, $assistant, $template);
 
-        if (! $definition->isContextAvailable($payload->summary(), $payload->memories())) {
+        if ($payload === null) {
             return null;
         }
 

@@ -52,6 +52,9 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_dispatches_response_job_after_recording_messages(): void
     {
         Queue::fake();
+        PrimaryAssistantDefinition::updateConfig([
+            'context_available' => true,
+        ]);
 
         AiThread::factory()->create([
             'assistant_key' => 'general-assistant',
@@ -180,6 +183,9 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_includes_memories_when_available_without_summary(): void
     {
         Queue::fake();
+        PrimaryAssistantDefinition::updateConfig([
+            'context_available' => true,
+        ]);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -217,6 +223,7 @@ class ThreadMessageServiceTest extends TestCase
         Queue::fake();
         PrimaryAssistantDefinition::updateConfig([
             'context_prompt' => 'Summary:{CONTEXT_PROMPT.LAST_SUMMARY}|Memories:{CONTEXT_PROMPT.MEMORIES}',
+            'context_available' => true,
         ]);
         App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
         App::forgetInstance(ThreadMessageService::class);

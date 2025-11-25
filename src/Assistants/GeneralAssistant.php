@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Assistants;
 
+use Atlas\Nexus\Models\AiMemory;
+use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Support\Assistants\AssistantDefinition;
 
 /**
@@ -90,11 +92,42 @@ Recent known context for this user.
 PROMPT;
     }
 
-    /**
-     * @param  array<int, string>  $memories
-     */
-    public function isContextAvailable(?string $summary, array $memories): bool
+    public function isContextAvailable(AiThread $thread): bool
     {
-        return $summary !== null || $memories !== [];
+        if ($this->hasSummary($thread)) {
+            return true;
+        }
+
+        $userId = $thread->getAttribute('user_id');
+
+        if (! is_int($userId)) {
+            return false;
+        }
+
+        return AiMemory::query()
+            ->where('assistant_key', $thread->assistant_key)
+            ->where('user_id', $userId)
+            ->exists();
+    }
+
+    private function hasSummary(AiThread $thread): bool
+    {
+        $summary = $thread->summary;
+
+        if (is_string($summary) && trim($summary) !== '') {
+            return true;
+        }
+
+        $userId = $thread->getAttribute('user_id');
+
+        if (! is_int($userId)) {
+            return false;
+        }
+
+        return AiThread::query()
+            ->where('assistant_key', $thread->assistant_key)
+            ->where('user_id', $userId)
+            ->whereNotNull('summary')
+            ->exists();
     }
 }

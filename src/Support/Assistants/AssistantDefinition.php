@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Support\Assistants;
 
+use Atlas\Nexus\Models\AiThread;
+
 /**
  * Class AssistantDefinition
  *
@@ -106,12 +108,9 @@ abstract class AssistantDefinition
         return null;
     }
 
-    /**
-     * @param  array<int, string>  $memories
-     */
-    public function isContextAvailable(?string $summary, array $memories): bool
+    public function isContextAvailable(AiThread $thread): bool
     {
-        return true;
+        return false;
     }
 
     /**
