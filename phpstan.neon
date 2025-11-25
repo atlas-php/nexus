@@ -8,6 +8,9 @@ parameters:
     level: 8
     bootstrapFiles:
         - vendor/autoload.php
+    scanDirectories:
+        - %currentWorkingDirectory%/src
+        - %currentWorkingDirectory%/tests
     parallel:
         maximumNumberOfProcesses: 0
         processTimeout: 0.0
