@@ -23,10 +23,10 @@ All **Agents** must treat any **Product Requirement Documents (PRDs)** included 
 3. All code must be **stateless**, **framework-aware**, and **application-agnostic**.
 4. Keep everything **self-contained**: no hard dependencies on a consuming app.
 5. Always reference **PRDs** for functional requirements and naming accuracy.
-6. Write clear, testable, and deterministic code. 
-7. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and expected usage details. These doc blocks are mandatory and intended to help both internal and external consumers understand the class role without reading its internals.
+6. Write clear, testable, and deterministic code.
+7. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and usage details.
 
-_Example:_
+*Example:*
 
 ```php
 /**
@@ -40,7 +40,7 @@ _Example:_
 
 ## Structure
 
-Each package must follow this layout:
+Each package must follow this layout. **No new top-level directories are allowed.**
 
 ```
 package-name/
@@ -49,76 +49,65 @@ package-name/
 │   ├── Install.md               # consumer friendly install instructions
 │   └── PRD/                     # source of truth to requirements
 ├── src/
-│   ├── Console/Commands/ 
-│   ├── Enums/ 
+│   ├── Console/Commands/
+│   ├── Enums/
 │   ├── Providers/
 │   │   └── PackageServiceProvider.php
-│   ├── Models/ 
+│   ├── Models/
 │   ├── Services/
 │   │   ├── Models/              # per-model services, one model per service
 │   │   └── <Domain>/            # feature services grouped by domain
 │   ├── Integrations/            # third-party, APIs, external services
-│   ├── Contracts/ 
-│   ├── Exceptions/ 
-│   └── Support/
+│   ├── Contracts/
+│   ├── Exceptions/
+│   └── Support/                 # small helpers, traits, utilities
 ├── config/
 ├── database/
 │   ├── factories/
 │   └── migrations/
 ├── tests/
 │   ├── Unit/                    # tests without database, helpers/support
-│   └── Features/<Domain>/       # feature/business tests grouped by domain
+│   └── Feature/<Domain>/        # feature/business tests grouped by domain
 ├── AGENTS.md
 └── README.md
 ```
 
-### Service & Integration Rules
+---
 
-Keep `src/Services` organized follow these rules:
+## Layer Responsibilities
 
-#### `src/Services/Models`
+### Services/Models (Model Layer)
 
-* Each class in `Services/Models` is responsible for **one Eloquent model** only.
-* Responsibilities:
-    * Extend `Atlas\Core\Service\ModelService` from the Atlas Core package.
-    * Centralized `create`, `update`, `delete`, and common query helpers for that model.
-    * Only normalize and parse data before it is persisted when needed.
-* Must **not**:
-    * Orchestrate multi-model workflows.
-    * Contain cross-domain business rules.
-    * Call external APIs directly.
-* Naming convention examples:
-    * `ContactModelService` in `Services/Models/ContactModelService.php`.
-    * `TaskModelService` in `Services/Models/TaskModelService.php`.
+* One service per model.
+* Extends `Atlas\Core\Service\ModelService`.
+* Handles create, update, delete, and model-specific helpers.
+* May normalize data pre-persistence when needed.
+* Must not orchestrate workflows, perform cross-domain logic, or call integrations.
+* Naming examples: `ContactModelService`, `TaskModelService`.
 
-These services act as the **model-facing layer** and are the preferred entrypoint when only a single model is affected.
+### Services/<Domain> (Business Layer)
 
-#### `src/Services/<Domain>` (business / feature services)
+* Groups business logic by domain.
+* Implements PRD use cases and workflows.
+* Orchestrates multiple model services.
+* Manages transactions.
+* Coordinates integrations, events, and jobs.
+* Must use `Services/Models` for persistence.
+* Services named by intent (e.g., `ScheduleCallWithContactService`).
 
-* Each domain directory (e.g. `Services/Contacts`, `Services/Tasks`) groups **business-oriented services** by feature or domain.
-* Responsibilities:
-    * Express **use cases** defined in PRDs (e.g. `ScheduleCallWithContactService`, `CreateFollowUpTasksForLeadService`).
-    * Orchestrate multiple model services and domain concepts.
-    * Manage transactions when a workflow touches multiple models.
-    * Coordinate with integrations (via `Integrations/` clients) and dispatch jobs/events.
-* Must:
-    * Be named by intent and follow the `*Service` suffix (e.g. `ScheduleCallWithContactService`).
-    * Use `Services/Models/*` for persistence logic rather than talking to models directly.
+### Integrations (External Layer)
 
-These services form the **business layer** and should be the primary surface area exposed to consuming applications for higher-level workflows.
+* Low-level API/SDK clients.
+* Handles authentication, requests, and responses.
+* Contains no business logic.
+* Examples: `OpenAiClient`, `StripeClient`.
 
-#### `src/Integrations`
+### Support (Utility Layer)
 
-* Houses low-level, reusable clients for **external systems** (e.g. HTTP APIs, third-party services).
-* Responsibilities:
-    * Encapsulate API calls, authentication, and request/response handling.
-    * Remain free of package-specific business rules.
-    * Wrappers for SDKs, third-party libraries, or other integrations.
-* Example:
-    * `Integrations/OpenAI/OpenAiClient.php`
-    * `Integrations/Stripe/StripeClient.php`
-
-Business services in `Services/<Domain>` may depend on these **integrations**.
+* Small helpers, traits, value objects, simple transformers.
+* Fully stateless.
+* No business logic, workflows, database access, or external calls.
+* Cannot depend on models, services, or integrations.
 
 ---
 
@@ -126,72 +115,69 @@ Business services in `Services/<Domain>` may depend on these **integrations**.
 
 ### Class Naming
 
-All classes should use PascalCase.
-
-* **Service Providers:** `ServiceProvider` suffix.
-* **Services:** `Service` suffix.
-* **Contracts:** Interfaces use `Contract` suffix.
-* **Models:** Singular names.
-* **Exceptions:** use `Exception` suffix.
+* Providers: `*ServiceProvider`
+* Services: `*Service`
+* Contracts: `*Contract`
+* Models: singular
+* Exceptions: `*Exception`
 
 ### File & Namespace Structure
 
-* All PHP classes must use the package namespace root.
-* Group by domain when applicable (`Services/Users/UserInviteService.php`).
+* Use the package namespace root.
+* Group by domain when applicable.
+* Use camelCase for variables and methods.
 
-### Variables & Methods
+### Methods
 
-* Use `camelCase` for variables and methods.
-* Prefix booleans with `is`, `has`, or `can`.
-* Keep methods short, descriptive, and predictable.
-* Ensure method and service names match **PRD-defined terminology** when applicable.
+* Short, descriptive, predictable.
+* Boolean methods prefixed with `is`, `has`, or `can`.
+* Must match PRD terminology.
 
 ---
 
 ## Service Provider Rules
 
-* Must handle **registration**, **publishing**, and **booting** cleanly.
-* Register bindings, configs, routes, and migrations **only if required**.
-* Use **package auto-discovery**.
-* Keep provider logic minimal and do not include business logic.
+* Register only what is required.
+* Use package auto-discovery.
+* Keep logic minimal.
+* No business logic in providers.
 
 ---
 
 ## Code Practices
 
-1. **Business Logic** — belongs in `Services/`, not controllers or providers. Use `Services/Models/*` for model-focused CRUD and `Services/<Domain>/*` for higher-level workflows that span multiple models or integrations.
-2. **Configuration** — define publishable config files in `config/`, use sensible defaults.
-3. **Testing** — use PHPUnit; cover both success and failure paths.
-4. **Type Safety** — declare all parameter and return types.
-5. **Error Handling** — use custom exceptions for expected failures.
-6. **Dependencies** — keep minimal; prefer Laravel contracts over concrete bindings.
-7. **PRD Alignment** — always verify that logic, method names, and service behavior align with the PRD before implementation.
-8. **Documentation via Doc Blocks** — every class, interface/contract, and trait must include a top-level PHPDoc block explaining its purpose. This ensures consumers understand intent and maintainability is preserved.
+1. Business logic lives in `Services/`.
+2. Use `Services/Models` for CRUD.
+3. Use `Services/<Domain>` for workflows.
+4. `Support/` contains helpers only.
+5. Config files belong in `config/` with sensible defaults.
+6. Write full test coverage.
+7. Enforce strict type declarations.
+8. Use custom exceptions for expected failures.
+9. Minimize dependencies.
+10. Ensure PRD alignment.
+11. Include a PHPDoc block on every class.
 
 ---
 
 ## Task Checklist
 
-Task is not completed unless the follow checks have been made: 
-
-1. Run Pint: `composer lint` (formatted).
-2. Run tests: `composer test` and passed without errors.
-3. Run larastan: `composer analyse` and passed without errors.
-4. Confirm PRD alignment for naming and functionality. 
-5. Ensure no temporary debugging or unused imports remain. 
-6. Verify that every class includes a valid PHPDoc with purpose and usage context.
+1. Run Pint: `composer lint`.
+2. Run tests: `composer test`.
+3. Run larastan: `composer analyse`.
+4. Confirm PRD alignment.
+5. Remove debugging and unused imports.
+6. Verify all classes include required PHPDoc.
 
 ---
 
 ## Enforcement
 
-Any contribution that violates these standards or PRD requirements will be rejected or revised before merge.
+Agents must:
 
-_Every Agent is required to:_
+1. Follow this guide precisely.
+2. Use PRDs as the single source of truth.
+3. Complete the task checklist.
+4. Request clarification when PRDs are incomplete.
 
-1. Follow this guide precisely. 
-2. Use PRDs as the **single source of truth** for all logic, naming, and intent. 
-3. Run through the task checklist before completion. 
-4. Seek clarification when a PRD is ambiguous or missing required details.
-
-> **Failure to follow this guide will result in rejection of the task.**
+Tasks violating these rules will be rejected.
