@@ -238,13 +238,17 @@ class ThreadTitleSummaryService
         $recentMessages = $messages
             ->sortBy('sequence')
             ->map(function (AiMessage $message): string {
-                $role = $message->role->value ?? 'message';
+                $role = strtoupper($message->role->value ?? 'message');
+                $content = trim((string) $message->content);
 
-                return strtoupper($role).': '.trim((string) $message->content);
+                return implode("\n", [
+                    sprintf('%s:', $role),
+                    $content,
+                ]);
             })
             ->all();
 
-        $joined = Str::limit(implode("\n", $recentMessages), 6000, '...');
+        $joined = Str::limit(implode("\n\n", $recentMessages), 6000, '...');
 
         $summaryText = $this->trimValue($state->thread->summary) ?? 'None';
         $recentText = $joined === '' ? 'None' : $joined;
