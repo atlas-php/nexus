@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Tools;
 
 use Atlas\Nexus\Integrations\Prism\Tools\FetchMoreContextTool;
-use Atlas\Nexus\Support\Tools\ToolDefinition;
 
 /**
  * Class ToolRegistry

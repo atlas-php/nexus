@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Support;
 
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 use Atlas\Nexus\Tests\TestCase;
 use Prism\Prism\Contracts\Message;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;

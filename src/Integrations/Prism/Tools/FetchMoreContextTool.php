@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Integrations\Prism\Tools;
 
 use Atlas\Nexus\Contracts\ThreadStateAwareTool;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Atlas\Nexus\Services\Threads\ThreadManagerService;
-use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Tools\ToolDefinition;
+use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Prism\Prism\Schema\ArraySchema;
 use Prism\Prism\Schema\StringSchema;
 use RuntimeException;

@@ -7,14 +7,14 @@ namespace Atlas\Nexus\Services\Threads;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
+use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
-use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -84,7 +84,7 @@ class ThreadStateService
     }
 
     /**
-     * @return Collection<int, \Atlas\Nexus\Support\Tools\ToolDefinition>
+     * @return Collection<int, \Atlas\Nexus\Services\Tools\ToolDefinition>
      */
     protected function resolveTools(ResolvedAssistant $assistant): Collection
     {
@@ -94,7 +94,7 @@ class ThreadStateService
     }
 
     /**
-     * @return Collection<int, \Atlas\Nexus\Support\Tools\ProviderToolDefinition>
+     * @return Collection<int, \Atlas\Nexus\Services\Tools\ProviderToolDefinition>
      */
     protected function resolveProviderTools(ResolvedAssistant $assistant): Collection
     {

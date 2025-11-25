@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Tools;
+namespace Atlas\Nexus\Services\Tools;
 
 use Atlas\Nexus\Contracts\NexusTool;
 

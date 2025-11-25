@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Fixtures;
 
 use Atlas\Nexus\Integrations\Prism\TextRequest;
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response;
 use RuntimeException;

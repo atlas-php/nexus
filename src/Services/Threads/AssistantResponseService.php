@@ -13,6 +13,7 @@ use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
+use Atlas\Nexus\Integrations\Prism\TextResponseSerializer;
 use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
 use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
 use Atlas\Nexus\Models\AiMemory;
@@ -21,12 +22,11 @@ use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ToolInvocation;
+use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
-use Atlas\Nexus\Support\Chat\ThreadState;
-use Atlas\Nexus\Support\Chat\ToolInvocation;
-use Atlas\Nexus\Support\Prism\TextResponseSerializer;
-use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Prism\Prism\Exceptions\PrismRateLimitedException;
@@ -421,7 +421,7 @@ class AssistantResponseService
     protected function normalizeProviderToolDefinitions(ThreadState $state): array
     {
         return $state->providerTools
-            ->map(static function (\Atlas\Nexus\Support\Tools\ProviderToolDefinition $definition): array {
+            ->map(static function (\Atlas\Nexus\Services\Tools\ProviderToolDefinition $definition): array {
                 return [
                     'key' => $definition->key(),
                     'options' => $definition->options(),
@@ -437,7 +437,7 @@ class AssistantResponseService
     protected function normalizeChatLogMessages(ChatThreadLog $chatThreadLog): array
     {
         return collect($chatThreadLog->messages())
-            ->map(static function (\Atlas\Nexus\Support\Chat\ChatMessage $message): array {
+            ->map(static function (\Atlas\Nexus\Services\Threads\Logging\ChatMessage $message): array {
                 return [
                     'role' => $message->role(),
                     'content' => $message->content(),

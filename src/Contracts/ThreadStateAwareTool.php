@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Contracts;
 
-use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 
 /**
  * Interface ThreadStateAwareTool

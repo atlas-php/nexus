@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Services\Assistants\Definitions;
 
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Support\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Assistants\AssistantDefinition;
 
 /**
  * Class HumanAssistant

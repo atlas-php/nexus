@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Fixtures\Assistants;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Support\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Assistants\AssistantDefinition;
 
 /**
  * Provides configurable assistant definitions for tests without requiring database records.

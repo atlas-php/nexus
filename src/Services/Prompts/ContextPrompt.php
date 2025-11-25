@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prompts;
+namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Services\Models\AiThreadService;
-use Atlas\Nexus\Services\Prompts\PromptVariableService;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Atlas\Nexus\Services\Threads\ThreadMemoryService;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
-use Atlas\Nexus\Support\Chat\ThreadState;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 

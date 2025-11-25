@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiThreadService;
-use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;

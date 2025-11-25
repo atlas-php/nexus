@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Contracts\PromptVariableGroup;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Foundation\Application;
 

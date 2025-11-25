@@ -12,8 +12,8 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
+use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
-use Atlas\Nexus\Support\Tools\ToolDefinition;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadManagerAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
@@ -138,7 +138,7 @@ class ThreadStateServiceTest extends TestCase
 
         $definition = $state->providerTools->first();
 
-        $this->assertInstanceOf(\Atlas\Nexus\Support\Tools\ProviderToolDefinition::class, $definition);
+        $this->assertInstanceOf(\Atlas\Nexus\Services\Tools\ProviderToolDefinition::class, $definition);
         $this->assertSame('file_search', $definition->key());
         $this->assertSame(['vector_store_ids' => ['vs_123']], $definition->options());
     }

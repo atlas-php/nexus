@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Assistants;
+namespace Atlas\Nexus\Services\Assistants;
 
 use Atlas\Nexus\Models\AiThread;
 

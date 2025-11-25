@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Tests\Fixtures;
 
 use Atlas\Nexus\Contracts\PromptVariableGroup;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
+use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 
 /**
  * Class CustomPromptVariable

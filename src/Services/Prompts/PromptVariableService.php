@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Prompts;
 
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
 use Stringable;
 
 /**

@@ -96,7 +96,7 @@ abstract class AbstractTool implements NexusTool, ToolRunLoggingAware
         /** @var mixed $state */
         $state = $this->state ?? null;
 
-        if (! $state instanceof \Atlas\Nexus\Support\Chat\ThreadState) {
+        if (! $state instanceof \Atlas\Nexus\Services\Threads\Data\ThreadState) {
             return null;
         }
 

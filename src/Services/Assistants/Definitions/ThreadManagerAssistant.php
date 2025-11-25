@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Assistants\Definitions;
 
-use Atlas\Nexus\Support\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Assistants\AssistantDefinition;
 
 /**
  * Class ThreadManagerAssistant

@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Tests\Fixtures;
 
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 
 /**
  * Creates throwing text requests so Prism generation errors can be exercised in tests.

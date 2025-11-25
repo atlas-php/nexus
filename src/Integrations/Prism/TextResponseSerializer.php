@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prism;
+namespace Atlas\Nexus\Integrations\Prism;
 
 use Prism\Prism\Text\Response;
 use Prism\Prism\Text\Step;

@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Tests\Fixtures;
 
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 
 /**
  * Produces rate-limited text requests for exercising provider rate limit handling.

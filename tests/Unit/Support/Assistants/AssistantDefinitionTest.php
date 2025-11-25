@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Support\Assistants;
 
-use Atlas\Nexus\Support\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Assistants\AssistantDefinition;
 use Atlas\Nexus\Tests\TestCase;
 
 /**

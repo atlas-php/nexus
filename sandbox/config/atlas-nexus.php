@@ -41,9 +41,9 @@ return [
     ],
 
     'variables' => [
-        \Atlas\Nexus\Support\Prompts\Variables\ThreadPromptVariables::class,
-        \Atlas\Nexus\Support\Prompts\Variables\UserPromptVariables::class,
-        \Atlas\Nexus\Support\Prompts\Variables\MemoryPromptVariables::class,
+        \Atlas\Nexus\Services\Prompts\Variables\ThreadPromptVariables::class,
+        \Atlas\Nexus\Services\Prompts\Variables\UserPromptVariables::class,
+        \Atlas\Nexus\Services\Prompts\Variables\MemoryPromptVariables::class,
         // \App\Nexus\Prompts\Variables\CustomPromptVariable::class,
     ],
 ];

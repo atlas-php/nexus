@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prompts\Variables;
+namespace Atlas\Nexus\Services\Prompts\Variables;
 
 use Atlas\Nexus\Contracts\PromptVariableGroup;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Models\AiThreadService;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
+use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 use Illuminate\Support\Carbon;
 
 use function implode;

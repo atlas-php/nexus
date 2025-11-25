@@ -179,5 +179,6 @@ Agents must:
 2. Use PRDs as the single source of truth.
 3. Complete the task checklist.
 4. Request clarification when PRDs are incomplete.
+5. Avoid any direct vendor edits.
 
 Tasks violating these rules will be rejected.

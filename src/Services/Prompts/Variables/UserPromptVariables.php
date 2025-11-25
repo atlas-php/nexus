@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prompts\Variables;
+namespace Atlas\Nexus\Services\Prompts\Variables;
 
 use Atlas\Nexus\Contracts\PromptVariableGroup;
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
+use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 
 /**
  * Class UserPromptVariables

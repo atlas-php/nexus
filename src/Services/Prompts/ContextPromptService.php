@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
-use Atlas\Nexus\Support\Prompts\ContextPrompt;
+use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
 
 /**
  * Class ContextPromptService

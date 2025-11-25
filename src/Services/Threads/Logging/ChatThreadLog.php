@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Chat;
+namespace Atlas\Nexus\Services\Threads\Logging;
 
 use Illuminate\Support\Collection;
 use Prism\Prism\Contracts\Message;

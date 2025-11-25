@@ -7,7 +7,7 @@ namespace Atlas\Nexus\Services\Tools;
 use Atlas\Nexus\Enums\AiToolRunStatus;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiToolRunService;
-use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Illuminate\Support\Carbon;
 
 /**

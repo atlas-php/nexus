@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Contracts;
 
-use Atlas\Nexus\Support\Prompts\PromptVariableContext;
+use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 
 /**
  * Interface PromptVariableGroup

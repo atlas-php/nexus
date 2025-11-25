@@ -43,7 +43,7 @@ class PromptVariableServiceTest extends TestCase
 
         $rendered = $service->apply(
             'Thread {THREAD.ID}: {THREAD.TITLE}',
-            new \Atlas\Nexus\Support\Prompts\PromptVariableContext($state)
+            new \Atlas\Nexus\Services\Prompts\PromptVariableContext($state)
         );
 
         $this->assertStringContainsString((string) $thread->id, $rendered);
@@ -65,7 +65,7 @@ class PromptVariableServiceTest extends TestCase
 
         $state = $this->app->make(ThreadStateService::class)->forThread($thread);
         $service = $this->app->make(PromptVariableService::class);
-        $context = new \Atlas\Nexus\Support\Prompts\PromptVariableContext($state);
+        $context = new \Atlas\Nexus\Services\Prompts\PromptVariableContext($state);
 
         $rendered = $service->apply($prompt, $context, ['CUSTOM.VALUE' => 'World']);
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prompts;
+namespace Atlas\Nexus\Services\Prompts;
 
 /**
  * Class ContextPromptPayload

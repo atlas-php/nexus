@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Unit\Services\Tools;
 
+use Atlas\Nexus\Services\Tools\ProviderToolDefinition;
 use Atlas\Nexus\Services\Tools\ProviderToolRegistry;
-use Atlas\Nexus\Support\Tools\ProviderToolDefinition;
 use Atlas\Nexus\Tests\TestCase;
 use Prism\Prism\ValueObjects\ProviderTool;
 

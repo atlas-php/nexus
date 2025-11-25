@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Support\Prompts;
+namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
-use Atlas\Nexus\Support\Chat\ThreadState;
+use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Schema;
 use Throwable;

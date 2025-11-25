@@ -1,6 +1,6 @@
 # Assistants
 
-Nexus no longer stores assistants or prompts in database tables. Instead, every assistant is defined via a PHP class that extends `Atlas\Nexus\Support\Assistants\AssistantDefinition` and is registered inside `config/atlas-nexus.php`.
+Nexus no longer stores assistants or prompts in database tables. Instead, every assistant is defined via a PHP class that extends `Atlas\Nexus\Services\Assistants\AssistantDefinition` and is registered inside `config/atlas-nexus.php`.
 
 ## Configuration
 

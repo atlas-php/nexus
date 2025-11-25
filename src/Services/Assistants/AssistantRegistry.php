@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Assistants;
 
-use Atlas\Nexus\Support\Assistants\AssistantDefinition;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Container\Container;
 use RuntimeException;

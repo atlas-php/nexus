@@ -6,7 +6,7 @@ namespace Atlas\Nexus\Tests\Unit;
 
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\NexusManager;
-use Atlas\Nexus\Support\Chat\ChatThreadLog;
+use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 use Atlas\Nexus\Tests\TestCase;
 
 /**

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Services\Tools;
 
-use Atlas\Nexus\Support\Tools\ProviderToolDefinition;
-
 /**
  * Class ProviderToolRegistry
  *

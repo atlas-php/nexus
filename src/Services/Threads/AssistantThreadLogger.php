@@ -9,11 +9,11 @@ use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
+use Atlas\Nexus\Integrations\Prism\TextResponseSerializer;
 use Atlas\Nexus\Models\AiThread;
+use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
-use Atlas\Nexus\Support\Assistants\ResolvedAssistant;
-use Atlas\Nexus\Support\Prism\TextResponseSerializer;
 use Illuminate\Support\Carbon;
 use Prism\Prism\Text\Response;
 
