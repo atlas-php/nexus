@@ -25,7 +25,7 @@ use RuntimeException;
  */
 class ThreadStateService
 {
-    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-summary-assistant';
 
     public function __construct(
         private readonly AiMessageService $messageService,

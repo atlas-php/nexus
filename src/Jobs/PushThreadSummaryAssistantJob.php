@@ -37,7 +37,7 @@ class PushThreadSummaryAssistantJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-summary-assistant';
 
     public int $tries = 1;
 

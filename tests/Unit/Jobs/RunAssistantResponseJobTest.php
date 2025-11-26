@@ -510,7 +510,7 @@ class RunAssistantResponseJobTest extends TestCase
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
-            'assistant_key' => 'thread-manager',
+            'assistant_key' => 'thread-summary-assistant',
         ]);
 
         AiMessage::factory()->create([
@@ -543,7 +543,7 @@ class RunAssistantResponseJobTest extends TestCase
             toolCalls: [],
             toolResults: [],
             usage: new Usage(3, 3),
-            meta: new Meta('resp-tm', 'gpt-thread-manager'),
+            meta: new Meta('resp-tm', 'gpt-thread-summary-assistant'),
             messages: $messageObjects,
             additionalContent: [],
         );

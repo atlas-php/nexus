@@ -37,7 +37,7 @@ class DefaultAssistantsTest extends TestCase
         $registry = $this->app->make(AssistantRegistry::class);
 
         $this->assertSame(
-            ['general-assistant', 'human-assistant', 'thread-manager', 'memory-assistant'],
+            ['general-assistant', 'human-assistant', 'thread-summary-assistant', 'memory-assistant'],
             $registry->keys()
         );
     }

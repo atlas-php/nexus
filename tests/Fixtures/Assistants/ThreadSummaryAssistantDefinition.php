@@ -12,7 +12,7 @@ class ThreadSummaryAssistantDefinition extends ConfigurableAssistantDefinition
     protected static function defaults(): array
     {
         return [
-            'key' => 'thread-manager',
+            'key' => 'thread-summary-assistant',
             'name' => 'Thread Summary Assistant',
             'description' => 'Generates thread titles and summaries.',
             'is_hidden' => true,
@@ -43,7 +43,7 @@ You review a full conversation and extract the essential meaning without includi
 
 Return only a JSON object with the fields: `title`, `summary`, and `keywords`.
 PROMPT,
-            'default_model' => 'gpt-thread-manager',
+            'default_model' => 'gpt-thread-summary-assistant',
             'tools' => [],
             'provider_tools' => [],
             'metadata' => [],

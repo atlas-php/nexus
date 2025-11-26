@@ -15,7 +15,7 @@ class ThreadSummaryAssistant extends AssistantDefinition
 {
     public function key(): string
     {
-        return 'thread-manager';
+        return 'thread-summary-assistant';
     }
 
     public function name(): string

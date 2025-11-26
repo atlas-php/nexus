@@ -177,7 +177,7 @@ class ThreadStateServiceTest extends TestCase
 
         /** @var AiThread $summaryThread */
         $summaryThread = AiThread::factory()->create([
-            'assistant_key' => 'thread-manager',
+            'assistant_key' => 'thread-summary-assistant',
             'type' => AiThreadType::TOOL->value,
             'parent_thread_id' => $parent->id,
             'user_id' => $parent->user_id,

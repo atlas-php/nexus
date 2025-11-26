@@ -48,7 +48,7 @@ use function json_encode;
  */
 class AssistantResponseService
 {
-    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-summary-assistant';
 
     private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
 
