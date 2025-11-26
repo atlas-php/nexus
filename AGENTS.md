@@ -25,6 +25,7 @@ All **Agents** must treat any **Product Requirement Documents (PRDs)** included 
 5. Always reference **PRDs** for functional requirements and naming accuracy.
 6. Write clear, testable, and deterministic code.
 7. Every class must include a **PHPDoc block at the top of the file** summarizing its purpose and usage details.
+8. **Do not use function-level namespacing imports** such as `use function json_decode;`. All functions must be referenced normally without importing them into the namespace.
 
 *Example:*
 
@@ -126,6 +127,7 @@ package-name/
 * Use the package namespace root.
 * Group by domain when applicable.
 * Use camelCase for variables and methods.
+* **Do not import individual global PHP functions using `use function`.**
 
 ### Methods
 
@@ -157,6 +159,7 @@ package-name/
 9. Minimize dependencies.
 10. Ensure PRD alignment.
 11. Include a PHPDoc block on every class.
+12. **Avoid function-level namespace imports.**
 
 ---
 
