@@ -25,7 +25,7 @@ use RuntimeException;
  */
 class ThreadStateService
 {
-    private const THREAD_MANAGER_KEY = 'thread-manager';
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
 
     public function __construct(
         private readonly AiMessageService $messageService,
@@ -137,7 +137,7 @@ class ThreadStateService
 
     protected function threadForPromptVariables(ThreadState $state): AiThread
     {
-        if ($state->assistant->key() !== self::THREAD_MANAGER_KEY) {
+        if ($state->assistant->key() !== self::THREAD_SUMMARY_ASSISTANT_KEY) {
             return $state->thread;
         }
 

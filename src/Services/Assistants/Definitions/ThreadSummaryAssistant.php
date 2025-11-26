@@ -7,11 +7,11 @@ namespace Atlas\Nexus\Services\Assistants\Definitions;
 use Atlas\Nexus\Services\Assistants\AssistantDefinition;
 
 /**
- * Class ThreadManagerAssistant
+ * Class ThreadSummaryAssistant
  *
- * Generates thread titles and summaries to support the default Nexus workflow.
+ * Internal assistant that generates titles and summaries to support the default Nexus workflow.
  */
-class ThreadManagerAssistant extends AssistantDefinition
+class ThreadSummaryAssistant extends AssistantDefinition
 {
     public function key(): string
     {
@@ -20,7 +20,7 @@ class ThreadManagerAssistant extends AssistantDefinition
 
     public function name(): string
     {
-        return 'Thread Manager';
+        return 'Thread Summary Assistant';
     }
 
     public function description(): ?string

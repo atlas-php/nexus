@@ -2,119 +2,150 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Threads;
+namespace Atlas\Nexus\Jobs;
 
+use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableContext;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
+use Atlas\Nexus\Services\Threads\AssistantThreadLogger;
 use Atlas\Nexus\Services\Threads\Data\ThreadState;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Str;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use RuntimeException;
 
 /**
- * Class ThreadTitleSummaryService
+ * Class PushThreadSummaryAssistantJob
  *
- * Generates or applies thread titles and summaries inline, using a lightweight model when requested.
+ * Dispatches the hidden thread summary assistant whenever a thread needs refreshed metadata.
  */
-class ThreadTitleSummaryService
+class PushThreadSummaryAssistantJob implements ShouldQueue
 {
-    private const THREAD_MANAGER_KEY = 'thread-manager';
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
-    public function __construct(
-        private readonly TextRequestFactory $textRequestFactory,
-        private readonly AiThreadService $threadService,
-        private readonly PromptVariableService $promptVariableService,
-        private readonly AssistantThreadLogger $assistantThreadLogger,
-        private readonly AssistantRegistry $assistantRegistry
-    ) {}
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
 
-    /**
-     * Generate and persist a title and summary based on the thread conversation.
-     *
-     * @return array{thread: AiThread, title: string|null, summary: string|null, keywords: array<int, string>}
-     */
-    public function generateAndSave(ThreadState $state, bool $preserveExistingTitle = true): array
+    public int $tries = 1;
+
+    public int $timeout = 120;
+
+    public function __construct(public int $threadId)
     {
-        $generated = $this->generate($state);
+        $queue = $this->resolveQueue();
 
-        $metadata = array_merge($state->thread->metadata ?? [], [
-            'keywords' => $generated['keywords'],
+        if ($queue !== null) {
+            $this->onQueue($queue);
+        }
+    }
+
+    public function handle(
+        AiThreadService $threadService,
+        AssistantRegistry $assistantRegistry,
+        AiMessageService $messageService,
+        TextRequestFactory $textRequestFactory,
+        PromptVariableService $promptVariableService,
+        AssistantThreadLogger $assistantThreadLogger
+    ): void {
+        $thread = $threadService->find($this->threadId);
+
+        if ($thread === null) {
+            return;
+        }
+
+        $assistant = $assistantRegistry->require(self::THREAD_SUMMARY_ASSISTANT_KEY);
+
+        $messages = $messageService->query()
+            ->where('thread_id', $thread->id)
+            ->where('status', AiMessageStatus::COMPLETED->value)
+            ->where('is_context_prompt', false)
+            ->orderBy('sequence')
+            ->get();
+
+        if ($messages->isEmpty()) {
+            return;
+        }
+
+        $state = new ThreadState(
+            $thread,
+            $assistant,
+            $assistant->systemPrompt(),
+            $messages,
+            collect(),
+            collect(),
+            null,
+            collect()
+        );
+
+        $summary = $this->generateSummary(
+            $state,
+            $assistant,
+            $textRequestFactory,
+            $promptVariableService,
+            $assistantThreadLogger
+        );
+
+        /** @var AiMessage $lastMessage */
+        $lastMessage = $messages->last();
+
+        $metadata = array_merge($thread->metadata ?? [], [
+            'keywords' => $summary['keywords'],
         ]);
 
         $payload = [
-            'summary' => $generated['summary'],
+            'summary' => $summary['summary'],
             'metadata' => $metadata,
+            'last_summary_message_id' => $lastMessage->getKey(),
         ];
 
-        if ($state->thread->title === null) {
-            $payload['title'] = $generated['title'];
+        if ($thread->title === null) {
+            $payload['title'] = $summary['title'];
         }
 
-        $updated = $this->threadService->update($state->thread, $payload);
-
-        return [
-            'thread' => $updated,
-            'title' => $updated->title,
-            'summary' => $updated->summary ?? $generated['summary'],
-            'keywords' => $generated['keywords'],
-        ];
-    }
-
-    /**
-     * Apply provided title and/or summary to the thread.
-     */
-    public function apply(ThreadState $state, ?string $title, ?string $summary): AiThread
-    {
-        $normalizedTitle = $this->trimValue($title);
-        $normalizedSummary = $this->trimValue($summary);
-
-        if ($normalizedTitle === null && $normalizedSummary === null) {
-            throw new RuntimeException('Provide a title or summary to update the thread.');
-        }
-
-        $payload = [];
-
-        if ($normalizedTitle !== null && $state->thread->title === null) {
-            $payload['title'] = $normalizedTitle;
-        }
-
-        if ($normalizedSummary !== null) {
-            $payload['summary'] = $normalizedSummary;
-        }
-
-        return $this->threadService->update($state->thread, $payload);
+        $threadService->update($thread, $payload);
     }
 
     /**
      * @return array{title: string, summary: string, keywords: array<int, string>}
      */
-    protected function generate(ThreadState $state): array
-    {
+    protected function generateSummary(
+        ThreadState $state,
+        ResolvedAssistant $assistant,
+        TextRequestFactory $textRequestFactory,
+        PromptVariableService $promptVariableService,
+        AssistantThreadLogger $assistantThreadLogger
+    ): array {
         if ($state->messages->isEmpty()) {
             throw new RuntimeException('Cannot generate title and summary without conversation messages.');
         }
 
-        $assistant = $this->threadManagerAssistant();
         $prompt = $assistant->systemPrompt();
 
         if ($prompt === '') {
-            throw new RuntimeException('Thread manager assistant prompt is missing.');
+            throw new RuntimeException('Thread summary assistant prompt is missing.');
         }
 
         $promptContext = new PromptVariableContext($state, $assistant, $prompt);
-        $promptText = $this->promptVariableService->apply($prompt, $promptContext);
+        $promptText = $promptVariableService->apply($prompt, $promptContext);
         $conversation = $this->conversationText($state);
 
         $provider = $this->provider();
         $model = $this->model($assistant->model());
 
-        $request = $this->textRequestFactory->make()
+        $request = $textRequestFactory->make()
             ->using($provider, $model)
             ->withSystemPrompt($promptText)
             ->withMessages([
@@ -139,32 +170,21 @@ class ThreadTitleSummaryService
 
         $decoded = $this->decodePayload($response->text);
 
-        $normalized = [
-            'title' => Str::limit($decoded['title'], 120, '...'),
-            'summary' => Str::limit($decoded['summary'], 5000, ''),
-            'keywords' => $decoded['keywords'],
-        ];
-
-        $metadata = [
-            'thread_manager_payload' => $decoded['raw_payload'],
-        ];
-
-        $this->assistantThreadLogger->log(
+        $assistantThreadLogger->log(
             $state->thread,
             $assistant,
             sprintf('Summary for Thread %s', $state->thread->getKey()),
             $conversation,
             $response,
-            $metadata,
-            $metadata
+            ['thread_summary_payload' => $decoded['raw_payload']],
+            ['thread_summary_payload' => $decoded['raw_payload']]
         );
 
-        return $normalized;
-    }
-
-    protected function threadManagerAssistant(): ResolvedAssistant
-    {
-        return $this->assistantRegistry->require(self::THREAD_MANAGER_KEY);
+        return [
+            'title' => Str::limit($decoded['title'], 120, '...'),
+            'summary' => Str::limit($decoded['summary'], 5000, ''),
+            'keywords' => $decoded['keywords'],
+        ];
     }
 
     /**
@@ -269,11 +289,8 @@ class ThreadTitleSummaryService
             '',
             $recentText,
         ]);
-        $limitedContext = Str::limit($context, 7000, '...');
 
-        return implode("\n", [
-            $limitedContext,
-        ]);
+        return Str::limit($context, 7000, '...');
     }
 
     protected function trimValue(?string $value): ?string
@@ -320,9 +337,12 @@ class ThreadTitleSummaryService
      */
     protected function existingKeywords(AiThread $thread): array
     {
-        $metadata = $thread->metadata ?? [];
+        /** @var array<string, mixed>|null $metadata */
+        $metadata = $thread->metadata;
+        /** @var array<string, mixed> $metadataArray */
+        $metadataArray = $metadata ?? [];
 
-        return $this->normalizeKeywords($metadata['keywords'] ?? null);
+        return $this->normalizeKeywords($metadataArray['keywords'] ?? null);
     }
 
     protected function provider(): string
@@ -348,7 +368,7 @@ class ThreadTitleSummaryService
     {
         $options = [];
 
-        if (strtolower($provider) === 'openai') {
+        if (mb_strtolower($provider) === 'openai') {
             $reasoning = $assistant->reasoning();
 
             if (is_array($reasoning) && $reasoning !== []) {
@@ -357,5 +377,12 @@ class ThreadTitleSummaryService
         }
 
         return $options;
+    }
+
+    protected function resolveQueue(): ?string
+    {
+        $queue = config('atlas-nexus.queue');
+
+        return is_string($queue) && $queue !== '' ? $queue : null;
     }
 }

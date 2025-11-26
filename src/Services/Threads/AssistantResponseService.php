@@ -15,7 +15,7 @@ use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Integrations\Prism\TextResponseSerializer;
 use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
-use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
+use Atlas\Nexus\Jobs\PushThreadSummaryAssistantJob;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
@@ -48,7 +48,7 @@ use function json_encode;
  */
 class AssistantResponseService
 {
-    private const THREAD_MANAGER_KEY = 'thread-manager';
+    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-manager';
 
     private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
 
@@ -184,7 +184,7 @@ class AssistantResponseService
                 );
             }
 
-            $this->dispatchThreadManagerAssistantJob($assistantMessage);
+            $this->dispatchThreadSummaryAssistantJob($assistantMessage);
             $this->dispatchMemoryExtractorAssistantJob($assistantMessage);
         } catch (Throwable $exception) {
             $failedReason = $exception instanceof PrismRateLimitedException
@@ -199,7 +199,7 @@ class AssistantResponseService
         }
     }
 
-    protected function dispatchThreadManagerAssistantJob(AiMessage $assistantMessage): void
+    protected function dispatchThreadSummaryAssistantJob(AiMessage $assistantMessage): void
     {
         $thread = $assistantMessage->thread?->fresh();
 
@@ -207,7 +207,7 @@ class AssistantResponseService
             return;
         }
 
-        if ($thread->assistant_key === self::THREAD_MANAGER_KEY) {
+        if ($thread->assistant_key === self::THREAD_SUMMARY_ASSISTANT_KEY) {
             $parent = $thread->parentThread()->first();
 
             if (! $parent instanceof \Atlas\Nexus\Models\AiThread) {
@@ -230,7 +230,7 @@ class AssistantResponseService
         }
 
         if ($thread->last_summary_message_id === null) {
-            PushThreadManagerAssistantJob::dispatch($thread->getKey());
+            PushThreadSummaryAssistantJob::dispatch($thread->getKey());
 
             return;
         }
@@ -242,7 +242,7 @@ class AssistantResponseService
             ->count();
 
         if ($messagesSinceSummary >= $messageInterval) {
-            PushThreadManagerAssistantJob::dispatch($thread->getKey());
+            PushThreadSummaryAssistantJob::dispatch($thread->getKey());
         }
     }
 
@@ -254,7 +254,7 @@ class AssistantResponseService
             return;
         }
 
-        if (in_array($thread->assistant_key, [self::THREAD_MANAGER_KEY, self::MEMORY_EXTRACTOR_KEY], true)) {
+        if (in_array($thread->assistant_key, [self::THREAD_SUMMARY_ASSISTANT_KEY, self::MEMORY_EXTRACTOR_KEY], true)) {
             return;
         }
 

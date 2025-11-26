@@ -7,7 +7,7 @@ namespace Atlas\Nexus\Tests\Unit\Jobs;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
-use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
+use Atlas\Nexus\Jobs\PushThreadSummaryAssistantJob;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
@@ -157,7 +157,7 @@ class RunAssistantResponseJobTest extends TestCase
 
     public function test_it_dispatches_thread_manager_job_after_minimum_message_count_met(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
 
         /** @var AiThread $thread */
@@ -207,14 +207,14 @@ class RunAssistantResponseJobTest extends TestCase
         $assistantMessage->refresh();
         $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
 
-        Bus::assertDispatched(PushThreadManagerAssistantJob::class, function (PushThreadManagerAssistantJob $job) use ($thread): bool {
+        Bus::assertDispatched(PushThreadSummaryAssistantJob::class, function (PushThreadSummaryAssistantJob $job) use ($thread): bool {
             return $job->threadId === $thread->id;
         });
     }
 
     public function test_it_dispatches_thread_manager_job_when_interval_reached_after_last_summary(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
 
         config()->set('atlas-nexus.thread_summary.message_interval', 3);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
@@ -293,14 +293,14 @@ class RunAssistantResponseJobTest extends TestCase
         $assistantMessage->refresh();
         $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
 
-        Bus::assertDispatched(PushThreadManagerAssistantJob::class, function (PushThreadManagerAssistantJob $job) use ($thread): bool {
+        Bus::assertDispatched(PushThreadSummaryAssistantJob::class, function (PushThreadSummaryAssistantJob $job) use ($thread): bool {
             return $job->threadId === $thread->id;
         });
     }
 
     public function test_it_dispatches_memory_extractor_job_after_four_unchecked_messages(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 10);
         config()->set('atlas-nexus.memory.pending_message_count', 4);
 
@@ -374,7 +374,7 @@ class RunAssistantResponseJobTest extends TestCase
 
     public function test_it_uses_configured_memory_extractor_threshold(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 10);
         config()->set('atlas-nexus.memory.pending_message_count', 2);
 
@@ -430,7 +430,7 @@ class RunAssistantResponseJobTest extends TestCase
 
     public function test_it_does_not_dispatch_when_interval_not_met(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
 
         config()->set('atlas-nexus.thread_summary.message_interval', 4);
         config()->set('atlas-nexus.thread_summary.minimum_messages', 2);
@@ -501,12 +501,12 @@ class RunAssistantResponseJobTest extends TestCase
         $assistantMessage->refresh();
         $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
 
-        Bus::assertNotDispatched(PushThreadManagerAssistantJob::class);
+        Bus::assertNotDispatched(PushThreadSummaryAssistantJob::class);
     }
 
     public function test_it_skips_dispatch_for_thread_manager_threads(): void
     {
-        Bus::fake([PushThreadManagerAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
+        Bus::fake([PushThreadSummaryAssistantJob::class, PushMemoryExtractorAssistantJob::class]);
 
         /** @var AiThread $thread */
         $thread = AiThread::factory()->create([
@@ -538,7 +538,7 @@ class RunAssistantResponseJobTest extends TestCase
 
         $response = new TextResponse(
             steps: collect([]),
-            text: 'Thread manager reply.',
+            text: 'Thread summary reply.',
             finishReason: FinishReason::Stop,
             toolCalls: [],
             toolResults: [],
@@ -555,7 +555,7 @@ class RunAssistantResponseJobTest extends TestCase
         $assistantMessage->refresh();
         $this->assertSame(AiMessageStatus::COMPLETED, $assistantMessage->status);
 
-        Bus::assertNotDispatched(PushThreadManagerAssistantJob::class);
+        Bus::assertNotDispatched(PushThreadSummaryAssistantJob::class);
     }
 
     private function migrationPath(): string

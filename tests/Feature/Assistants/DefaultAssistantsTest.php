@@ -8,7 +8,7 @@ use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant;
 use Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant;
 use Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant;
-use Atlas\Nexus\Services\Assistants\Definitions\ThreadManagerAssistant;
+use Atlas\Nexus\Services\Assistants\Definitions\ThreadSummaryAssistant;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
@@ -28,7 +28,7 @@ class DefaultAssistantsTest extends TestCase
         $expected = [
             GeneralAssistant::class,
             HumanAssistant::class,
-            ThreadManagerAssistant::class,
+            ThreadSummaryAssistant::class,
             MemoryAssistant::class,
         ];
 

@@ -24,8 +24,6 @@ class ThreadManagerService
 
     public function __construct(
         private readonly AiThreadService $threadService,
-        private readonly ThreadStateService $threadStateService,
-        private readonly ThreadTitleSummaryService $titleSummaryService,
         private readonly ThreadMemoryService $threadMemoryService
     ) {}
 
@@ -175,48 +173,6 @@ class ThreadManagerService
         }
 
         return $ordered;
-    }
-
-    /**
-     * @return array{thread: AiThread, title: string|null, summary: string|null, keywords: array<int, string>}
-     */
-    public function updateThread(
-        ThreadState $state,
-        int $threadId,
-        ?string $title,
-        ?string $summary,
-        bool $generate
-    ): array {
-        $thread = $this->threadService->query()
-            ->where('assistant_key', $state->assistant->key())
-            ->where('user_id', $state->thread->user_id)
-            ->where('id', $threadId)
-            ->first();
-
-        if ($thread === null) {
-            throw new RuntimeException('Thread not found for this assistant and user.');
-        }
-
-        $targetState = $thread->is($state->thread)
-            ? $state
-            : $this->threadStateService->forThread($thread);
-
-        if ($generate) {
-            return $this->titleSummaryService->generateAndSave($targetState);
-        }
-
-        if ($title === null && $summary === null) {
-            throw new RuntimeException('Provide a title or summary to update the thread.');
-        }
-
-        $updated = $this->titleSummaryService->apply($targetState, $title, $summary);
-
-        return [
-            'thread' => $updated,
-            'title' => $updated->title,
-            'summary' => $updated->summary,
-            'keywords' => $this->keywordsForThread($updated),
-        ];
     }
 
     /**

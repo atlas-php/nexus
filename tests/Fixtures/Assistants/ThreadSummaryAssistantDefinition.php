@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Atlas\Nexus\Tests\Fixtures\Assistants;
 
-class ThreadManagerAssistantDefinition extends ConfigurableAssistantDefinition
+class ThreadSummaryAssistantDefinition extends ConfigurableAssistantDefinition
 {
     /**
      * @return array<string, mixed>
@@ -13,7 +13,7 @@ class ThreadManagerAssistantDefinition extends ConfigurableAssistantDefinition
     {
         return [
             'key' => 'thread-manager',
-            'name' => 'Thread Manager',
+            'name' => 'Thread Summary Assistant',
             'description' => 'Generates thread titles and summaries.',
             'is_hidden' => true,
             'system_prompt' => <<<'PROMPT'

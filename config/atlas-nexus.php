@@ -35,7 +35,7 @@ return [
     'assistants' => [
         \Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant::class,
         \Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant::class,
-        \Atlas\Nexus\Services\Assistants\Definitions\ThreadManagerAssistant::class,
+        \Atlas\Nexus\Services\Assistants\Definitions\ThreadSummaryAssistant::class,
         \Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant::class,
         // Additional consumer-defined assistants go here.
     ],

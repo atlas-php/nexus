@@ -8,7 +8,7 @@ use Atlas\Nexus\Enums\AiMessageContentType;
 use Atlas\Nexus\Enums\AiMessageRole;
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Enums\AiThreadType;
-use Atlas\Nexus\Jobs\PushThreadManagerAssistantJob;
+use Atlas\Nexus\Jobs\PushThreadSummaryAssistantJob;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
@@ -284,7 +284,7 @@ class ThreadMessageServiceTest extends TestCase
 
         $service->sendUserMessage($thread, 'Are you there?', $thread->user_id);
 
-        Queue::assertPushed(PushThreadManagerAssistantJob::class);
+        Queue::assertPushed(PushThreadSummaryAssistantJob::class);
     }
 
     public function test_it_dispatches_to_configured_queue_when_set(): void
@@ -345,7 +345,7 @@ class ThreadMessageServiceTest extends TestCase
         $service = $this->app->make(ThreadMessageService::class);
         $result = $service->sendUserMessage($thread, 'Hello inline', $thread->user_id, AiMessageContentType::TEXT, false);
 
-        Queue::assertPushed(PushThreadManagerAssistantJob::class);
+        Queue::assertPushed(PushThreadSummaryAssistantJob::class);
 
         $assistantMessage = $result['assistant']->fresh();
         $this->assertInstanceOf(AiMessage::class, $assistantMessage);

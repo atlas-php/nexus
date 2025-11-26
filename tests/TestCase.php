@@ -9,7 +9,7 @@ use Atlas\Nexus\Providers\AtlasNexusServiceProvider;
 use Atlas\Nexus\Services\Assistants\AssistantRegistry;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\Assistants\SecondaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadManagerAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadSummaryAssistantDefinition;
 use Prism\Prism\PrismServiceProvider;
 
 /**
@@ -39,13 +39,13 @@ abstract class TestCase extends PackageTestCase
 
         PrimaryAssistantDefinition::resetConfig();
         SecondaryAssistantDefinition::resetConfig();
-        ThreadManagerAssistantDefinition::resetConfig();
+        ThreadSummaryAssistantDefinition::resetConfig();
 
         if ($this->shouldUseAssistantFixtures()) {
             $assistants = [
                 PrimaryAssistantDefinition::class,
                 SecondaryAssistantDefinition::class,
-                ThreadManagerAssistantDefinition::class,
+                ThreadSummaryAssistantDefinition::class,
             ];
 
             config()->set('atlas-nexus.assistants', $assistants);

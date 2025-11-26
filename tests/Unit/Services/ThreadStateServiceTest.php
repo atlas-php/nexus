@@ -15,7 +15,7 @@ use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
 use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadManagerAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadSummaryAssistantDefinition;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\TestCase;
 
@@ -164,7 +164,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_thread_manager_prompt_variables_use_parent_thread_when_available(): void
     {
-        ThreadManagerAssistantDefinition::updateConfig([
+        ThreadSummaryAssistantDefinition::updateConfig([
             'system_prompt' => 'Summary for {THREAD.ID}: {THREAD.TITLE}',
         ]);
 
