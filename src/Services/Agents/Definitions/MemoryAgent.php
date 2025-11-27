@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants\Definitions;
+namespace Atlas\Nexus\Services\Agents\Definitions;
 
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 
 /**
- * Class MemoryAssistant
+ * Class MemoryAgent
  *
- * Reviews unprocessed thread messages alongside known memories to capture new, non-duplicated facts.
+ * Reviews unprocessed thread messages alongside known memories to capture durable facts.
  */
-class MemoryAssistant extends AssistantDefinition
+class MemoryAgent extends AgentDefinition
 {
     public function key(): string
     {
@@ -20,7 +20,7 @@ class MemoryAssistant extends AssistantDefinition
 
     public function name(): string
     {
-        return 'Memory Assistant';
+        return 'Memory Agent';
     }
 
     public function description(): ?string

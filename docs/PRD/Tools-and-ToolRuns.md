@@ -17,8 +17,8 @@ Tools are **code-defined**. Each tool implements `NexusTool`, declares a fixed *
 - Additional tools can be registered at runtime by resolving `ToolRegistry` from the container and calling `register(new ToolDefinition('custom', CustomTool::class))`.
 - Only tools with resolvable handler classes are exposed to Prism.
 - `ToolRegistry::available()` exposes all registered tool definitions (for UI listing/checkboxes when creating assistants).
-- Handlers may implement `ConfigurableTool` to receive assistant-owned configuration arrays. Return keyed entries from `AssistantDefinition::tools()` (e.g., `['calendar_lookup' => ['allowed_calendars' => ['sales']]]`) to pass these options to the handler before it is converted into a Prism tool.
-- `AssistantDefinition::providerTools()` mirrors this structure for provider-native tools so each assistant controls its own provider options (vector store ids, allowed domains, etc.) without touching global config.
+- Handlers may implement `ConfigurableTool` to receive agent-owned configuration arrays. Return keyed entries from `AgentDefinition::tools()` (e.g., `['calendar_lookup' => ['allowed_calendars' => ['sales']]]`) to pass these options to the handler before it is converted into a Prism tool.
+- `AgentDefinition::providerTools()` mirrors this structure for provider-native tools so each agent controls its own provider options (vector store ids, allowed domains, etc.) without touching global config.
 - Example configuration:
 
 ```php

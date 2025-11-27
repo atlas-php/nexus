@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Unit\Support\Assistants;
+namespace Atlas\Nexus\Tests\Unit\Support\Agents;
 
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
- * Class ResolvedAssistantTest
+ * Class ResolvedAgentTest
  *
- * Ensures assistant configuration payloads are exposed for runtime services.
+ * Ensures agent configuration payloads are exposed for runtime services.
  */
-class ResolvedAssistantTest extends TestCase
+class ResolvedAgentTest extends TestCase
 {
     public function test_it_exposes_configuration_maps(): void
     {
-        $definition = new class extends AssistantDefinition
+        $definition = new class extends AgentDefinition
         {
             private int $maxSteps = 5;
 
@@ -75,7 +75,7 @@ class ResolvedAssistantTest extends TestCase
             }
         };
 
-        $resolved = new ResolvedAssistant($definition);
+        $resolved = new ResolvedAgent($definition);
 
         $this->assertSame(5, $resolved->maxDefaultSteps());
         $this->assertSame(['limit' => 10], $resolved->toolConfiguration('fetch_more_context'));

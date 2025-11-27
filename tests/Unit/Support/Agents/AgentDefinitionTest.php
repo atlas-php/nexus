@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Unit\Support\Assistants;
+namespace Atlas\Nexus\Tests\Unit\Support\Agents;
 
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 use Atlas\Nexus\Tests\TestCase;
 
 /**
- * Class AssistantDefinitionTest
+ * Class AgentDefinitionTest
  *
- * Verifies assistant definition payload normalization and defaults.
+ * Verifies agent definition payload normalization and defaults.
  */
-class AssistantDefinitionTest extends TestCase
+class AgentDefinitionTest extends TestCase
 {
-    public function test_it_normalizes_assistant_and_prompt_payloads(): void
+    public function test_it_normalizes_agent_and_prompt_payloads(): void
     {
-        $definition = new class extends AssistantDefinition
+        $definition = new class extends AgentDefinition
         {
             private string $descriptionValue = 'Demo description';
 
@@ -41,7 +41,7 @@ class AssistantDefinitionTest extends TestCase
 
             public function name(): string
             {
-                return 'Demo Assistant';
+                return 'Demo Agent';
             }
 
             public function systemPrompt(): string
@@ -167,11 +167,11 @@ class AssistantDefinitionTest extends TestCase
             }
         };
 
-        $assistant = $definition->assistantAttributes();
+        $assistant = $definition->agentAttributes();
         $prompt = $definition->promptAttributes();
 
         $this->assertSame('demo-assistant', $assistant['assistant_key']);
-        $this->assertSame('Demo Assistant', $assistant['name']);
+        $this->assertSame('Demo Agent', $assistant['name']);
         $this->assertSame('Demo description', $assistant['description']);
         $this->assertSame('gpt-4o', $assistant['default_model']);
         $this->assertSame(0.25, $assistant['temperature']);
@@ -200,7 +200,7 @@ class AssistantDefinitionTest extends TestCase
 
     public function test_it_handles_absent_optional_data(): void
     {
-        $definition = new class extends AssistantDefinition
+        $definition = new class extends AgentDefinition
         {
             public function key(): string
             {
@@ -223,7 +223,7 @@ class AssistantDefinitionTest extends TestCase
             }
         };
 
-        $assistant = $definition->assistantAttributes();
+        $assistant = $definition->agentAttributes();
         $prompt = $definition->promptAttributes();
 
         $this->assertSame('minimal-assistant', $assistant['assistant_key']);

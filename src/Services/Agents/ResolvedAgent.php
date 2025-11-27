@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants;
+namespace Atlas\Nexus\Services\Agents;
 
 /**
- * Class ResolvedAssistant
+ * Class ResolvedAgent
  *
- * Provides normalized assistant data derived from an AssistantDefinition instance.
+ * Provides normalized agent data derived from an AgentDefinition instance.
  */
-class ResolvedAssistant
+class ResolvedAgent
 {
     private string $key;
 
@@ -63,11 +63,11 @@ class ResolvedAssistant
      */
     private ?array $reasoningOptions;
 
-    public function __construct(private readonly AssistantDefinition $definition)
+    public function __construct(private readonly AgentDefinition $definition)
     {
-        $attributes = $definition->assistantAttributes();
+        $attributes = $definition->agentAttributes();
 
-        $key = $attributes['assistant_key'] ?? $attributes['key'] ?? null;
+        $key = $attributes['assistant_key'] ?? $attributes['agent_key'] ?? $attributes['key'] ?? null;
 
         $this->key = is_string($key) && $key !== '' ? strtolower($key) : strtolower($definition->key());
         $this->name = (string) ($attributes['name'] ?? $definition->name());
@@ -88,7 +88,7 @@ class ResolvedAssistant
         $this->reasoningOptions = $this->normalizeConfigurationArray($attributes['reasoning'] ?? null);
     }
 
-    public function definition(): AssistantDefinition
+    public function definition(): AgentDefinition
     {
         return $this->definition;
     }

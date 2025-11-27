@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants\Definitions;
+namespace Atlas\Nexus\Services\Agents\Definitions;
 
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 
 /**
- * Class HumanAssistant
+ * Class HumanAgent
  *
- * Ships the Sara persona assistant for human-like conversation testing without requiring consumers to craft one.
+ * Ships the Sara persona agent for human-like conversation testing without custom code.
  */
-class HumanAssistant extends AssistantDefinition
+class HumanAgent extends AgentDefinition
 {
     public function key(): string
     {
@@ -22,12 +22,12 @@ class HumanAssistant extends AssistantDefinition
 
     public function name(): string
     {
-        return 'Conversational Assistant';
+        return 'Human Agent (Sara)';
     }
 
     public function description(): ?string
     {
-        return 'An experimental conversational assistant that responds as Sara, a human.';
+        return 'An experimental conversational agent that responds as Sara, a human.';
     }
 
     public function model(): ?string

@@ -7,7 +7,7 @@ namespace Atlas\Nexus\Services\Threads\Data;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Tools\ProviderToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Illuminate\Support\Collection;
@@ -36,7 +36,7 @@ class ThreadState
      */
     public function __construct(
         public readonly AiThread $thread,
-        public readonly ResolvedAssistant $assistant,
+        public readonly ResolvedAgent $assistant,
         public readonly ?string $prompt,
         public readonly Collection $messages,
         public readonly Collection $memories,

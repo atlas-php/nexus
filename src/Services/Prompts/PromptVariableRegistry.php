@@ -64,17 +64,7 @@ class PromptVariableRegistry
 
     private function registerConfigured(): void
     {
-        $configured = $this->config->get('atlas-nexus.variables', []);
-
-        if (! is_array($configured)) {
-            return;
-        }
-
-        foreach ($configured as $provider) {
-            if (! is_string($provider) || $provider === '') {
-                continue;
-            }
-
+        foreach ($this->configuredProviders() as $provider) {
             $variable = $this->app->make($provider);
 
             if (! $variable instanceof PromptVariableGroup) {
@@ -108,5 +98,61 @@ class PromptVariableRegistry
         }
 
         return $normalized;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function configuredProviders(): array
+    {
+        $defaults = $this->normalizeProviderList(
+            $this->config->get('atlas-nexus.defaults.prompt_attributes', [])
+        );
+
+        $promptAttributes = $this->normalizeProviderList(
+            $this->config->get('atlas-nexus.prompt_attributes')
+        );
+
+        $legacyVariables = $this->normalizeProviderList(
+            $this->config->get('atlas-nexus.variables')
+        );
+
+        $legacyIsCustom = $legacyVariables !== [] && $defaults !== [] && $legacyVariables !== $defaults;
+
+        if ($legacyIsCustom) {
+            return $legacyVariables;
+        }
+
+        if ($promptAttributes !== []) {
+            return $promptAttributes;
+        }
+
+        if ($legacyVariables !== []) {
+            return $legacyVariables;
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function normalizeProviderList(mixed $configured): array
+    {
+        if (! is_array($configured)) {
+            return [];
+        }
+
+        $providers = [];
+
+        foreach ($configured as $provider) {
+            if (! is_string($provider) || $provider === '') {
+                continue;
+            }
+
+            $providers[] = $provider;
+        }
+
+        return $providers;
     }
 }

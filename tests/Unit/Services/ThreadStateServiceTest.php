@@ -14,8 +14,8 @@ use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadSummaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\ThreadSummaryAgentDefinition;
 use Atlas\Nexus\Tests\Fixtures\StubTool;
 use Atlas\Nexus\Tests\TestCase;
 
@@ -36,7 +36,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_builds_thread_state_with_messages_memories_and_tools(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'tools' => ['calendar_lookup'],
             'system_prompt' => 'Stay helpful.',
         ]);
@@ -80,7 +80,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_excludes_tool_when_not_enabled(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'tools' => [],
         ]);
 
@@ -99,7 +99,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_returns_no_tools_when_assistant_has_none(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'tools' => [],
         ]);
 
@@ -118,7 +118,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_applies_provider_tool_configuration_from_assistant(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'provider_tools' => [
                 'file_search' => ['vector_store_ids' => ['vs_123', '']],
             ],
@@ -145,7 +145,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_returns_no_provider_tools_when_assistant_has_none(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'provider_tools' => [],
         ]);
 
@@ -164,7 +164,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_thread_manager_prompt_variables_use_parent_thread_when_available(): void
     {
-        ThreadSummaryAssistantDefinition::updateConfig([
+        ThreadSummaryAgentDefinition::updateConfig([
             'system_prompt' => 'Summary for {THREAD.ID}: {THREAD.TITLE}',
         ]);
 
@@ -197,7 +197,7 @@ class ThreadStateServiceTest extends TestCase
 
     public function test_it_snapshots_prompt_on_first_state_build(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'system_prompt' => 'Original instructions.',
         ]);
 
@@ -218,7 +218,7 @@ class ThreadStateServiceTest extends TestCase
         $this->assertInstanceOf(AiThread::class, $snapshot);
         $this->assertSame('Original instructions.', $snapshot->prompt_snapshot);
 
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'system_prompt' => 'Updated instructions mid-thread.',
         ]);
 
@@ -234,7 +234,7 @@ class ThreadStateServiceTest extends TestCase
         config()->set('atlas-nexus.threads.snapshot_prompts', false);
 
         try {
-            PrimaryAssistantDefinition::updateConfig([
+            PrimaryAgentDefinition::updateConfig([
                 'system_prompt' => 'Unlocked instructions.',
             ]);
 
@@ -252,7 +252,7 @@ class ThreadStateServiceTest extends TestCase
             $this->assertSame('Unlocked instructions.', $initialState->prompt);
             $this->assertNull($thread->fresh()?->prompt_snapshot);
 
-            PrimaryAssistantDefinition::updateConfig([
+            PrimaryAgentDefinition::updateConfig([
                 'system_prompt' => 'New unlocked instructions.',
             ]);
 

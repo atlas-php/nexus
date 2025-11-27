@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants;
+namespace Atlas\Nexus\Services\Agents;
 
 use Atlas\Nexus\Models\AiThread;
 
 /**
- * Class AssistantDefinition
+ * Class AgentDefinition
  *
- * Baseline DTO-style definition that describes an assistant and its prompt metadata.
- * Consumers extend this class and register implementations via config to keep assistants
+ * Baseline DTO-style definition that describes an agent and its prompt metadata.
+ * Consumers extend this class and register implementations via config to keep agents
  * declarative and application-owned.
  */
-abstract class AssistantDefinition
+abstract class AgentDefinition
 {
     abstract public function key(): string;
 
@@ -116,13 +116,14 @@ abstract class AssistantDefinition
     /**
      * @return array<string, mixed>
      */
-    final public function assistantAttributes(): array
+    final public function agentAttributes(): array
     {
         [$toolKeys, $toolConfigurations] = $this->normalizeToolDeclarations($this->tools());
         [$providerToolKeys, $providerToolConfigurations] = $this->normalizeToolDeclarations($this->providerTools());
         $reasoning = $this->reasoning();
 
         return [
+            'agent_key' => $this->key(),
             'assistant_key' => $this->key(),
             'key' => $this->key(),
             'name' => $this->name(),
@@ -215,12 +216,35 @@ abstract class AssistantDefinition
             }
         }
 
-        $normalizedKeys = array_keys($keys);
-
         return [
-            $normalizedKeys !== [] ? $normalizedKeys : null,
+            $keys !== [] ? array_keys($keys) : null,
             $configurations !== [] ? $configurations : null,
         ];
+    }
+
+    /**
+     * @param  array<string|int, mixed>|null  $configuration
+     * @return array<string, mixed>|null
+     */
+    final protected function normalizeConfigurationArray(?array $configuration): ?array
+    {
+        if ($configuration === null) {
+            return null;
+        }
+
+        $normalized = [];
+
+        foreach ($configuration as $key => $value) {
+            $normalizedKey = (string) $key;
+
+            if ($normalizedKey === '') {
+                continue;
+            }
+
+            $normalized[$normalizedKey] = $value;
+        }
+
+        return $normalized === [] ? null : $normalized;
     }
 
     /**
@@ -228,15 +252,15 @@ abstract class AssistantDefinition
      */
     private function normalizeToolKeyFromDeclaration(array $declaration): ?string
     {
-        $key = $declaration['key'] ?? null;
+        $key = $declaration['key'] ?? $declaration['tool'] ?? null;
 
-        if (! is_string($key)) {
-            return null;
+        if (is_string($key)) {
+            $normalized = trim($key);
+
+            return $normalized !== '' ? $normalized : null;
         }
 
-        $trimmed = trim($key);
-
-        return $trimmed === '' ? null : $trimmed;
+        return null;
     }
 
     /**
@@ -249,28 +273,9 @@ abstract class AssistantDefinition
 
         if (! is_array($config)) {
             $config = $declaration;
-            unset($config['key'], $config['config'], $config['configuration'], $config['options']);
+            unset($config['key'], $config['tool'], $config['config'], $config['configuration'], $config['options']);
         }
 
         return $config === [] ? null : $config;
-    }
-
-    /**
-     * @param  array<string|int, mixed>  $config
-     * @return array<string, mixed>|null
-     */
-    final protected function normalizeConfigurationArray(array $config): ?array
-    {
-        $normalized = [];
-
-        foreach ($config as $key => $value) {
-            if (! is_string($key) || $key === '') {
-                continue;
-            }
-
-            $normalized[$key] = $value;
-        }
-
-        return $normalized === [] ? null : $normalized;
     }
 }

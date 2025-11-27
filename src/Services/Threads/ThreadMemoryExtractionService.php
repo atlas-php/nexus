@@ -10,8 +10,8 @@ use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Illuminate\Support\Collection;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
@@ -29,7 +29,7 @@ class ThreadMemoryExtractionService
     private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
 
     public function __construct(
-        private readonly AssistantRegistry $assistantRegistry,
+        private readonly AgentRegistry $assistantRegistry,
         private readonly ThreadMemoryService $threadMemoryService,
         private readonly TextRequestFactory $textRequestFactory,
         private readonly AiMessageService $messageService,
@@ -134,7 +134,7 @@ class ThreadMemoryExtractionService
         return is_string($provider) && $provider !== '' ? $provider : 'openai';
     }
 
-    private function model(ResolvedAssistant $assistant): string
+    private function model(ResolvedAgent $assistant): string
     {
         $model = $assistant->model() ?? config('prism.default_model') ?? 'gpt-4o-mini';
 

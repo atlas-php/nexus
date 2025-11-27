@@ -6,10 +6,11 @@ namespace Atlas\Nexus\Tests;
 
 use Atlas\Core\Testing\PackageTestCase;
 use Atlas\Nexus\Providers\AtlasNexusServiceProvider;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Assistants\SecondaryAssistantDefinition;
-use Atlas\Nexus\Tests\Fixtures\Assistants\ThreadSummaryAssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Threads\Hooks\ThreadHookRegistry;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\SecondaryAgentDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\ThreadSummaryAgentDefinition;
 use Prism\Prism\PrismServiceProvider;
 
 /**
@@ -37,24 +38,25 @@ abstract class TestCase extends PackageTestCase
     {
         parent::setUp();
 
-        PrimaryAssistantDefinition::resetConfig();
-        SecondaryAssistantDefinition::resetConfig();
-        ThreadSummaryAssistantDefinition::resetConfig();
+        PrimaryAgentDefinition::resetConfig();
+        SecondaryAgentDefinition::resetConfig();
+        ThreadSummaryAgentDefinition::resetConfig();
 
-        if ($this->shouldUseAssistantFixtures()) {
-            $assistants = [
-                PrimaryAssistantDefinition::class,
-                SecondaryAssistantDefinition::class,
-                ThreadSummaryAssistantDefinition::class,
+        if ($this->shouldUseAgentFixtures()) {
+            $agents = [
+                PrimaryAgentDefinition::class,
+                SecondaryAgentDefinition::class,
+                ThreadSummaryAgentDefinition::class,
             ];
 
-            config()->set('atlas-nexus.assistants', $assistants);
+            config()->set('atlas-nexus.agents', $agents);
         }
 
-        $this->app->make(AssistantRegistry::class)->refresh();
+        $this->app->make(AgentRegistry::class)->refresh();
+        $this->app->make(ThreadHookRegistry::class)->refresh();
     }
 
-    protected function shouldUseAssistantFixtures(): bool
+    protected function shouldUseAgentFixtures(): bool
     {
         return true;
     }

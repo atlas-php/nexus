@@ -11,8 +11,8 @@ use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Jobs\RunAssistantResponseJob;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\ContextPromptService;
@@ -33,7 +33,7 @@ class ThreadMessageService
         private readonly AiMessageService $messageService,
         private readonly AiThreadService $threadService,
         private readonly AssistantResponseService $assistantResponseService,
-        private readonly AssistantRegistry $assistantRegistry,
+        private readonly AgentRegistry $assistantRegistry,
         private readonly ContextPromptService $contextPromptService,
         private readonly ConfigRepository $config
     ) {}
@@ -116,7 +116,7 @@ class ThreadMessageService
         }
     }
 
-    protected function resolveAssistant(AiThread $thread): ResolvedAssistant
+    protected function resolveAssistant(AiThread $thread): ResolvedAgent
     {
         $assistantKey = $thread->assistant_key;
 
@@ -143,7 +143,7 @@ class ThreadMessageService
         return is_string($queue) && $queue !== '' ? $queue : null;
     }
 
-    protected function maybeCreateContextMessage(AiThread $thread, ResolvedAssistant $assistant): ?AiMessage
+    protected function maybeCreateContextMessage(AiThread $thread, ResolvedAgent $assistant): ?AiMessage
     {
         if ($this->threadHasMessages($thread) || ! $this->isUserThread($thread)) {
             return null;

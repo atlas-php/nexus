@@ -12,7 +12,7 @@ Scenario-driven overview of how consumers create assistants, start threads, send
 - [Manage Memories](#manage-memories)
 
 ## Create an Assistant & Prompt
-1. Create a class that extends `Atlas\Nexus\Services\Assistants\AssistantDefinition` and implement the required methods (`key`, `name`, `systemPrompt`, defaults, tools, etc.). Override `maxDefaultSteps()`, `isActive()`, and `isHidden()` as needed for routing/UI controls.
+1. Create a class that extends `Atlas\Nexus\Services\Agents\AgentDefinition` and implement the required methods (`key`, `name`, `systemPrompt`, defaults, tools, etc.). Override `maxDefaultSteps()`, `isActive()`, and `isHidden()` as needed for routing/UI controls.
 2. Register the class inside `config/atlas-nexus.php` under `assistants`.
 3. Reference the assistant by its `key` everywhere else (threads, messages, tool runs, memories).
 

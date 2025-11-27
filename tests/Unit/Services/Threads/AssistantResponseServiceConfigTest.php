@@ -9,7 +9,7 @@ use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
 use Atlas\Nexus\Services\Tools\ToolDefinition;
 use Atlas\Nexus\Services\Tools\ToolRegistry;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
 use Atlas\Nexus\Tests\Fixtures\ConfigurableStubTool;
 use Atlas\Nexus\Tests\TestCase;
 use ReflectionMethod;
@@ -21,7 +21,7 @@ class AssistantResponseServiceConfigTest extends TestCase
         parent::setUp();
 
         ConfigurableStubTool::reset();
-        PrimaryAssistantDefinition::resetConfig();
+        PrimaryAgentDefinition::resetConfig();
 
         $this->app->make(ToolRegistry::class)->register(
             new ToolDefinition('configurable_tool', ConfigurableStubTool::class)
@@ -36,7 +36,7 @@ class AssistantResponseServiceConfigTest extends TestCase
 
     public function test_it_applies_assistant_tool_configuration_to_configurable_tools(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'tools' => [
                 'configurable_tool' => ['mode' => 'summary', 'depth' => 2],
             ],
@@ -62,7 +62,7 @@ class AssistantResponseServiceConfigTest extends TestCase
 
     public function test_it_applies_openai_reasoning_options_when_configured(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'reasoning' => [
                 'effort' => 'medium',
                 'budget_tokens' => 512,
@@ -91,7 +91,7 @@ class AssistantResponseServiceConfigTest extends TestCase
 
     public function test_it_skips_reasoning_options_for_non_openai_providers(): void
     {
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'reasoning' => [
                 'effort' => 'high',
             ],

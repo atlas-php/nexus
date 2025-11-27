@@ -8,8 +8,8 @@ use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableContext;
@@ -54,7 +54,7 @@ class PushThreadSummaryAssistantJob implements ShouldQueue
 
     public function handle(
         AiThreadService $threadService,
-        AssistantRegistry $assistantRegistry,
+        AgentRegistry $assistantRegistry,
         AiMessageService $messageService,
         TextRequestFactory $textRequestFactory,
         PromptVariableService $promptVariableService,
@@ -123,7 +123,7 @@ class PushThreadSummaryAssistantJob implements ShouldQueue
      */
     protected function generateSummary(
         ThreadState $state,
-        ResolvedAssistant $assistant,
+        ResolvedAgent $assistant,
         TextRequestFactory $textRequestFactory,
         PromptVariableService $promptVariableService,
         AssistantThreadLogger $assistantThreadLogger
@@ -364,7 +364,7 @@ class PushThreadSummaryAssistantJob implements ShouldQueue
     /**
      * @return array<string, mixed>
      */
-    protected function resolveProviderOptions(ResolvedAssistant $assistant, string $provider): array
+    protected function resolveProviderOptions(ResolvedAgent $assistant, string $provider): array
     {
         $options = [];
 

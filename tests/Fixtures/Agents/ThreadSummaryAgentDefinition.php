@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Fixtures\Assistants;
+namespace Atlas\Nexus\Tests\Fixtures\Agents;
 
-class ThreadSummaryAssistantDefinition extends ConfigurableAssistantDefinition
+class ThreadSummaryAgentDefinition extends ConfigurableAgentDefinition
 {
     /**
      * @return array<string, mixed>
@@ -13,7 +13,7 @@ class ThreadSummaryAssistantDefinition extends ConfigurableAssistantDefinition
     {
         return [
             'key' => 'thread-summary-assistant',
-            'name' => 'Thread Summary Assistant',
+            'name' => 'Thread Summary Agent',
             'description' => 'Generates thread titles and summaries.',
             'is_hidden' => true,
             'system_prompt' => <<<'PROMPT'
@@ -43,7 +43,7 @@ You review a full conversation and extract the essential meaning without includi
 
 Return only a JSON object with the fields: `title`, `summary`, and `keywords`.
 PROMPT,
-            'default_model' => 'gpt-thread-summary-assistant',
+            'default_model' => 'gpt-thread-summary-agent',
             'tools' => [],
             'provider_tools' => [],
             'metadata' => [],

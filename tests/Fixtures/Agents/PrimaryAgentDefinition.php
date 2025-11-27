@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Fixtures\Assistants;
+namespace Atlas\Nexus\Tests\Fixtures\Agents;
 
 use Atlas\Nexus\Models\AiThread;
 
-class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
+class PrimaryAgentDefinition extends ConfigurableAgentDefinition
 {
     /**
      * @return array<string, mixed>
@@ -15,9 +15,9 @@ class PrimaryAssistantDefinition extends ConfigurableAssistantDefinition
     {
         return [
             'key' => 'general-assistant',
-            'name' => 'General Assistant',
-            'description' => 'Test general-purpose assistant.',
-            'system_prompt' => 'You are a helpful test assistant.',
+            'name' => 'General Agent',
+            'description' => 'Test general-purpose agent.',
+            'system_prompt' => 'You are a helpful test agent.',
             'default_model' => 'gpt-test',
             'temperature' => 0.2,
             'top_p' => 0.5,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Schema;
@@ -22,7 +22,7 @@ class PromptVariableContext
 
     public function __construct(
         public readonly ThreadState $threadState,
-        private ?ResolvedAssistant $assistantOverride = null,
+        private ?ResolvedAgent $assistantOverride = null,
         private ?string $promptOverride = null,
         private ?Authenticatable $user = null,
         private ?AiThread $threadOverride = null
@@ -43,7 +43,7 @@ class PromptVariableContext
         return $this->resolvedThread();
     }
 
-    public function assistant(): ResolvedAssistant
+    public function assistant(): ResolvedAgent
     {
         return $this->assistantOverride ?? $this->threadState->assistant;
     }

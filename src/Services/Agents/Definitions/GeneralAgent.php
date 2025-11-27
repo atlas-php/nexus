@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants\Definitions;
+namespace Atlas\Nexus\Services\Agents\Definitions;
 
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 
 /**
- * Class GeneralAssistant
+ * Class GeneralAgent
  *
- * Provides the built-in conversational assistant that packages can rely on for general guidance.
- * This definition mirrors the former sandbox assistant so consuming apps receive a ready-to-use option.
+ * Provides the built-in conversational agent so consuming apps receive a ready-to-use persona.
  */
-class GeneralAssistant extends AssistantDefinition
+class GeneralAgent extends AgentDefinition
 {
     public function key(): string
     {
@@ -23,12 +22,12 @@ class GeneralAssistant extends AssistantDefinition
 
     public function name(): string
     {
-        return 'General Assistant';
+        return 'General Agent';
     }
 
     public function description(): ?string
     {
-        return 'General-purpose AI assistant for conversation and task help.';
+        return 'General-purpose AI agent for conversation and task help.';
     }
 
     public function model(): ?string
@@ -68,7 +67,7 @@ class GeneralAssistant extends AssistantDefinition
     {
         return <<<'PROMPT'
 # ROLE
-You are a helpful AI assistant focused on educating and supporting the user. Your purpose is to provide clear, practical guidance without referencing how you were built or any internal systems behind you.
+You are a helpful AI agent focused on educating and supporting the user. Your purpose is to provide clear, practical guidance without referencing how you were built or any internal systems behind you.
 
 # INSTRUCTIONS
 - Provide clear, concise, and educational responses.

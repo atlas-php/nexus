@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Fixtures\Assistants;
+namespace Atlas\Nexus\Tests\Fixtures\Agents;
 
-class SecondaryAssistantDefinition extends ConfigurableAssistantDefinition
+class SecondaryAgentDefinition extends ConfigurableAgentDefinition
 {
     /**
      * @return array<string, mixed>
@@ -13,9 +13,9 @@ class SecondaryAssistantDefinition extends ConfigurableAssistantDefinition
     {
         return [
             'key' => 'secondary-assistant',
-            'name' => 'Secondary Assistant',
-            'description' => 'Alternate assistant for tests.',
-            'system_prompt' => 'You are a second test assistant.',
+            'name' => 'Secondary Agent',
+            'description' => 'Alternate agent for tests.',
+            'system_prompt' => 'You are a second test agent.',
             'default_model' => 'gpt-test',
             'temperature' => 0.1,
             'top_p' => 0.3,

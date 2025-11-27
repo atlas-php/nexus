@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Tests\Fixtures\Assistants;
+namespace Atlas\Nexus\Tests\Fixtures\Agents;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 
 /**
- * Provides configurable assistant definitions for tests without requiring database records.
+ * Provides configurable agent definitions for tests without requiring database records.
  */
-abstract class ConfigurableAssistantDefinition extends AssistantDefinition
+abstract class ConfigurableAgentDefinition extends AgentDefinition
 {
     /**
      * @var array<class-string<static>, array<string, mixed>>
@@ -56,7 +56,7 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
 
     public function name(): string
     {
-        return (string) $this->data('name', 'Test Assistant');
+        return (string) $this->data('name', 'Test Agent');
     }
 
     public function description(): ?string
@@ -84,7 +84,7 @@ abstract class ConfigurableAssistantDefinition extends AssistantDefinition
 
     public function systemPrompt(): string
     {
-        return (string) $this->data('system_prompt', 'You are a test assistant.');
+        return (string) $this->data('system_prompt', 'You are a test agent.');
     }
 
     public function model(): ?string

@@ -2,6 +2,24 @@
 
 declare(strict_types=1);
 
+$defaultAgents = [
+    \Atlas\Nexus\Services\Agents\Definitions\GeneralAgent::class,
+    \Atlas\Nexus\Services\Agents\Definitions\HumanAgent::class,
+    \Atlas\Nexus\Services\Agents\Definitions\ThreadSummaryAgent::class,
+    \Atlas\Nexus\Services\Agents\Definitions\MemoryAgent::class,
+];
+
+$defaultPromptAttributes = [
+    \Atlas\Nexus\Services\Prompts\Variables\ThreadPromptVariables::class,
+    \Atlas\Nexus\Services\Prompts\Variables\UserPromptVariables::class,
+    \Atlas\Nexus\Services\Prompts\Variables\MemoryPromptVariables::class,
+];
+
+$defaultThreadHooks = [
+    \Atlas\Nexus\Services\Threads\Hooks\ThreadSummaryHook::class,
+    \Atlas\Nexus\Services\Threads\Hooks\ThreadMemoryHook::class,
+];
+
 return [
     'database' => [
         'connection' => env('ATLAS_NEXUS_DATABASE_CONNECTION'),
@@ -32,18 +50,22 @@ return [
         'snapshot_prompts' => true,
     ],
 
-    'assistants' => [
-        \Atlas\Nexus\Services\Assistants\Definitions\GeneralAssistant::class,
-        \Atlas\Nexus\Services\Assistants\Definitions\HumanAssistant::class,
-        \Atlas\Nexus\Services\Assistants\Definitions\ThreadSummaryAssistant::class,
-        \Atlas\Nexus\Services\Assistants\Definitions\MemoryAssistant::class,
-        // Additional consumer-defined assistants go here.
+    'defaults' => [
+        'agents' => $defaultAgents,
+        'prompt_attributes' => $defaultPromptAttributes,
     ],
 
+    'agents' => $defaultAgents,
+
+    'prompt_attributes' => $defaultPromptAttributes,
+
     'variables' => [
-        \Atlas\Nexus\Services\Prompts\Variables\ThreadPromptVariables::class,
-        \Atlas\Nexus\Services\Prompts\Variables\UserPromptVariables::class,
-        \Atlas\Nexus\Services\Prompts\Variables\MemoryPromptVariables::class,
+        ...$defaultPromptAttributes,
         // \App\Nexus\Prompts\Variables\CustomPromptVariable::class,
+    ],
+
+    'thread_hooks' => [
+        ...$defaultThreadHooks,
+        // \App\Nexus\Threads\Hooks\CustomHook::class,
     ],
 ];

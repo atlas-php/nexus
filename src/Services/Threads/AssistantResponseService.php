@@ -14,15 +14,13 @@ use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequest;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\Integrations\Prism\TextResponseSerializer;
-use Atlas\Nexus\Jobs\PushMemoryExtractorAssistantJob;
-use Atlas\Nexus\Jobs\PushThreadSummaryAssistantJob;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiToolRun;
 use Atlas\Nexus\Services\Models\AiMessageService;
-use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
 use Atlas\Nexus\Services\Threads\Data\ThreadState;
+use Atlas\Nexus\Services\Threads\Hooks\ThreadHookRunner;
 use Atlas\Nexus\Services\Threads\Logging\ChatThreadLog;
 use Atlas\Nexus\Services\Threads\Logging\ToolInvocation;
 use Atlas\Nexus\Services\Tools\ToolDefinition;
@@ -48,10 +46,6 @@ use function json_encode;
  */
 class AssistantResponseService
 {
-    private const THREAD_SUMMARY_ASSISTANT_KEY = 'thread-summary-assistant';
-
-    private const MEMORY_EXTRACTOR_KEY = 'memory-assistant';
-
     /**
      * @var array<string, array<string, mixed>|int|float|string|null>
      */
@@ -60,12 +54,12 @@ class AssistantResponseService
     public function __construct(
         private readonly ThreadStateService $threadStateService,
         private readonly AiMessageService $messageService,
-        private readonly AiThreadService $threadService,
         private readonly AiToolRunService $toolRunService,
         private readonly TextRequestFactory $textRequestFactory,
         private readonly ToolRunLogger $toolRunLogger,
         private readonly AssistantThreadLogger $assistantThreadLogger,
         private readonly OpenAiRateLimitClient $openAiRateLimitClient,
+        private readonly ThreadHookRunner $threadHookRunner,
     ) {}
 
     public function handle(int $assistantMessageId): void
@@ -184,8 +178,7 @@ class AssistantResponseService
                 );
             }
 
-            $this->dispatchThreadSummaryAssistantJob($assistantMessage);
-            $this->dispatchMemoryExtractorAssistantJob($assistantMessage);
+            $this->threadHookRunner->run($state, $assistantMessage);
         } catch (Throwable $exception) {
             $failedReason = $exception instanceof PrismRateLimitedException
                 ? $this->formatRateLimitedFailure($exception, $state ?? null, $textRequest, $providerKey, $modelKey)
@@ -197,92 +190,6 @@ class AssistantResponseService
         } finally {
             $this->recordedToolOutputs = [];
         }
-    }
-
-    protected function dispatchThreadSummaryAssistantJob(AiMessage $assistantMessage): void
-    {
-        $thread = $assistantMessage->thread?->fresh();
-
-        if ($thread === null) {
-            return;
-        }
-
-        if ($thread->assistant_key === self::THREAD_SUMMARY_ASSISTANT_KEY) {
-            $parent = $thread->parentThread()->first();
-
-            if (! $parent instanceof \Atlas\Nexus\Models\AiThread) {
-                return;
-            }
-
-            $thread = $parent->fresh() ?? $parent;
-        }
-
-        $totalMessageCount = $this->messageService->query()
-            ->where('thread_id', $thread->getKey())
-            ->where('status', AiMessageStatus::COMPLETED->value)
-            ->count();
-
-        $minimumMessages = $this->threadSummaryConfig('minimum_messages', 2);
-        $messageInterval = $this->threadSummaryConfig('message_interval', 10);
-
-        if ($totalMessageCount < $minimumMessages) {
-            return;
-        }
-
-        if ($thread->last_summary_message_id === null) {
-            PushThreadSummaryAssistantJob::dispatch($thread->getKey());
-
-            return;
-        }
-
-        $messagesSinceSummary = $this->messageService->query()
-            ->where('thread_id', $thread->getKey())
-            ->where('status', AiMessageStatus::COMPLETED->value)
-            ->where('id', '>', $thread->last_summary_message_id)
-            ->count();
-
-        if ($messagesSinceSummary >= $messageInterval) {
-            PushThreadSummaryAssistantJob::dispatch($thread->getKey());
-        }
-    }
-
-    protected function dispatchMemoryExtractorAssistantJob(AiMessage $assistantMessage): void
-    {
-        $thread = $assistantMessage->thread?->fresh();
-
-        if ($thread === null) {
-            return;
-        }
-
-        if (in_array($thread->assistant_key, [self::THREAD_SUMMARY_ASSISTANT_KEY, self::MEMORY_EXTRACTOR_KEY], true)) {
-            return;
-        }
-
-        $pendingCount = $this->messageService->query()
-            ->where('thread_id', $thread->getKey())
-            ->where('status', AiMessageStatus::COMPLETED->value)
-            ->where('is_memory_checked', false)
-            ->count();
-
-        $pendingThreshold = $this->memoryExtractorConfig('pending_message_count', 4);
-
-        if ($pendingCount < $pendingThreshold) {
-            return;
-        }
-
-        $metadata = $thread->metadata ?? [];
-
-        if (! empty($metadata['memory_job_pending'])) {
-            return;
-        }
-
-        $metadata['memory_job_pending'] = true;
-
-        $this->threadService->update($thread, [
-            'metadata' => $metadata,
-        ]);
-
-        PushMemoryExtractorAssistantJob::dispatch($thread->getKey());
     }
 
     /**
@@ -462,32 +369,6 @@ class AssistantResponseService
             })
             ->values()
             ->all();
-    }
-
-    protected function memoryExtractorConfig(string $key, int $default): int
-    {
-        $configuration = config('atlas-nexus.memory', []);
-
-        if (! is_array($configuration)) {
-            return $default;
-        }
-
-        $value = (int) ($configuration[$key] ?? $default);
-
-        return $value > 0 ? $value : $default;
-    }
-
-    protected function threadSummaryConfig(string $key, int $default): int
-    {
-        $configuration = config('atlas-nexus.thread_summary', []);
-
-        if (! is_array($configuration)) {
-            return $default;
-        }
-
-        $value = (int) ($configuration[$key] ?? $default);
-
-        return $value > 0 ? $value : $default;
     }
 
     /**

@@ -10,8 +10,8 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -39,7 +39,7 @@ class NexusChatCommand extends Command
     protected $description = 'Keep a Nexus chat session alive, dispatching assistant responses via jobs and polling status.';
 
     public function __construct(
-        private readonly AssistantRegistry $assistantRegistry,
+        private readonly AgentRegistry $assistantRegistry,
         private readonly AiThreadService $threadService,
         private readonly AiMessageService $messageService,
         private readonly ThreadMessageService $threadMessageService
@@ -110,7 +110,7 @@ class NexusChatCommand extends Command
         }
     }
 
-    protected function resolveThread(ResolvedAssistant $assistant, int $userId): AiThread
+    protected function resolveThread(ResolvedAgent $assistant, int $userId): AiThread
     {
         $threadId = $this->option('thread');
 

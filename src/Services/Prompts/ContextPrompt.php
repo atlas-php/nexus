@@ -7,7 +7,7 @@ namespace Atlas\Nexus\Services\Prompts;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Atlas\Nexus\Services\Threads\ThreadMemoryService;
@@ -37,7 +37,7 @@ class ContextPrompt
 
     public function compose(
         AiThread $thread,
-        ResolvedAssistant $assistant,
+        ResolvedAgent $assistant,
         string $template
     ): ?ContextPromptPayload {
         if (! $this->shouldAttach($thread)) {
@@ -161,7 +161,7 @@ class ContextPrompt
      */
     protected function threadState(
         AiThread $thread,
-        ResolvedAssistant $assistant,
+        ResolvedAgent $assistant,
         Collection $memories
     ): ThreadState {
         return new ThreadState(

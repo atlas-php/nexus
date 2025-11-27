@@ -11,7 +11,7 @@ use Atlas\Nexus\Enums\AiThreadStatus;
 use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Integrations\Prism\TextResponseSerializer;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Illuminate\Support\Carbon;
@@ -35,7 +35,7 @@ class AssistantThreadLogger
      */
     public function log(
         AiThread $parentThread,
-        ResolvedAssistant $assistant,
+        ResolvedAgent $assistant,
         string $title,
         string $userMessageContent,
         Response $response,

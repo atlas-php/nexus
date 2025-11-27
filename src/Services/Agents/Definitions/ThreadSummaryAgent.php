@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Atlas\Nexus\Services\Assistants\Definitions;
+namespace Atlas\Nexus\Services\Agents\Definitions;
 
-use Atlas\Nexus\Services\Assistants\AssistantDefinition;
+use Atlas\Nexus\Services\Agents\AgentDefinition;
 
 /**
- * Class ThreadSummaryAssistant
+ * Class ThreadSummaryAgent
  *
- * Internal assistant that generates titles and summaries to support the default Nexus workflow.
+ * Internal agent that generates titles and summaries to support the Nexus workflow.
  */
-class ThreadSummaryAssistant extends AssistantDefinition
+class ThreadSummaryAgent extends AgentDefinition
 {
     public function key(): string
     {
@@ -20,7 +20,7 @@ class ThreadSummaryAssistant extends AssistantDefinition
 
     public function name(): string
     {
-        return 'Thread Summary Assistant';
+        return 'Thread Summary Agent';
     }
 
     public function description(): ?string
@@ -71,7 +71,7 @@ If the current summary is `None`, generate a new summary using only the latest c
 3. The `summary` must:
    * Always contain **at least 1 sentence**.
    * Contain **no more than 3 paragraphs**, with each paragraph consisting of **2–4 sentences**.
-   * Focus on the user’s **interests, motivations, emotional tone, and conversational direction**, not the assistant's actions.
+   * Focus on the user’s **interests, motivations, emotional tone, and conversational direction**, not the agent's actions.
    * Integrate and refine any prior summary (when provided) to maintain continuity while preserving previously known durable facts.
    * Express the user’s motivations descriptively rather than labeling them (e.g., *"sharing the excitement of an upcoming trip"* instead of *"motivation: excitement"").
 4. Include a `keywords` field containing **2–8 single-word keywords** representing the conversation's main themes. Begin with the provided keyword list, add new keywords for emerging topics, and remove any that are no longer relevant or supported by the latest conversation.

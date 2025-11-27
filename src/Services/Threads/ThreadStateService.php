@@ -6,8 +6,8 @@ namespace Atlas\Nexus\Services\Threads;
 
 use Atlas\Nexus\Enums\AiMessageStatus;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Prompts\PromptVariableContext;
@@ -33,7 +33,7 @@ class ThreadStateService
         private readonly ProviderToolRegistry $providerToolRegistry,
         private readonly ToolRegistry $toolRegistry,
         private readonly PromptVariableService $promptVariableService,
-        private readonly AssistantRegistry $assistantRegistry,
+        private readonly AgentRegistry $assistantRegistry,
         private readonly AiThreadService $threadService
     ) {}
 
@@ -86,7 +86,7 @@ class ThreadStateService
     /**
      * @return Collection<int, \Atlas\Nexus\Services\Tools\ToolDefinition>
      */
-    protected function resolveTools(ResolvedAssistant $assistant): Collection
+    protected function resolveTools(ResolvedAgent $assistant): Collection
     {
         $toolKeys = $assistant->tools();
 
@@ -96,7 +96,7 @@ class ThreadStateService
     /**
      * @return Collection<int, \Atlas\Nexus\Services\Tools\ProviderToolDefinition>
      */
-    protected function resolveProviderTools(ResolvedAssistant $assistant): Collection
+    protected function resolveProviderTools(ResolvedAgent $assistant): Collection
     {
         $keys = $assistant->providerTools();
 
@@ -156,7 +156,7 @@ class ThreadStateService
         return $loadedParent instanceof AiThread ? $loadedParent : $state->thread;
     }
 
-    protected function resolvePrompt(AiThread $thread, ResolvedAssistant $assistant): ?string
+    protected function resolvePrompt(AiThread $thread, ResolvedAgent $assistant): ?string
     {
         $prompt = $this->normalizePrompt($assistant->systemPrompt());
 

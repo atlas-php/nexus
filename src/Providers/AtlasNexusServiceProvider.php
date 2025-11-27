@@ -8,7 +8,7 @@ use Atlas\Core\Providers\PackageServiceProvider;
 use Atlas\Nexus\Integrations\OpenAI\OpenAiRateLimitClient;
 use Atlas\Nexus\Integrations\Prism\TextRequestFactory;
 use Atlas\Nexus\NexusManager;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
 use Atlas\Nexus\Services\Models\AiMessageService;
 use Atlas\Nexus\Services\Models\AiThreadService;
 use Atlas\Nexus\Services\Models\AiToolRunService;
@@ -17,6 +17,8 @@ use Atlas\Nexus\Services\Prompts\PromptVariableRegistry;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Threads\AssistantResponseService;
 use Atlas\Nexus\Services\Threads\AssistantThreadLogger;
+use Atlas\Nexus\Services\Threads\Hooks\ThreadHookRegistry;
+use Atlas\Nexus\Services\Threads\Hooks\ThreadHookRunner;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Services\Threads\ThreadMemoryService;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
@@ -55,7 +57,7 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->alias(NexusManager::class, 'atlas-nexus.manager');
         $this->app->alias(TextRequestFactory::class, 'atlas-nexus.text-factory');
 
-        $this->app->singleton(AssistantRegistry::class);
+        $this->app->singleton(AgentRegistry::class);
         $this->app->singleton(AiThreadService::class);
         $this->app->singleton(AiMessageService::class);
         $this->app->singleton(AiToolRunService::class);
@@ -63,6 +65,8 @@ class AtlasNexusServiceProvider extends PackageServiceProvider
         $this->app->singleton(PromptVariableService::class);
         $this->app->singleton(ThreadMemoryService::class);
         $this->app->singleton(ThreadMemoryExtractionService::class);
+        $this->app->singleton(ThreadHookRegistry::class);
+        $this->app->singleton(ThreadHookRunner::class);
         $this->app->singleton(AssistantThreadLogger::class);
         $this->app->singleton(ProviderToolRegistry::class);
         $this->app->singleton(ToolRegistry::class);

@@ -10,7 +10,7 @@ use Atlas\Nexus\Enums\AiThreadType;
 use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
 use Atlas\Nexus\Services\Threads\ThreadMemoryExtractionService;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -26,7 +26,7 @@ use RuntimeException;
 
 class ThreadMemoryExtractionServiceTest extends TestCase
 {
-    protected function shouldUseAssistantFixtures(): bool
+    protected function shouldUseAgentFixtures(): bool
     {
         return false;
     }
@@ -155,8 +155,8 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $this->assertSame(AiMessageRole::USER, $loggedUserMessage->role);
         $this->assertSame(AiMessageRole::ASSISTANT, $loggedAssistantMessage->role);
 
-        /** @var AssistantRegistry $registry */
-        $registry = $this->app->make(AssistantRegistry::class);
+        /** @var AgentRegistry $registry */
+        $registry = $this->app->make(AgentRegistry::class);
         $assistant = $registry->require('memory-assistant');
 
         $metadataPayload = $logThread->metadata['memory_extractor_payload'] ?? null;
@@ -269,8 +269,8 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $service = $this->app->make(ThreadMemoryExtractionService::class);
         $service->extractFromMessages($thread, collect([$pendingUser, $pendingAssistant]));
 
-        /** @var AssistantRegistry $registry */
-        $registry = $this->app->make(AssistantRegistry::class);
+        /** @var AgentRegistry $registry */
+        $registry = $this->app->make(AgentRegistry::class);
         $assistant = $registry->require('memory-assistant');
 
         $logThread = AiThread::query()
@@ -397,8 +397,8 @@ class ThreadMemoryExtractionServiceTest extends TestCase
         $service = $this->app->make(ThreadMemoryExtractionService::class);
         $service->extractFromMessages($thread, collect([$userMessage, $assistantMessage]));
 
-        /** @var AssistantRegistry $registry */
-        $registry = $this->app->make(AssistantRegistry::class);
+        /** @var AgentRegistry $registry */
+        $registry = $this->app->make(AgentRegistry::class);
         $assistant = $registry->require('memory-assistant');
 
         $logThread = AiThread::query()

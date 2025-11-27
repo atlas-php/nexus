@@ -1,6 +1,6 @@
 # PRD — Atlas Nexus
 
-Atlas Nexus centralizes AI assistants, prompts, threads, messages, tools, tool runs, and shared memories. This document is the authoritative specification for overall responsibilities and shared schemas across the package.
+Atlas Nexus centralizes AI agents, prompts, threads, messages, tools, tool runs, and shared memories. This document is the authoritative specification for overall responsibilities and shared schemas across the package.
 
 ## Table of Contents
 - [System Overview](#system-overview)
@@ -24,27 +24,28 @@ All tables support soft deletes unless noted otherwise. Default names are config
 | Table             | Purpose                                                     |
 |-------------------|-------------------------------------------------------------|
 | `ai_threads`      | Conversation containers (user/tool threads)                 |
-| `ai_messages`     | User and assistant messages in a thread                     |
+| `ai_messages`     | User and agent messages in a thread                     |
 | `ai_message_tools`    | Execution logs for tool calls                               |
 
 Each table definition with fields is detailed in the linked PRDs below.
 
 ## Configuration
 - `atlas-nexus.database.connection` — optional connection override for all Nexus tables.
-- `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, assistant snapshots).
-- `atlas-nexus.queue` — optional queue name for assistant response jobs.
-- `atlas-nexus.threads.snapshot_prompts` — toggle whether running threads lock the assistant prompt on first response (enabled by default).
-- `atlas-nexus.assistants` — list of assistant definition classes.
+- `atlas-nexus.database.tables.*` — per-table name overrides (threads, messages, tool runs, agent snapshots).
+- `atlas-nexus.queue` — optional queue name for agent response jobs.
+- `atlas-nexus.threads.snapshot_prompts` — toggle whether running threads lock the agent prompt on first response (enabled by default).
+- `atlas-nexus.agents` — list of agent definition classes.
+- `atlas-nexus.thread_hooks` — list of hook classes executed after each agent response (defaults dispatch summary + memory agents).
 - `atlas-nexus.variables` — list of prompt variable providers resolved at runtime.
 
 ## Job vs Inline Execution
-- `ThreadMessageService::sendUserMessage` stages a pending assistant message and either dispatches `RunAssistantResponseJob` or runs inline based on the `$dispatchResponse` flag.
+- `ThreadMessageService::sendUserMessage` stages a pending agent message and either dispatches `RunAssistantResponseJob` or runs inline based on the `$dispatchResponse` flag.
 - `RunAssistantResponseJob` delegates to `AssistantResponseService`, which handles Prism calls, tool logging, and failure capture.
-- Failures must mark the assistant message as `FAILED` with a `failed_reason`.
+- Failures must mark the agent message as `FAILED` with a `failed_reason`.
 
 ## Assistant Definitions
-- Assistants are code-defined via `AssistantDefinition` classes. There is no `ai_assistants` table.
-- Consumers control which assistants exist by registering their definition classes in configuration.
+- Agents are code-defined via `AgentDefinition` classes. There is no `ai_agents` table; records are code-defined.
+- Consumers control which agents exist by registering their definition classes in configuration.
 
 ## Purge & Retention
 - Trashed threads, messages, and tool runs retain their data until explicitly purged.
@@ -60,7 +61,7 @@ All conversation artifacts carry an optional `group_id` to align with tenant/acc
 Services propagate `group_id` from threads to messages, memories, and tool runs automatically when present.
 
 ## Failure Semantics
-- Assistant response failures (inline or job) must mark the assistant message as `FAILED` with the error message.
+- Agent response failures (inline or job) must mark the agent message as `FAILED` with the error message.
 - Tool runs record statuses via `AiToolRunStatus` (`QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`).
 
 ## Also See

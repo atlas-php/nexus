@@ -14,7 +14,7 @@ use Atlas\Nexus\Models\AiMemory;
 use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Threads\ThreadMessageService;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
 use Atlas\Nexus\Tests\Fixtures\ThrowingTextRequestFactory;
 use Atlas\Nexus\Tests\TestCase;
 use Illuminate\Support\Carbon;
@@ -52,7 +52,7 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_dispatches_response_job_after_recording_messages(): void
     {
         Queue::fake();
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'context_available' => true,
         ]);
 
@@ -129,7 +129,7 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_skips_context_prompt_when_assistant_has_no_template(): void
     {
         Queue::fake();
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'context_prompt' => null,
         ]);
         App::forgetInstance(\Atlas\Nexus\Services\Prompts\ContextPromptService::class);
@@ -183,7 +183,7 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_includes_memories_when_available_without_summary(): void
     {
         Queue::fake();
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'context_available' => true,
         ]);
 
@@ -221,7 +221,7 @@ class ThreadMessageServiceTest extends TestCase
     public function test_it_honors_custom_prompt_template_with_variables(): void
     {
         Queue::fake();
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'context_prompt' => 'Summary:{CONTEXT_PROMPT.LAST_SUMMARY}|Memories:{CONTEXT_PROMPT.MEMORIES}',
             'context_available' => true,
         ]);
@@ -311,7 +311,7 @@ class ThreadMessageServiceTest extends TestCase
     {
         Queue::fake();
 
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'default_model' => 'gpt-inline',
         ]);
 
@@ -355,7 +355,7 @@ class ThreadMessageServiceTest extends TestCase
         $this->assertIsArray($assistantMessage->raw_response);
         $this->assertSame('Inline reply', $assistantMessage->raw_response['text']);
 
-        PrimaryAssistantDefinition::resetConfig();
+        PrimaryAgentDefinition::resetConfig();
     }
 
     public function test_it_marks_inline_failures_as_failed(): void

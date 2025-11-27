@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\User;
-use Atlas\Nexus\Services\Assistants\AssistantRegistry;
+use Atlas\Nexus\Services\Agents\AgentRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,7 +26,7 @@ class NexusSetupCommand extends Command
      */
     protected $description = 'Create a fake user suitable for Nexus sandbox sessions.';
 
-    public function __construct(private readonly AssistantRegistry $assistantRegistry)
+    public function __construct(private readonly AgentRegistry $assistantRegistry)
     {
         parent::__construct();
     }

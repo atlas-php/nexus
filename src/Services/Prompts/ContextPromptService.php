@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Atlas\Nexus\Services\Prompts;
 
 use Atlas\Nexus\Models\AiThread;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 
 /**
  * Class ContextPromptService
@@ -18,7 +18,7 @@ class ContextPromptService
         private readonly ContextPrompt $contextPrompt
     ) {}
 
-    public function buildForThread(AiThread $thread, ResolvedAssistant $assistant): ?string
+    public function buildForThread(AiThread $thread, ResolvedAgent $assistant): ?string
     {
         $template = $assistant->contextPrompt();
 

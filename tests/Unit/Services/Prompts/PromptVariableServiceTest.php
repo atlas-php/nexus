@@ -8,7 +8,7 @@ use Atlas\Nexus\Models\AiMessage;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Services\Prompts\PromptVariableService;
 use Atlas\Nexus\Services\Threads\ThreadStateService;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
 use Atlas\Nexus\Tests\TestCase;
 
 class PromptVariableServiceTest extends TestCase
@@ -54,7 +54,7 @@ class PromptVariableServiceTest extends TestCase
     {
         $prompt = 'Hello {CUSTOM.VALUE}';
 
-        PrimaryAssistantDefinition::updateConfig([
+        PrimaryAgentDefinition::updateConfig([
             'system_prompt' => 'Hello {CUSTOM.VALUE}',
         ]);
 
@@ -71,7 +71,7 @@ class PromptVariableServiceTest extends TestCase
 
         $this->assertSame('Hello World', $rendered);
 
-        PrimaryAssistantDefinition::resetConfig();
+        PrimaryAgentDefinition::resetConfig();
     }
 
     private function migrationPath(): string

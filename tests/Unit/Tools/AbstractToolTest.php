@@ -10,10 +10,10 @@ use Atlas\Nexus\Integrations\Prism\Tools\ToolParameter;
 use Atlas\Nexus\Integrations\Prism\Tools\ToolResponse;
 use Atlas\Nexus\Models\AiThread;
 use Atlas\Nexus\Models\AiToolRun;
-use Atlas\Nexus\Services\Assistants\ResolvedAssistant;
+use Atlas\Nexus\Services\Agents\ResolvedAgent;
 use Atlas\Nexus\Services\Threads\Data\ThreadState;
 use Atlas\Nexus\Services\Tools\ToolRunLogger;
-use Atlas\Nexus\Tests\Fixtures\Assistants\PrimaryAssistantDefinition;
+use Atlas\Nexus\Tests\Fixtures\Agents\PrimaryAgentDefinition;
 use Atlas\Nexus\Tests\TestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -263,7 +263,7 @@ class AbstractToolTest extends TestCase
 
     private function makeThreadState(): ThreadState
     {
-        $assistant = new ResolvedAssistant(new PrimaryAssistantDefinition);
+        $assistant = new ResolvedAgent(new PrimaryAgentDefinition);
         $thread = AiThread::factory()->make(['assistant_key' => 'general-assistant']);
 
         return new ThreadState(
